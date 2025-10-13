@@ -5,8 +5,10 @@ import { io as socketIOClient } from 'socket.io-client';
 export const AuthContext = createContext();
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
 
 export const AuthProvider = ({ children }) => {
+  // Read from localStorage on init
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
@@ -25,47 +27,35 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem('accessToken');
   }, [accessToken]);
 
-  // Socket
+  // Socket.io client
   const [socket, setSocket] = useState(null);
   useEffect(() => {
     if (!accessToken) return;
 
-    const host = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
-    const s = socketIOClient(host, { auth: { token: accessToken } });
-
+    const s = socketIOClient(SOCKET_URL, { auth: { token: accessToken } });
     setSocket(s);
-    s.on('connect', () => console.log('Socket connected', s.id));
-
+    s.on('connect', () => console.log('Socket connected:', s.id));
     return () => s.disconnect();
   }, [accessToken]);
 
   // Axios instance
   const axiosInstance = axios.create({ baseURL: API_BASE });
-
   axiosInstance.interceptors.request.use(config => {
     if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
     return config;
   });
 
-  axiosInstance.interceptors.response.use(
-    response => response,
-    error => {
-      if (error.response?.status === 401) {
-        console.warn('Unauthorized! Logging out...');
-        logout();
-      }
-      return Promise.reject(error);
-    }
-  );
-
+  // Login function
   const login = async (email, password) => {
     const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
-    setAccessToken(res.data.accessToken);
+    const token = res.data.accessToken;
+    setAccessToken(token);
 
-    const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
+    const payload = JSON.parse(atob(token.split('.')[1]));
     setUser({ _id: payload.id, role: payload.role });
   };
 
+  // Logout function
   const logout = () => {
     setUser(null);
     setAccessToken(null);
