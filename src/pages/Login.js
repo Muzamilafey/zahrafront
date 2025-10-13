@@ -35,7 +35,7 @@ export default function Login() {
           <div className="hidden md:block p-6 rounded-xl floating">
             <div className="bg-gradient-to-br from-brand-200 to-brand-50 rounded-xl p-8 shadow-lg">
               <h3 className="text-2xl font-bold text-brand-700 mb-2">Welcome Back</h3>
-              <p className="text-gray-600">Sign in to access your GENZ Hospital dashboard and manage appointments, prescriptions and billing.</p>
+              <p className="text-gray-600">Sign in to access your Muzamilafey HMIS dashboard and manage appointments, prescriptions and billing.</p>
             </div>
           </div>
 
