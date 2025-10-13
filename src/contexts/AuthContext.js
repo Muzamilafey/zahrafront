@@ -4,7 +4,7 @@ import { io as socketIOClient } from 'socket.io-client';
 
 export const AuthContext = createContext();
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   useEffect(() => {
     try {
-      const host = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+      const host = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
       const s = socketIOClient(host, { auth: { token: accessToken } });
       setSocket(s);
       s.on('connect', () => console.log('socket connected', s.id));
