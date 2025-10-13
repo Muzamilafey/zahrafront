@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+
+/* Brand utilities */
+@layer components {
+  .btn-brand {
+    @apply bg-brand-500 text-white font-semibold rounded-lg px-4 py-2 shadow hover:bg-brand-600 transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-md p-6 border border-transparent hover:shadow-lg transition-shadow duration-200;
+  }
+
+  .input {
+    @apply w-full p-3 border border-gray-200 rounded-md transition-all duration-150;
+  }
+
+  .input:focus {
+    @apply outline-none ring-2 ring-brand-200 border-brand-400;
+  }
+
+  .page-hero {
+    background: linear-gradient(90deg, rgba(14,165,233,0.06), rgba(14,165,233,0.02));
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.6), rgba(255,255,255,0));
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  /* modern button variants */
+  .btn-modern {
+    @apply inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150;
+  }
+  .btn-modern-primary {
+    @apply inline-flex items-center gap-2 bg-brand-600 text-white px-3 py-1.5 rounded-lg shadow hover:bg-brand-700 transition-colors duration-150;
+  }
+  .btn-modern-outline {
+    @apply inline-flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-50 transition-colors duration-150;
+  }
+
+  /* helper for pages that use a fixed navbar at top */
+  .has-fixed-navbar {
+    padding-top: 64px; /* adjust if navbar height changes */
+  }
+
+  .floating {
+    animation: float 6s ease-in-out infinite;
+  }
+}
+
+/* Dark mode overrides (applies when document.documentElement has class 'dark') */
+@layer components {
+  .dark body {
+    background-color: #0b1220;
+    color: #e6eef8;
+  }
+  .dark .card {
+    @apply bg-gray-800 border-gray-700 text-gray-100;
+  }
+  .dark .input {
+    @apply bg-gray-900 border-gray-700 text-gray-100;
+  }
+  /* ensure placeholders and form text are visible in dark mode */
+  .dark .input::placeholder,
+  .dark input::placeholder,
+  .dark textarea::placeholder,
+  .dark select::placeholder { color: rgba(230,238,248,0.9) !important; opacity: 1 !important; }
+  .dark .input::-webkit-input-placeholder,
+  .dark input::-webkit-input-placeholder,
+  .dark textarea::-webkit-input-placeholder { color: rgba(230,238,248,0.9) !important; }
+  .dark .input::-moz-placeholder,
+  .dark input::-moz-placeholder,
+  .dark textarea::-moz-placeholder { color: rgba(230,238,248,0.9) !important; }
+
+  /* force readable text color for common form elements inside dark mode */
+  .dark input,
+  .dark textarea,
+  .dark select,
+  .dark .input,
+  .dark button,
+  .dark label,
+  .dark .form-label,
+  .dark .text-sm { color: #E6EEF8 !important; }
+
+  /* slightly lighter borders for inputs so controls are visible */
+  .dark .input { border-color: #4b5563 !important; }
+
+  /* If an element keeps a light background (e.g. .bg-white) inside dark mode,
+     force inputs/textareas/selects inside it to use dark text so they remain readable. */
+  .dark .bg-white input,
+  .dark .bg-white textarea,
+  .dark .bg-white select,
+  .dark .bg-white .input {
+    color: #0b1220 !important;
+    background-color: #ffffff !important;
+    border-color: #d1d5db !important;
+  }
+  .dark .bg-white input::placeholder,
+  .dark .bg-white textarea::placeholder,
+  .dark .bg-white .input::placeholder {
+    color: rgba(17,24,39,0.5) !important; /* darker placeholder on white */
+    opacity: 1 !important;
+  }
+
+  /* dropdown options (best-effort, some browsers ignore) */
+  .dark select option { background-color: #0b1220; color: #E6EEF8; }
+  .dark .btn-modern {
+    @apply bg-gray-800 border-gray-700 text-gray-100;
+  }
+  .dark .btn-modern-primary {
+    @apply bg-brand-400 text-white;
+  }
+  .dark .page-hero {
+    background: linear-gradient(90deg, rgba(2,132,199,0.06), rgba(2,132,199,0.02));
+  }
+}
+
+/* Broader overrides so utility classes that set white backgrounds are darkened in dark mode */
+@layer utilities {
+  .dark .bg-white { background-color: #0b1220 !important; color: #e6eef8 !important; border-color: #1f2937 !important; }
+  .dark .bg-gray-50 { background-color: #071125 !important; color: #e6eef8 !important; }
+  .dark .bg-gray-100 { background-color: #0b1724 !important; color: #e6eef8 !important; }
+  .dark .text-gray-500 { color: #9CA3AF !important; }
+}
+
+/* Table-specific safety rules: ensure header and cell text is readable in dark mode */
+@layer components {
+  .dark table th { color: #E6EEF8 !important; }
+  .dark table td { color: #E6EEF8 !important; }
+}
+
+@layer components {
+  /* Ensure TopStats / small card text is visible in dark mode */
+  .dark .card .text-sm { color: #CBD5E1 !important; }
+  .dark .card .text-2xl, .dark .card .text-3xl, .dark .card .font-bold { color: #E6EEF8 !important; }
+  /* brand numbers use a brighter blue on dark backgrounds */
+  .dark .text-brand-700 { color: #60A5FA !important; }
+  /* growth percentage (green/red) ensure enough contrast */
+  .dark .card .text-green-600 { color: #34D399 !important; }
+  .dark .card .text-red-600 { color: #FB7185 !important; }
+}
+
+/* Broad overrides: make utility classes for green/red readable in dark mode even outside .card */
+@layer utilities {
+  .dark .text-green-600 { color: #34D399 !important; }
+  .dark .text-red-600 { color: #FB7185 !important; }
+}
