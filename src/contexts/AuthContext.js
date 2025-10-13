@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { io as socketIOClient } from 'socket.io-client';
 
@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')) || null);
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken') || null);
   const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refreshToken') || null);
-  const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
 
   // Persist user & tokens in localStorage
   useEffect(() => {
@@ -26,21 +26,32 @@ export const AuthProvider = ({ children }) => {
     refreshToken ? localStorage.setItem('refreshToken', refreshToken) : localStorage.removeItem('refreshToken');
   }, [refreshToken]);
 
-  // Initialize socket
+  // Initialize or reconnect socket when accessToken changes
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
 
-    const s = socketIOClient(SOCKET_URL, { auth: { token: accessToken } });
-    setSocket(s);
+    // Disconnect old socket if exists
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
+    const s = socketIOClient(SOCKET_URL, { auth: { token: accessToken }, autoConnect: true });
+    socketRef.current = s;
 
     s.on('connect', () => console.log('Socket connected:', s.id));
-    
-    // Optional: handle token expiry from server without forcing logout
+    s.on('disconnect', () => console.log('Socket disconnected'));
+
     s.on('auth:expired', async () => {
       if (refreshToken) {
         try {
           const res = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
-          setAccessToken(res.data.accessToken);
+          setAccessToken(res.data.accessToken); // triggers socket reconnect automatically
         } catch (e) {
           console.warn('Socket token refresh failed', e);
         }
@@ -48,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => s.disconnect();
-  }, [accessToken]);
+  }, [accessToken, refreshToken]);
 
   // Axios instance with automatic token refresh
   const axiosInstance = axios.create({ baseURL: API_BASE });
@@ -88,10 +99,19 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
+    if (socketRef.current) socketRef.current.disconnect();
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, axiosInstance, accessToken, refreshToken, socket }}>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      logout,
+      axiosInstance,
+      accessToken,
+      refreshToken,
+      socket: socketRef.current
+    }}>
       {children}
     </AuthContext.Provider>
   );
