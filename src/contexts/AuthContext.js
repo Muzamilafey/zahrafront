@@ -5,72 +5,58 @@ import { io as socketIOClient } from 'socket.io-client';
 export const AuthContext = createContext();
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')) || null);
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken') || null);
   const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refreshToken') || null);
+  const [socket, setSocket] = useState(null);
 
+  // Persist user & tokens in localStorage
   useEffect(() => {
-    if (user) localStorage.setItem('user', JSON.stringify(user));
-    else localStorage.removeItem('user');
+    user ? localStorage.setItem('user', JSON.stringify(user)) : localStorage.removeItem('user');
   }, [user]);
 
   useEffect(() => {
-    if (accessToken) localStorage.setItem('accessToken', accessToken);
-    else localStorage.removeItem('accessToken');
-  }, [accessToken]);
-
-  // socket.io client
-  const [socket, setSocket] = useState(null);
-  useEffect(() => {
-    try {
-      const host = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
-      const s = socketIOClient(host, { auth: { token: accessToken } });
-      setSocket(s);
-      s.on('connect', () => console.log('socket connected', s.id));
-
-      // handle server telling us the token expired during handshake
-      s.on('auth:expired', async () => {
-        console.log('socket: auth expired, attempting refresh');
-        if (refreshToken) {
-          try {
-            const res = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
-            setAccessToken(res.data.accessToken);
-            // socket will reconnect because accessToken changed (effect dependency)
-          } catch (e) {
-            console.warn('refresh failed after socket auth expired', e);
-            logout();
-          }
-        } else {
-          logout();
-        }
-      });
-
-      return () => { s.disconnect(); };
-    } catch (e) { console.warn('socket init failed', e); }
+    accessToken ? localStorage.setItem('accessToken', accessToken) : localStorage.removeItem('accessToken');
   }, [accessToken]);
 
   useEffect(() => {
-    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    else localStorage.removeItem('refreshToken');
+    refreshToken ? localStorage.setItem('refreshToken', refreshToken) : localStorage.removeItem('refreshToken');
   }, [refreshToken]);
 
-  const axiosInstance = axios.create({
-    baseURL: API_BASE,
-  });
+  // Initialize socket
+  useEffect(() => {
+    if (!accessToken) return;
 
-  axiosInstance.interceptors.request.use(
-    config => {
-      if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
-      return config;
-    },
-    error => Promise.reject(error)
-  );
+    const s = socketIOClient(SOCKET_URL, { auth: { token: accessToken } });
+    setSocket(s);
+
+    s.on('connect', () => console.log('Socket connected:', s.id));
+    
+    // Optional: handle token expiry from server without forcing logout
+    s.on('auth:expired', async () => {
+      if (refreshToken) {
+        try {
+          const res = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
+          setAccessToken(res.data.accessToken);
+        } catch (e) {
+          console.warn('Socket token refresh failed', e);
+        }
+      }
+    });
+
+    return () => s.disconnect();
+  }, [accessToken]);
+
+  // Axios instance with automatic token refresh
+  const axiosInstance = axios.create({ baseURL: API_BASE });
+
+  axiosInstance.interceptors.request.use(config => {
+    if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+    return config;
+  });
 
   axiosInstance.interceptors.response.use(
     response => response,
@@ -82,8 +68,7 @@ export const AuthProvider = ({ children }) => {
           error.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
           return axios(error.config);
         } catch (e) {
-          logout();
-          return Promise.reject(e);
+          console.warn('Request token refresh failed', e);
         }
       }
       return Promise.reject(error);
