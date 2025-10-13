@@ -1,67 +1,57 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { io as socketIOClient } from 'socket.io-client';
 
 export const AuthContext = createContext();
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')) || null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken') || null);
   const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refreshToken') || null);
-  const socketRef = useRef(null);
 
-  // Persist user & tokens in localStorage
+  // Keep localStorage in sync
   useEffect(() => {
-    user ? localStorage.setItem('user', JSON.stringify(user)) : localStorage.removeItem('user');
+    if (user) localStorage.setItem('user', JSON.stringify(user));
+    else localStorage.removeItem('user');
   }, [user]);
 
   useEffect(() => {
-    accessToken ? localStorage.setItem('accessToken', accessToken) : localStorage.removeItem('accessToken');
+    if (accessToken) localStorage.setItem('accessToken', accessToken);
+    else localStorage.removeItem('accessToken');
   }, [accessToken]);
 
   useEffect(() => {
-    refreshToken ? localStorage.setItem('refreshToken', refreshToken) : localStorage.removeItem('refreshToken');
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    else localStorage.removeItem('refreshToken');
   }, [refreshToken]);
 
-  // Initialize or reconnect socket when accessToken changes
+  // Socket
+  const [socket, setSocket] = useState(null);
   useEffect(() => {
-    if (!accessToken) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      return;
-    }
+    if (!accessToken) return;
 
-    // Disconnect old socket if exists
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-    }
+    const host = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
+    const s = socketIOClient(host, { auth: { token: accessToken } });
 
-    const s = socketIOClient(SOCKET_URL, { auth: { token: accessToken }, autoConnect: true });
-    socketRef.current = s;
-
-    s.on('connect', () => console.log('Socket connected:', s.id));
-    s.on('disconnect', () => console.log('Socket disconnected'));
+    setSocket(s);
+    s.on('connect', () => console.log('Socket connected', s.id));
 
     s.on('auth:expired', async () => {
-      if (refreshToken) {
-        try {
-          const res = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
-          setAccessToken(res.data.accessToken); // triggers socket reconnect automatically
-        } catch (e) {
-          console.warn('Socket token refresh failed', e);
-        }
-      }
+      console.log('Socket auth expired, refreshing token...');
+      await tryRefreshToken();
+      // socket will reconnect with new token
     });
 
     return () => s.disconnect();
-  }, [accessToken, refreshToken]);
+  }, [accessToken]);
 
-  // Axios instance with automatic token refresh
+  // Axios instance
   const axiosInstance = axios.create({ baseURL: API_BASE });
 
   axiosInstance.interceptors.request.use(config => {
@@ -74,17 +64,32 @@ export const AuthProvider = ({ children }) => {
     async error => {
       if (error.response?.status === 401 && refreshToken) {
         try {
-          const res = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
-          setAccessToken(res.data.accessToken);
-          error.config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+          await tryRefreshToken();
+          error.config.headers.Authorization = `Bearer ${accessToken}`;
           return axios(error.config);
-        } catch (e) {
-          console.warn('Request token refresh failed', e);
+        } catch {
+          logout(); // Only logout if refresh fails
         }
       }
       return Promise.reject(error);
     }
   );
+
+  // Refresh token helper
+  const tryRefreshToken = async () => {
+    if (!refreshToken) throw new Error('No refresh token');
+
+    try {
+      const res = await axios.post(`${API_BASE}/auth/refresh-token`, { refreshToken });
+      setAccessToken(res.data.accessToken);
+
+      const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
+      setUser(prev => ({ ...prev, _id: payload.id, role: payload.role }));
+    } catch (err) {
+      console.warn('Token refresh failed', err);
+      throw err;
+    }
+  };
 
   const login = async (email, password) => {
     const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
@@ -99,19 +104,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
-    if (socketRef.current) socketRef.current.disconnect();
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      logout,
-      axiosInstance,
-      accessToken,
-      refreshToken,
-      socket: socketRef.current
-    }}>
+    <AuthContext.Provider value={{ user, login, logout, axiosInstance, accessToken, refreshToken, socket }}>
       {children}
     </AuthContext.Provider>
   );
