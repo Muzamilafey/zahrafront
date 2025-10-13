@@ -8,7 +8,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://zahra-7bi2.onrender.com';
 
 export const AuthProvider = ({ children }) => {
-  // Read from localStorage on init
+  // Persisted state from localStorage
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
@@ -40,10 +40,23 @@ export const AuthProvider = ({ children }) => {
 
   // Axios instance
   const axiosInstance = axios.create({ baseURL: API_BASE });
+
   axiosInstance.interceptors.request.use(config => {
     if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
     return config;
   });
+
+  // Instead of logging out automatically, just pass the 401 error
+  axiosInstance.interceptors.response.use(
+    response => response,
+    error => {
+      // Optional: handle 401 here if you want to show a message, but do not logout
+      if (error.response?.status === 401) {
+        console.warn('Unauthorized request:', error.config.url);
+      }
+      return Promise.reject(error);
+    }
+  );
 
   // Login function
   const login = async (email, password) => {
@@ -55,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     setUser({ _id: payload.id, role: payload.role });
   };
 
-  // Logout function
+  // Manual logout
   const logout = () => {
     setUser(null);
     setAccessToken(null);
