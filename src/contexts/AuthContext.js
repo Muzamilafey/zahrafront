@@ -6,15 +6,29 @@ export const AuthContext = createContext();
 const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
 
 export const AuthProvider = ({ children }) => {
-  // Initialize user and token from localStorage
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken') || null);
+  // Load token and user from localStorage when app starts
+  useEffect(() => {
+    const savedToken = localStorage.getItem('accessToken');
+    const savedUser = localStorage.getItem('user');
 
-  // Keep localStorage in sync
+    if (savedToken && savedUser) {
+      try {
+        setAccessToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+      }
+    }
+
+    setLoading(false);
+  }, []);
+
+  // Keep storage updated
   useEffect(() => {
     if (user) localStorage.setItem('user', JSON.stringify(user));
     else localStorage.removeItem('user');
@@ -25,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem('accessToken');
   }, [accessToken]);
 
-  // Axios instance with Authorization header
+  // Axios setup
   const axiosInstance = axios.create({ baseURL: API_BASE });
   axiosInstance.interceptors.request.use(
     config => {
@@ -35,23 +49,30 @@ export const AuthProvider = ({ children }) => {
     error => Promise.reject(error)
   );
 
-  // Login function
+  // Login
   const login = async (email, password) => {
     const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
-    setAccessToken(res.data.accessToken);
+    const token = res.data.accessToken;
+    const payload = JSON.parse(atob(token.split('.')[1]));
 
-    const payload = JSON.parse(atob(res.data.accessToken.split('.')[1]));
-    setUser({ _id: payload.id, role: payload.role });
+    const newUser = { _id: payload.id, role: payload.role };
+    setUser(newUser);
+    setAccessToken(token);
+
+    localStorage.setItem('user', JSON.stringify(newUser));
+    localStorage.setItem('accessToken', token);
   };
 
-  // Logout function
+  // Logout
   const logout = () => {
     setUser(null);
     setAccessToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, axiosInstance, accessToken }}>
+    <AuthContext.Provider value={{ user, login, logout, axiosInstance, accessToken, loading }}>
       {children}
     </AuthContext.Provider>
   );
