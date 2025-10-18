@@ -11,9 +11,8 @@ export default function ReceptionistDashboard() {
   const [recent, setRecent] = useState([]);
   const [appointments, setAppointments] = useState([]);
 
-  // New state for modal
-  const [modalMessage, setModalMessage] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  // ✅ Modal state
+  const [modal, setModal] = useState({ show: false, title: '', message: '', type: 'success' });
 
   useEffect(() => {
     const load = async () => {
@@ -64,17 +63,21 @@ export default function ReceptionistDashboard() {
 
   return (
     <>
-      {/* ✅ Custom modal */}
-      {showModal && (
+      {/* ✅ Modal UI */}
+      {modal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
-            <h2 className="text-xl font-semibold mb-2 text-green-700">
-              Success
+            <h2
+              className={`text-xl font-semibold mb-2 ${
+                modal.type === 'success' ? 'text-green-700' : 'text-red-600'
+              }`}
+            >
+              {modal.title}
             </h2>
-            <p className="mb-4">{modalMessage}</p>
+            <p className="whitespace-pre-line mb-4">{modal.message}</p>
             <button
               className="btn-brand w-full"
-              onClick={() => setShowModal(false)}
+              onClick={() => setModal({ ...modal, show: false })}
             >
               Close
             </button>
@@ -95,7 +98,12 @@ export default function ReceptionistDashboard() {
               e.preventDefault();
               try {
                 if (!reg.name || reg.name.trim().length === 0) {
-                  return alert('Please enter patient name');
+                  return setModal({
+                    show: true,
+                    title: 'Missing Info',
+                    message: 'Please enter patient name.',
+                    type: 'error',
+                  });
                 }
 
                 let email = (reg.email || '').trim();
@@ -118,10 +126,7 @@ export default function ReceptionistDashboard() {
                   assignedDoctor: assignedDoctor || undefined,
                 };
 
-                const createRes = await axiosInstance.post(
-                  '/patients/create',
-                  payload
-                );
+                const createRes = await axiosInstance.post('/patients/create', payload);
                 const temp = createRes.data?.tempPassword;
                 setReg({ name: '', phone: '', email: '' });
                 setAssignedDoctor('');
@@ -138,25 +143,42 @@ export default function ReceptionistDashboard() {
                   );
                 } catch (e) {}
 
-                // ✅ Replaced alert with modal
-                setModalMessage(
-                  `Patient registered${temp ? `\nTemp password: ${temp}` : ''}`
-                );
-                setShowModal(true);
+                // ✅ Success modal
+                setModal({
+                  show: true,
+                  title: 'Patient Registered',
+                  message: `Patient registered successfully${
+                    temp ? `\nTemp password: ${temp}` : ''
+                  }`,
+                  type: 'success',
+                });
               } catch (err) {
                 console.error('Registration error', err);
+                let msg = 'Registration failed. Please try again.';
                 if (err.response) {
                   const data = err.response.data;
                   if (data.errors && Array.isArray(data.errors)) {
-                    alert(data.errors.map((e) => `${e.param}: ${e.msg}`).join('\n'));
+                    msg = data.errors.map((e) => `${e.param}: ${e.msg}`).join('\n');
+                  } else if (
+                    data.message &&
+                    (data.message.toLowerCase().includes('exists') ||
+                      data.message.toLowerCase().includes('already'))
+                  ) {
+                    msg = 'This email or phone number is already registered.';
                   } else if (data.message) {
-                    alert(data.message);
-                  } else {
-                    alert(JSON.stringify(data));
+                    msg = data.message;
                   }
-                } else {
-                  alert(err.message || 'Registration failed');
+                } else if (err.message) {
+                  msg = err.message;
                 }
+
+                // ✅ Error modal
+                setModal({
+                  show: true,
+                  title: 'Error',
+                  message: msg,
+                  type: 'error',
+                });
               }
             }}
           >
