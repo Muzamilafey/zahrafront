@@ -13,7 +13,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/profile" className="text-sm text-gray-700 hover:text-brand-600">Profile</Link>
-              <button onClick={logout} className="text-sm btn-brand">Logout</button>
+              <button onClick={logout} className="text-sm btn-brand">Signoutbutton>
             </>
           ) : (
             <>
