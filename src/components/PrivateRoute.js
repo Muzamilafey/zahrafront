@@ -5,7 +5,7 @@ import { AuthContext } from '../contexts/AuthContext';
 const PrivateRoute = ({ children, roles = [] }) => {
   const { user, loading } = useContext(AuthContext);
 
-  // Wait for AuthContext to finish loading from localStorage
+  // Wait for AuthContext to finish loading (important!)
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen text-lg font-medium text-brand-700">
@@ -14,13 +14,13 @@ const PrivateRoute = ({ children, roles = [] }) => {
     );
   }
 
-  // If no user, redirect to login
+  // Redirect to login if not logged in
   if (!user) return <Navigate to="/login" replace />;
 
-  // If user exists but not allowed role, redirect to dashboard
+  // Role check (optional)
   if (roles.length && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
 
-  // If everything is fine, render protected content
+  // Everything okay, render children
   return children;
 };
 
