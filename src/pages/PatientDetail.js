@@ -87,20 +87,191 @@ export default function PatientDetail(){
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 bg-white p-4 rounded shadow">
-          <h3 className="font-medium mb-2">Personal Info</h3>
-          <div className="text-sm text-gray-700">Name: {user.name}</div>
-          <div className="text-sm text-gray-700">Email: {user.email || 'N/A'}</div>
-          <div className="text-sm text-gray-700">Phone: {user.phone || patient.phone || 'N/A'}</div>
-          <div className="text-sm text-gray-700">Gender: {patient.gender || user.gender || 'N/A'}</div>
-          <div className="text-sm text-gray-700">DOB: {patient.dob || user.dob || 'N/A'}</div>
-          <div className="text-sm text-gray-700">Address: {patient.address || user.address || 'N/A'}</div>
+        <div className="col-span-1">
+          <div className="bg-white p-4 rounded shadow mb-4">
+            <h3 className="font-medium mb-2">Personal Info</h3>
+            <div className="space-y-1">
+              <div className="text-sm">
+                <span className="text-gray-500">Hospital ID:</span> {patient.hospitalId}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">MRN:</span> {patient.mrn}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Name:</span> {patient.firstName} {patient.middleName} {patient.lastName}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">National ID:</span> {patient.nationalId || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Gender:</span> {patient.gender || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Date of Birth:</span> {patient.dob ? new Date(patient.dob).toLocaleDateString() : 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Age:</span> {patient.age || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Marital Status:</span> {patient.maritalStatus || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Nationality:</span> {patient.nationality || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Ethnicity:</span> {patient.ethnicity || 'N/A'}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded shadow mb-4">
+            <h3 className="font-medium mb-2">Contact Information</h3>
+            <div className="space-y-1">
+              <div className="text-sm">
+                <span className="text-gray-500">Phone (Primary):</span> {patient.phonePrimary || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Phone (Secondary):</span> {patient.phoneSecondary || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Email:</span> {patient.email || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Address:</span> {patient.address || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">County:</span> {patient.county || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Sub-County:</span> {patient.subCounty || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Ward:</span> {patient.ward || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Postal Address:</span> {patient.postalAddress || 'N/A'}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded shadow mb-4">
+            <h3 className="font-medium mb-2">Next of Kin</h3>
+            <div className="space-y-1">
+              <div className="text-sm">
+                <span className="text-gray-500">Name:</span> {patient.nextOfKin?.name || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Relationship:</span> {patient.nextOfKin?.relationship || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Phone:</span> {patient.nextOfKin?.phone || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Alt Phone:</span> {patient.nextOfKin?.altPhone || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Address:</span> {patient.nextOfKin?.address || 'N/A'}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-medium mb-2">Demographics</h3>
+            <div className="space-y-1">
+              <div className="text-sm">
+                <span className="text-gray-500">Occupation:</span> {patient.occupation || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Religion:</span> {patient.religion || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Education Level:</span> {patient.educationLevel || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Disability Status:</span> {patient.disabilityStatus || 'N/A'}
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Guardian Info:</span> {patient.guardianInfo || 'N/A'}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="col-span-2 bg-white p-4 rounded shadow">
-          <h3 className="font-medium mb-2">Health Record</h3>
+        <div className="col-span-2">
+          <div className="bg-white p-4 rounded shadow mb-4">
+            <h3 className="font-medium mb-2">Clinical Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Blood Group:</span> {patient.bloodGroup || 'N/A'}
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Allergies:</span>
+                  {patient.allergies && patient.allergies.length > 0 ? (
+                    <ul className="ml-4 list-disc">
+                      {Array.isArray(patient.allergies) 
+                        ? patient.allergies.map((allergy, idx) => (
+                            <li key={idx}>{allergy}</li>
+                          ))
+                        : <li>{patient.allergies}</li>
+                      }
+                    </ul>
+                  ) : ' None'}
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Chronic Conditions:</span>
+                  <div className="ml-4">{patient.chronicConditions || 'None recorded'}</div>
+                </div>
+              </div>
+              <div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Current Medications:</span>
+                  <div className="ml-4">{patient.currentMedications || 'None recorded'}</div>
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Past Medical History:</span>
+                  <div className="ml-4">{patient.pastMedicalHistory || 'None recorded'}</div>
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Surgical History:</span>
+                  <div className="ml-4">{patient.surgicalHistory || 'None recorded'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <div className="mb-4">
+          <div className="bg-white p-4 rounded shadow mb-4">
+            <h3 className="font-medium mb-2">Billing Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Payment Mode:</span> {patient.paymentMode || 'N/A'}
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Insurance Provider:</span> {patient.insuranceProvider || 'N/A'}
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Insurance Card Number:</span> {patient.insuranceCardNumber || 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">NHIF Number:</span> {patient.nhifNumber || 'N/A'}
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Employer:</span> {patient.employer || 'N/A'}
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-gray-500">Corporate Number:</span> {patient.corporateNumber || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-medium mb-2">Health Record</h3>
+
+            <div className="mb-4">
             <h4 className="font-medium">Recent Visits</h4>
             {records.visits.length === 0 ? (
               <div className="text-sm text-gray-500">No visits recorded</div>

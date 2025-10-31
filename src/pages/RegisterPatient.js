@@ -143,11 +143,11 @@ export default function RegisterPatient() {
       }
     }
     try {
+      // Structure payload to match backend expectations
       const payload = {
-        // simple mapping - backend should accept these fields or adapt accordingly
+        // Basic Information
         hospitalId: form.hospitalId,
         nationalId: form.nationalId,
-        name: `${form.firstName} ${form.middleName} ${form.lastName}`.trim(),
         firstName: form.firstName,
         middleName: form.middleName,
         lastName: form.lastName,
@@ -158,6 +158,7 @@ export default function RegisterPatient() {
         nationality: form.nationality,
         ethnicity: form.ethnicity,
 
+        // Contact Information
         phonePrimary: form.phonePrimary,
         phoneSecondary: form.phoneSecondary,
         email: form.email,
@@ -167,42 +168,43 @@ export default function RegisterPatient() {
         ward: form.ward,
         postalAddress: form.postalAddress,
 
+        // Next of Kin
         nextOfKin: {
           name: form.nextOfKinName,
           relationship: form.nextOfKinRelationship,
           phone: form.nextOfKinPhone,
           altPhone: form.nextOfKinAltPhone,
-          address: form.nextOfKinAddress,
+          address: form.nextOfKinAddress
         },
 
-        clinical: {
-          bloodGroup: form.bloodGroup,
-          allergies: form.allergies,
-          chronicConditions: form.chronicConditions,
-          currentMedications: form.currentMedications,
-          pastMedicalHistory: form.pastMedicalHistory,
-          surgicalHistory: form.surgicalHistory,
-        },
+        // Clinical Information
+        bloodGroup: form.bloodGroup,
+        allergies: form.allergies ? form.allergies.split(',').map(a => a.trim()) : [],
+        chronicConditions: form.chronicConditions,
+        currentMedications: form.currentMedications,
+        pastMedicalHistory: form.pastMedicalHistory,
+        surgicalHistory: form.surgicalHistory,
 
-        billing: {
-          paymentMode: form.paymentMode,
-          insuranceProvider: form.insuranceProvider,
-          insuranceCardNumber: form.insuranceCardNumber,
-          nhifNumber: form.nhifNumber,
-          employer: form.employer,
-          corporateNumber: form.corporateNumber,
-        },
+        // Billing Information
+        paymentMode: form.paymentMode,
+        insuranceProvider: form.insuranceProvider,
+        insuranceCardNumber: form.insuranceCardNumber,
+        nhifNumber: form.nhifNumber,
+        employer: form.employer,
+        corporateNumber: form.corporateNumber,
 
-        demographics: {
-          occupation: form.occupation,
-          religion: form.religion,
-          educationLevel: form.educationLevel,
-          disabilityStatus: form.disabilityStatus,
-          guardianInfo: form.guardianInfo,
-        },
+        // Demographics
+        occupation: form.occupation,
+        religion: form.religion,
+        educationLevel: form.educationLevel,
+        disabilityStatus: form.disabilityStatus,
+        guardianInfo: form.guardianInfo,
 
-        assignedDoctor: doctorId,
-        createdBy: user?._id,
+        // Optional assignments
+        assignedDoctor: doctorId || undefined,
+        
+        // Metadata
+        createdBy: user?._id
       };
 
       const res = await axiosInstance.post('/patients/create', payload);
