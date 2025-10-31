@@ -194,8 +194,8 @@ export default function Sidebar({ role }) {
     <aside className="w-64 bg-white border-r min-h-screen p-4 hidden md:block sticky top-14" style={{ alignSelf: 'flex-start' }}>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <div className="text-xl font-bold text-brand-700">GENZ</div>
-          <div className="text-sm text-gray-500">Community Hospital</div>
+          <div className="text-xl font-bold text-brand-700">CoreCare</div>
+          <div className="text-sm text-gray-500"></div>
         </div>
         <button onClick={toggleCollapsed} className="p-2 text-gray-600 hover:bg-gray-100 rounded" title="Collapse sidebar">
           <FaChevronLeft />
