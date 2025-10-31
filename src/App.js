@@ -52,6 +52,8 @@ import AdminUser from './pages/admin/AdminUser';
 import AppointmentsBilling from './pages/finance/AppointmentsBilling';
 import PatientList from './pages/PatientList';
 import RegisterPatient from './pages/RegisterPatient';
+import PatientDetail from './pages/PatientDetail';
+import PatientPayments from './pages/PatientPayments';
 import Transactions from './pages/finance/Transactions';
 import Reports from './pages/finance/Reports';
 import Refunds from './pages/finance/Refunds';
@@ -92,6 +94,8 @@ function App() {
           <Route path="/patients/admitted" element={<PrivateRoute><Layout><AdmittedPatients /></Layout></PrivateRoute>} />
           <Route path="/patients/visits" element={<PrivateRoute><Layout><PatientVisits /></Layout></PrivateRoute>} />
           <Route path="/patients/visits/report" element={<PrivateRoute><Layout><VisitsReport /></Layout></PrivateRoute>} />
+          <Route path="/patients/:id" element={<PrivateRoute><Layout><PatientDetail /></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
           
           {/* Admin Routes */}
           <Route path="/dashboard/admin/patients" element={<PrivateRoute><Layout><AdminPatients /></Layout></PrivateRoute>} />
