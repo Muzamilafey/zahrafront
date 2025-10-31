@@ -9,6 +9,7 @@ export default function PatientDetail(){
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState({ visits: [], prescriptions: [], labs: [] });
+  const [payments, setPayments] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(()=>{ load(); }, [id]);
@@ -33,6 +34,16 @@ export default function PatientDetail(){
           prescriptions: prRes.data.prescriptions || prRes.data || [],
           labs: lRes.data.labtests || lRes.data || [],
         });
+        // payments - try /payments?patientId= or /patients/:id/payments
+        try{
+          const pRes = await axiosInstance.get('/payments', { params: { patientId: id } }).catch(()=>null);
+          if(pRes && pRes.data){
+            setPayments(pRes.data.payments || pRes.data || []);
+          } else {
+            const pRes2 = await axiosInstance.get(`/patients/${id}/payments`).catch(()=>({ data: { payments: [] } }));
+            setPayments(pRes2.data.payments || pRes2.data || []);
+          }
+        }catch(e){ setPayments([]); }
       }catch(e){
         // ignore
       }
@@ -122,6 +133,36 @@ export default function PatientDetail(){
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <h4 className="font-medium">Recent Payments</h4>
+            {payments.length === 0 ? (
+              <div className="text-sm text-gray-500">No payments found</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="text-left text-xs text-gray-600">
+                    <tr>
+                      <th className="px-2 py-1">Date</th>
+                      <th className="px-2 py-1">Amount</th>
+                      <th className="px-2 py-1">Method</th>
+                      <th className="px-2 py-1">Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.slice(0,10).map(p => (
+                      <tr key={p._id || p.id} className="border-t">
+                        <td className="px-2 py-2">{new Date(p.createdAt || p.date).toLocaleString()}</td>
+                        <td className="px-2 py-2">{p.amount || p.total || 0}</td>
+                        <td className="px-2 py-2">{p.method || p.source || 'N/A'}</td>
+                        <td className="px-2 py-2">{p.reference || p.transactionId || p._id}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
