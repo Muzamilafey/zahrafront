@@ -3,18 +3,40 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
 
 export default function NewVisit() {
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, user } = useContext(AuthContext);
+
+  // Only doctors and admins can create visits
+  if (!user || !['doctor', 'admin'].includes(user.role)) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 p-4 rounded shadow">
+          <h3 className="text-red-800 font-medium">Access Denied</h3>
+          <p className="text-red-600">Only doctors and administrators can create patient visits.</p>
+        </div>
+      </div>
+    );
+  }
   const [form, setForm] = useState({
     patientId: '',
-    doctorId: '',
-    type: '',
+    doctorId: user?.role === 'doctor' ? user?.doctorId : '',
+    visitType: '',
     visitDate: new Date().toISOString().split('T')[0],
     diagnosis: {
       code: '',
       description: '',
       notes: ''
     },
-    treatmentNotes: ''
+    vitals: {
+      temperature: '',
+      bloodPressure: '',
+      pulse: '',
+      respiratoryRate: '',
+      oxygenSaturation: '',
+      weight: '',
+      height: ''
+    },
+    treatmentNotes: '',
+    status: 'pending'
   });
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(true);
@@ -78,6 +100,12 @@ export default function NewVisit() {
         ...prev,
         diagnosis: { ...prev.diagnosis, [field]: value }
       }));
+    } else if (name.startsWith('vitals.')) {
+      const field = name.split('.')[1];
+      setForm(prev => ({
+        ...prev,
+        vitals: { ...prev.vitals, [field]: value }
+      }));
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
     }
@@ -91,11 +119,21 @@ export default function NewVisit() {
       setToast({ message: 'Visit created successfully', type: 'success' });
       setForm({
         patientId: '',
-        doctorId: '',
-        type: '',
+        doctorId: user?.role === 'doctor' ? user?.doctorId : '',
+        visitType: '',
         visitDate: new Date().toISOString().split('T')[0],
         diagnosis: { code: '', description: '', notes: '' },
-        treatmentNotes: ''
+        vitals: {
+          temperature: '',
+          bloodPressure: '',
+          pulse: '',
+          respiratoryRate: '',
+          oxygenSaturation: '',
+          weight: '',
+          height: ''
+        },
+        treatmentNotes: '',
+        status: 'pending'
       });
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to create visit', type: 'error' });
@@ -150,8 +188,8 @@ export default function NewVisit() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Visit Type</label>
             <select
-              name="type"
-              value={form.type}
+              name="visitType"
+              value={form.visitType}
               onChange={handleChange}
               className="input w-full"
               required
@@ -176,8 +214,93 @@ export default function NewVisit() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Code</label>
+          {/* Vitals Section */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-medium mb-4">Vitals</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Temperature (°C)</label>
+                <input
+                  type="number"
+                  name="vitals.temperature"
+                  value={form.vitals.temperature}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Blood Pressure</label>
+                <input
+                  type="text"
+                  name="vitals.bloodPressure"
+                  value={form.vitals.bloodPressure}
+                  onChange={handleChange}
+                  placeholder="e.g. 120/80"
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pulse (bpm)</label>
+                <input
+                  type="number"
+                  name="vitals.pulse"
+                  value={form.vitals.pulse}
+                  onChange={handleChange}
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Respiratory Rate</label>
+                <input
+                  type="number"
+                  name="vitals.respiratoryRate"
+                  value={form.vitals.respiratoryRate}
+                  onChange={handleChange}
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">O₂ Saturation (%)</label>
+                <input
+                  type="number"
+                  name="vitals.oxygenSaturation"
+                  value={form.vitals.oxygenSaturation}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                <input
+                  type="number"
+                  name="vitals.weight"
+                  value={form.vitals.weight}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                <input
+                  type="number"
+                  name="vitals.height"
+                  value={form.vitals.height}
+                  onChange={handleChange}
+                  className="input w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Diagnosis Section */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-medium mb-4">Diagnosis</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Code</label>
             <input
               type="text"
               name="diagnosis.code"
