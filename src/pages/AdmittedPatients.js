@@ -49,6 +49,7 @@ export default function AdmittedPatients(){
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MRN</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ward/Bed</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admitted At</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -59,6 +60,14 @@ export default function AdmittedPatients(){
                   <td className="px-6 py-4 whitespace-nowrap">{p.mrn}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{p.currentAdmission?.ward?.name || p.currentAdmission?.ward || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{new Date(p.currentAdmission?.admittedAt || p.createdAt).toLocaleString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Link 
+                      to={`/admission/${p._id}/summary`} 
+                      className="btn-secondary inline-block px-4 py-2 text-sm"
+                    >
+                      View Admission Summary
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

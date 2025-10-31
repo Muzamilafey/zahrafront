@@ -62,6 +62,7 @@ import Refunds from './pages/finance/Refunds';
 import ReceptionAppointments from './pages/reception/Appointments';
 import StaffRequests from './pages/staff/StaffRequests';
 import ChatPage from './pages/Chat';
+import AdmissionSummary from './pages/admission/AdmissionSummary';
 
 function App() {
   return (
@@ -99,6 +100,11 @@ function App() {
           <Route path="/patients/visits/new" element={<PrivateRoute><Layout><NewVisit /></Layout></PrivateRoute>} />
           <Route path="/patients/:id" element={<PrivateRoute><Layout><ErrorBoundary><PatientDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
+          
+          {/* Admission Summary Routes */}
+          <Route path="/admission/:patientId/summary" element={<PrivateRoute><Layout><ErrorBoundary>
+            <AdmissionSummary />
+          </ErrorBoundary></Layout></PrivateRoute>} />
           
           {/* Admin Routes */}
           <Route path="/dashboard/admin/patients" element={<PrivateRoute><Layout><AdminPatients /></Layout></PrivateRoute>} />
