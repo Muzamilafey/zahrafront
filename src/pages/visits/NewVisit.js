@@ -4,21 +4,9 @@ import Toast from '../../components/ui/Toast';
 
 export default function NewVisit() {
   const { axiosInstance, user } = useContext(AuthContext);
-
-  // Only doctors and admins can create visits
-  if (!user || !['doctor', 'admin'].includes(user.role)) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 p-4 rounded shadow">
-          <h3 className="text-red-800 font-medium">Access Denied</h3>
-          <p className="text-red-600">Only doctors and administrators can create patient visits.</p>
-        </div>
-      </div>
-    );
-  }
   const [form, setForm] = useState({
     patientId: '',
-    doctorId: user?.role === 'doctor' ? user?.doctorId : '',
+    doctorId: '',
     visitType: '',
     visitDate: new Date().toISOString().split('T')[0],
     diagnosis: {
@@ -45,10 +33,32 @@ export default function NewVisit() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Set doctor ID after form initialization if user is a doctor
   useEffect(() => {
-    loadPatients();
-    loadDoctors();
-  }, []);
+    if (user?.role === 'doctor' && user?.doctorId) {
+      setForm(prev => ({ ...prev, doctorId: user.doctorId }));
+    }
+  }, [user]);
+
+  // Only doctors and admins can create visits
+  if (!user || !['doctor', 'admin'].includes(user.role)) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 p-4 rounded shadow">
+          <h3 className="text-red-800 font-medium">Access Denied</h3>
+          <p className="text-red-600">Only doctors and administrators can create patient visits.</p>
+        </div>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    // Only load data if user has permission
+    if (user && ['doctor', 'admin'].includes(user.role)) {
+      loadPatients();
+      loadDoctors();
+    }
+  }, [user]);
 
   const loadPatients = async () => {
     try {
