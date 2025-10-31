@@ -148,6 +148,7 @@ export default function NewVisit() {
 
       <form onSubmit={handleSubmit} className="max-w-2xl bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 gap-6">
+          {/* Patient Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
             <select
@@ -166,6 +167,7 @@ export default function NewVisit() {
             </select>
           </div>
 
+          {/* Doctor Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
             <select
@@ -185,6 +187,7 @@ export default function NewVisit() {
             </select>
           </div>
 
+          {/* Visit Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Visit Type</label>
             <select
@@ -202,6 +205,7 @@ export default function NewVisit() {
             </select>
           </div>
 
+          {/* Visit Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Visit Date</label>
             <input
@@ -215,7 +219,7 @@ export default function NewVisit() {
           </div>
 
           {/* Vitals Section */}
-          <div className="border-t pt-4 mt-4">
+          <div className="border-t pt-4">
             <h3 className="text-lg font-medium mb-4">Vitals</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -297,43 +301,47 @@ export default function NewVisit() {
           </div>
 
           {/* Diagnosis Section */}
-          <div className="border-t pt-4 mt-4">
+          <div className="border-t pt-4">
             <h3 className="text-lg font-medium mb-4">Diagnosis</h3>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Code</label>
-            <input
-              type="text"
-              name="diagnosis.code"
-              value={form.diagnosis.code}
-              onChange={handleChange}
-              placeholder="e.g., ICD-10 code"
-              className="input w-full"
-            />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Code</label>
+                <input
+                  type="text"
+                  name="diagnosis.code"
+                  value={form.diagnosis.code}
+                  onChange={handleChange}
+                  placeholder="e.g., ICD-10 code"
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Description</label>
+                <textarea
+                  name="diagnosis.description"
+                  value={form.diagnosis.description}
+                  onChange={handleChange}
+                  className="input w-full"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Notes</label>
+                <textarea
+                  name="diagnosis.notes"
+                  value={form.diagnosis.notes}
+                  onChange={handleChange}
+                  className="input w-full"
+                  rows="2"
+                ></textarea>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Description</label>
-            <textarea
-              name="diagnosis.description"
-              value={form.diagnosis.description}
-              onChange={handleChange}
-              className="input w-full"
-              rows="2"
-            ></textarea>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis Notes</label>
-            <textarea
-              name="diagnosis.notes"
-              value={form.diagnosis.notes}
-              onChange={handleChange}
-              className="input w-full"
-              rows="2"
-            ></textarea>
-          </div>
-
-          <div>
+          {/* Treatment Notes */}
+          <div className="border-t pt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Treatment Notes</label>
             <textarea
               name="treatmentNotes"
@@ -344,6 +352,7 @@ export default function NewVisit() {
             ></textarea>
           </div>
 
+          {/* Submit Button */}
           <div>
             <button
               type="submit"
