@@ -17,7 +17,9 @@ export default function NewVisit() {
     treatmentNotes: ''
   });
   const [patients, setPatients] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(true);
   const [doctors, setDoctors] = useState([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -28,19 +30,27 @@ export default function NewVisit() {
 
   const loadPatients = async () => {
     try {
+      setPatientsLoading(true);
       const res = await axiosInstance.get('/patients');
       setPatients(res.data.patients || []);
     } catch (e) {
       console.error(e);
+      setToast({ message: 'Failed to load patients', type: 'error' });
+    } finally {
+      setPatientsLoading(false);
     }
   };
 
   const loadDoctors = async () => {
     try {
+      setDoctorsLoading(true);
       const res = await axiosInstance.get('/doctors/list');
       setDoctors(res.data.doctors || []);
     } catch (e) {
       console.error(e);
+      setToast({ message: 'Failed to load doctors', type: 'error' });
+    } finally {
+      setDoctorsLoading(false);
     }
   };
 
@@ -93,8 +103,8 @@ export default function NewVisit() {
               className="input w-full"
               required
             >
-              <option value="">Select Patient</option>
-              {patients.map(p => (
+              <option value="">{patientsLoading ? 'Loading patients...' : 'Select Patient'}</option>
+              {!patientsLoading && patients.map(p => (
                 <option key={p._id} value={p._id}>
                   {p.user?.name} ({p.hospitalId})
                 </option>
@@ -110,11 +120,12 @@ export default function NewVisit() {
               onChange={handleChange}
               className="input w-full"
               required
+              disabled={doctorsLoading}
             >
-              <option value="">Select Doctor</option>
-              {doctors.map(d => (
+              <option value="">{doctorsLoading ? 'Loading doctors...' : 'Select Doctor'}</option>
+              {!doctorsLoading && doctors.map(d => (
                 <option key={d._id} value={d._id}>
-                  {d.user?.name} - {d.specialties?.join(', ')}
+                  {d.user?.name || d.user?.email || 'Doctor'}{d.specialties?.length ? ` - ${d.specialties.join(', ')}` : ''}
                 </option>
               ))}
             </select>
