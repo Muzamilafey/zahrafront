@@ -63,6 +63,9 @@ import ReceptionAppointments from './pages/reception/Appointments';
 import StaffRequests from './pages/staff/StaffRequests';
 import ChatPage from './pages/Chat';
 import AdmissionSummary from './pages/admission/AdmissionSummary';
+import NewTheatreBill from './pages/admission/billing/NewTheatreBill';
+import NewLabBill from './pages/admission/billing/NewLabBill';
+import NewPharmacyBill from './pages/admission/billing/NewPharmacyBill';
 
 function App() {
   return (
@@ -104,6 +107,17 @@ function App() {
           {/* Admission Summary Routes */}
           <Route path="/admission/:patientId/summary" element={<PrivateRoute><Layout><ErrorBoundary>
             <AdmissionSummary />
+          </ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Admission Billing Routes */}
+          <Route path="/admission/:id/billing/theatre" element={<PrivateRoute><Layout><ErrorBoundary>
+            <NewTheatreBill />
+          </ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/admission/:id/billing/lab" element={<PrivateRoute><Layout><ErrorBoundary>
+            <NewLabBill />
+          </ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/admission/:id/billing/pharmacy" element={<PrivateRoute><Layout><ErrorBoundary>
+            <NewPharmacyBill />
           </ErrorBoundary></Layout></PrivateRoute>} />
           
           {/* Admin Routes */}

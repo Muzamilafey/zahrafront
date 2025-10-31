@@ -102,10 +102,10 @@ export default function AdmissionSummary() {
     {
       title: "Bills & Fees",
       buttons: [
-        { label: "New Patient Meal Bill", action: () => navigate(`/patients/${patientId}/new-meal-bill`) },
-        { label: "New Patient Theatre Bill", action: () => navigate(`/patients/${patientId}/new-theatre-bill`) },
-        { label: "Internal Theatre Items Request(s)", action: () => navigate(`/patients/${patientId}/theatre-requests`) },
-        { label: "New InPatient Miscellaneous Fees Bill", action: () => navigate(`/patients/${patientId}/new-misc-bill`) }
+        { label: "New Patient Meal Bill", action: () => navigate(`/admission/${patientId}/billing/meal`) },
+        { label: "New Patient Theatre Bill", action: () => navigate(`/admission/${patientId}/billing/theatre`) },
+        { label: "New Patient Lab Bill", action: () => navigate(`/admission/${patientId}/billing/lab`) },
+        { label: "New Patient Pharmacy Bill", action: () => navigate(`/admission/${patientId}/billing/pharmacy`) }
       ]
     },
     {
