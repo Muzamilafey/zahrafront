@@ -207,7 +207,7 @@ export default function RegisterPatient() {
         createdBy: user?._id
       };
 
-      const res = await axiosInstance.post('/patients/create', payload);
+      const res = await axiosInstance.post('/patients/register', payload);
       const createdPatient = res.data.patient || res.data;
       setCreatedPatient(createdPatient);
       setToast({ message: 'Patient registered successfully, redirecting...', type: 'success' });

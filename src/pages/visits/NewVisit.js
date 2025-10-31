@@ -87,7 +87,7 @@ export default function NewVisit() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axiosInstance.post('/visits', form);
+      await axiosInstance.post('/visits/create', form);
       setToast({ message: 'Visit created successfully', type: 'success' });
       setForm({
         patientId: '',
