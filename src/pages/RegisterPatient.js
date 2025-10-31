@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import Toast from '../components/ui/Toast';
+import { useNavigate } from 'react-router-dom';
 
 const initialForm = {
   hospitalId: '', // patient number / auto increment
@@ -53,6 +54,7 @@ const initialForm = {
 
 export default function RegisterPatient() {
   const { axiosInstance, user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [doctors, setDoctors] = useState([]);
   const [doctorId, setDoctorId] = useState('');
@@ -204,11 +206,16 @@ export default function RegisterPatient() {
       };
 
       const res = await axiosInstance.post('/patients/create', payload);
-      setCreatedPatient(res.data.patient || res.data);
-      setToast({ message: 'Patient registered successfully', type: 'success' });
+      const createdPatient = res.data.patient || res.data;
+      setCreatedPatient(createdPatient);
+      setToast({ message: 'Patient registered successfully, redirecting...', type: 'success' });
       setForm({ ...initialForm, hospitalId: form.hospitalId });
       setDoctorId('');
       try{ localStorage.removeItem('patientFormDraft'); }catch(e){}
+      // Redirect to patient detail page after a short delay
+      setTimeout(() => {
+        navigate(`/patients/${createdPatient._id}`);
+      }, 1500);
     } catch (e) {
       console.error(e);
       // show server validation errors if provided
