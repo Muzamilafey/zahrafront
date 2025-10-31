@@ -125,7 +125,7 @@ export default function Sidebar({ role }) {
           onMouseLeave={() => setHovered(false)}
         >
           <div className="mb-4 text-center">
-            <div className="text-lg font-bold text-brand-700">G</div>
+            <div className="text-lg font-bold text-brand-700">CC</div>
           </div>
           <nav className="flex flex-col gap-2 items-center">
             {items.map(i => (

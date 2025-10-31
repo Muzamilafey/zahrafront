@@ -4,6 +4,9 @@ import Toast from '../../components/ui/Toast';
 
 export default function NewVisit() {
   const { axiosInstance, user } = useContext(AuthContext);
+  const isAuthorized = Boolean(user && ['doctor', 'admin'].includes(user.role));
+  
+  // Initialize all state hooks at the top level
   const [form, setForm] = useState({
     patientId: '',
     doctorId: '',
@@ -33,36 +36,8 @@ export default function NewVisit() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Set doctor ID after form initialization if user is a doctor
-  // Load data when component mounts
-  useEffect(() => {
-    // Only load data if user has permission
-    if (user && ['doctor', 'admin'].includes(user.role)) {
-      loadPatients();
-      loadDoctors();
-    }
-  }, [user]);
-
-  // Set doctor ID for doctor users
-  useEffect(() => {
-    if (user?.role === 'doctor' && user?.doctorId) {
-      setForm(prev => ({ ...prev, doctorId: user.doctorId }));
-    }
-  }, [user]);
-
-  // Only doctors and admins can create visits
-  if (!user || !['doctor', 'admin'].includes(user.role)) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 p-4 rounded shadow">
-          <h3 className="text-red-800 font-medium">Access Denied</h3>
-          <p className="text-red-600">Only doctors and administrators can create patient visits.</p>
-        </div>
-      </div>
-    );
-  }
-
   const loadPatients = async () => {
+    if (!isAuthorized) return;
     try {
       setPatientsLoading(true);
       const res = await axiosInstance.get('/patients');
@@ -76,18 +51,16 @@ export default function NewVisit() {
   };
 
   const loadDoctors = async () => {
+    if (!isAuthorized) return;
     try {
       setDoctorsLoading(true);
-      // Try /doctors/list first, fallback to /doctors if needed
       let res;
       try {
         res = await axiosInstance.get('/doctors/list');
       } catch (e) {
-        // Fallback to /doctors endpoint
         res = await axiosInstance.get('/doctors');
       }
       
-      // Normalize the response
       const doctorsList = res.data.doctors || [];
       if (doctorsList.length === 0) {
         setToast({ message: 'No doctors found in the system', type: 'warning' });
@@ -95,14 +68,26 @@ export default function NewVisit() {
       setDoctors(doctorsList);
     } catch (e) {
       console.error('Error loading doctors:', e);
-      setToast({ 
-        message: e?.response?.data?.message || 'Failed to load doctors. Please try again.',
-        type: 'error'
-      });
+      setToast({ message: e?.response?.data?.message || 'Failed to load doctors', type: 'error' });
     } finally {
       setDoctorsLoading(false);
     }
   };
+
+  // Effect to load initial data
+  useEffect(() => {
+    if (isAuthorized) {
+      loadPatients();
+      loadDoctors();
+    }
+  }, [isAuthorized]);
+
+  // Effect to set doctor ID if user is a doctor
+  useEffect(() => {
+    if (user?.role === 'doctor' && user?.doctorId) {
+      setForm(prev => ({ ...prev, doctorId: user.doctorId }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -153,6 +138,18 @@ export default function NewVisit() {
       setLoading(false);
     }
   };
+
+  // Early return for unauthorized users - after all hooks
+  if (!isAuthorized) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 p-4 rounded shadow">
+          <h3 className="text-red-800 font-medium">Access Denied</h3>
+          <p className="text-red-600">Only doctors and administrators can create patient visits.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
