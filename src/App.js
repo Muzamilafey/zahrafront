@@ -47,6 +47,8 @@ import AdminPatient from './pages/admin/AdminPatient';
 import AdminAssignDoctor from './pages/admin/AdminAssignDoctor';
 import AdminUser from './pages/admin/AdminUser';
 import AppointmentsBilling from './pages/finance/AppointmentsBilling';
+import PatientList from './pages/PatientList';
+import RegisterPatient from './pages/RegisterPatient';
 import Transactions from './pages/finance/Transactions';
 import Reports from './pages/finance/Reports';
 import Refunds from './pages/finance/Refunds';
@@ -81,8 +83,13 @@ function App() {
           <Route path="/dashboard/admin" element={<PrivateRoute><Layout><AdminDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/users" element={<PrivateRoute><Layout><AdminUsers /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/doctors" element={<PrivateRoute><Layout><AdminDoctors /></Layout></PrivateRoute>} />
+          {/* Patient Management Routes */}
+          <Route path="/patients" element={<PrivateRoute><Layout><PatientList /></Layout></PrivateRoute>} />
+          <Route path="/patients/register" element={<PrivateRoute><Layout><RegisterPatient /></Layout></PrivateRoute>} />
+          
+          {/* Admin Routes */}
           <Route path="/dashboard/admin/patients" element={<PrivateRoute><Layout><AdminPatients /></Layout></PrivateRoute>} />
-           <Route path="/dashboard/admin/patients/:id" element={<PrivateRoute><Layout><AdminPatient /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/admin/patients/:id" element={<PrivateRoute><Layout><AdminPatient /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id/assign" element={<PrivateRoute><Layout><AdminAssignDoctor /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/users/:id" element={<PrivateRoute><Layout><AdminUser /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/settings" element={<PrivateRoute><Layout><AdminSettings /></Layout></PrivateRoute>} />
