@@ -58,6 +58,7 @@ export default function PatientDetail(){
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => navigate(`/patients/${id}/payments`)} className="btn-outline">View Payments</button>
+          <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="btn-brand">New Visit</button>
           <Link to="/patients" className="btn-muted">Back to list</Link>
         </div>
       </div>

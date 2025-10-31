@@ -59,8 +59,24 @@ export default function RegisterPatient() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
   const [createdPatient, setCreatedPatient] = useState(null);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => { loadDoctors(); fetchNextPatientNumber(); }, []);
+  // load draft from localStorage if present
+  useEffect(()=>{
+    try{
+      const draft = localStorage.getItem('patientFormDraft');
+      if(draft){
+        const parsed = JSON.parse(draft);
+        setForm(f => ({ ...f, ...parsed }));
+      }
+    }catch(e){}
+  }, []);
+
+  // autosave draft to localStorage
+  useEffect(()=>{
+    try{ localStorage.setItem('patientFormDraft', JSON.stringify(form)); }catch(e){}
+  }, [form]);
 
   const loadDoctors = async () => {
     try {
@@ -102,6 +118,28 @@ export default function RegisterPatient() {
     e.preventDefault();
     setLoading(true);
     setToast(null);
+    setErrors({});
+
+    // simple front-end validation
+    const phoneRegex = /^[0-9+()\-\s]{7,20}$/;
+    if(!form.phonePrimary || !phoneRegex.test(form.phonePrimary)){
+      setErrors({ phonePrimary: 'Enter a valid primary phone number' });
+      setLoading(false);
+      return;
+    }
+    if(form.phoneSecondary && !phoneRegex.test(form.phoneSecondary)){
+      setErrors({ phoneSecondary: 'Enter a valid secondary phone number' });
+      setLoading(false);
+      return;
+    }
+    // guardian required for minors
+    if(form.age && Number(form.age) < 18){
+      if(!form.guardianInfo && !form.nextOfKinName){
+        setErrors({ guardianInfo: 'Guardian or next of kin required for minors' });
+        setLoading(false);
+        return;
+      }
+    }
     try {
       const payload = {
         // simple mapping - backend should accept these fields or adapt accordingly
@@ -170,9 +208,13 @@ export default function RegisterPatient() {
       setToast({ message: 'Patient registered successfully', type: 'success' });
       setForm({ ...initialForm, hospitalId: form.hospitalId });
       setDoctorId('');
+      try{ localStorage.removeItem('patientFormDraft'); }catch(e){}
     } catch (e) {
       console.error(e);
-      setToast({ message: e?.response?.data?.message || 'Failed to register patient', type: 'error' });
+      // show server validation errors if provided
+      const srv = e?.response?.data || {};
+      if(srv.errors) setErrors(srv.errors);
+      setToast({ message: srv.message || 'Failed to register patient', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -182,6 +224,13 @@ export default function RegisterPatient() {
     <div className="p-6 max-w-3xl mx-auto">
       <h2 className="text-xl font-semibold mb-4">Register New Patient</h2>
       <form className="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+        {Object.keys(errors).length > 0 && (
+          <div className="col-span-2 p-3 bg-red-50 text-red-700 rounded">
+            <ul className="list-disc pl-5">
+              {Object.entries(errors).map(([k,v])=> <li key={k}>{v}</li>)}
+            </ul>
+          </div>
+        )}
         <div className="col-span-2 flex gap-4">
           <input name="hospitalId" value={form.hospitalId} onChange={onChange} placeholder="Patient Number (auto)" className="input" />
           <input name="nationalId" value={form.nationalId} onChange={onChange} placeholder="National ID / Passport / Birth Cert No" className="input" />
