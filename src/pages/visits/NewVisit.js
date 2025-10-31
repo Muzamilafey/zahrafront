@@ -44,11 +44,27 @@ export default function NewVisit() {
   const loadDoctors = async () => {
     try {
       setDoctorsLoading(true);
-      const res = await axiosInstance.get('/doctors/list');
-      setDoctors(res.data.doctors || []);
+      // Try /doctors/list first, fallback to /doctors if needed
+      let res;
+      try {
+        res = await axiosInstance.get('/doctors/list');
+      } catch (e) {
+        // Fallback to /doctors endpoint
+        res = await axiosInstance.get('/doctors');
+      }
+      
+      // Normalize the response
+      const doctorsList = res.data.doctors || [];
+      if (doctorsList.length === 0) {
+        setToast({ message: 'No doctors found in the system', type: 'warning' });
+      }
+      setDoctors(doctorsList);
     } catch (e) {
-      console.error(e);
-      setToast({ message: 'Failed to load doctors', type: 'error' });
+      console.error('Error loading doctors:', e);
+      setToast({ 
+        message: e?.response?.data?.message || 'Failed to load doctors. Please try again.',
+        type: 'error'
+      });
     } finally {
       setDoctorsLoading(false);
     }
