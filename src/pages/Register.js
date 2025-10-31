@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
 
 const SPECIALTIES = [
   'General',
@@ -52,7 +52,7 @@ export default function Register() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <div className="hidden md:block p-6 rounded-xl floating">
             <div className="bg-gradient-to-br from-brand-100 to-brand-50 rounded-xl p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-brand-700 mb-2">Join GENZ Hospital</h3>
+              <h3 className="text-2xl font-bold text-brand-700 mb-2">Join Muzamilafey HMIS</h3>
               <p className="text-gray-600">Create your account to book appointments, request prescriptions and view invoices.</p>
             </div>
           </div>
