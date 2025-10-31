@@ -33,19 +33,27 @@ export default function PatientDetail(){
           axiosInstance.get('/prescriptions', { params: { patientId: id } }).catch(()=>({ data: { prescriptions: [] } })),
           axiosInstance.get('/labtests', { params: { patientId: id } }).catch(()=>({ data: { labtests: [] } })),
         ]);
-        setRecords({
-          visits: vRes.data.visits || vRes.data || [],
-          prescriptions: prRes.data.prescriptions || prRes.data || [],
-          labs: lRes.data.labtests || lRes.data || [],
-        });
+        const safeArray = (val) => Array.isArray(val) ? val : (val && typeof val === 'object' && Array.isArray(val.items) ? val.items : []);
+        const visitsArr = Array.isArray(vRes.data.visits) ? vRes.data.visits : (Array.isArray(vRes.data) ? vRes.data : []);
+        const presArr = Array.isArray(prRes.data.prescriptions) ? prRes.data.prescriptions : (Array.isArray(prRes.data) ? prRes.data : []);
+        const labsArr = Array.isArray(lRes.data.labtests) ? lRes.data.labtests : (Array.isArray(lRes.data) ? lRes.data : []);
+        setRecords({ visits: visitsArr, prescriptions: presArr, labs: labsArr });
         // payments - try /payments?patientId= or /patients/:id/payments
         try{
           const pRes = await axiosInstance.get('/payments', { params: { patientId: id } }).catch(()=>null);
+          const normalizePayments = (data) => {
+            if (!data) return [];
+            if (Array.isArray(data)) return data;
+            if (Array.isArray(data.payments)) return data.payments;
+            if (Array.isArray(data.items)) return data.items;
+            if (data.payment) return Array.isArray(data.payment) ? data.payment : [data.payment];
+            return [];
+          };
           if(pRes && pRes.data){
-            setPayments(pRes.data.payments || pRes.data || []);
+            setPayments(normalizePayments(pRes.data));
           } else {
             const pRes2 = await axiosInstance.get(`/patients/${id}/payments`).catch(()=>({ data: { payments: [] } }));
-            setPayments(pRes2.data.payments || pRes2.data || []);
+            setPayments(normalizePayments(pRes2.data));
           }
         }catch(e){ setPayments([]); }
       }catch(e){
