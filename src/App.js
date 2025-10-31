@@ -55,6 +55,7 @@ import RegisterPatient from './pages/RegisterPatient';
 import PatientDetail from './pages/PatientDetail';
 import PatientPayments from './pages/PatientPayments';
 import NewVisit from './pages/visits/NewVisit';
+import ErrorBoundary from './components/ErrorBoundary';
 import Transactions from './pages/finance/Transactions';
 import Reports from './pages/finance/Reports';
 import Refunds from './pages/finance/Refunds';
@@ -96,7 +97,7 @@ function App() {
           <Route path="/patients/visits" element={<PrivateRoute><Layout><PatientVisits /></Layout></PrivateRoute>} />
           <Route path="/patients/visits/report" element={<PrivateRoute><Layout><VisitsReport /></Layout></PrivateRoute>} />
           <Route path="/patients/visits/new" element={<PrivateRoute><Layout><NewVisit /></Layout></PrivateRoute>} />
-          <Route path="/patients/:id" element={<PrivateRoute><Layout><PatientDetail /></Layout></PrivateRoute>} />
+          <Route path="/patients/:id" element={<PrivateRoute><Layout><ErrorBoundary><PatientDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
           
           {/* Admin Routes */}
