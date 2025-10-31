@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
+import Toast from '../components/ui/Toast';
 
 export default function PatientDetail(){
   const { id } = useParams();
@@ -11,6 +12,9 @@ export default function PatientDetail(){
   const [records, setRecords] = useState({ visits: [], prescriptions: [], labs: [] });
   const [payments, setPayments] = useState([]);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [payForm, setPayForm] = useState({ amount: '', method: 'cash', reference: '' });
+  const [payLoading, setPayLoading] = useState(false);
 
   useEffect(()=>{ load(); }, [id]);
 
@@ -164,6 +168,53 @@ export default function PatientDetail(){
                 </table>
               </div>
             )}
+          </div>
+
+          <div className="mt-4 border-t pt-4">
+            <h4 className="font-medium mb-2">Record Payment</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+              <div className="col-span-1">
+                <label className="text-xs text-gray-600">Amount</label>
+                <input name="amount" value={payForm.amount} onChange={e=>setPayForm(f=>({ ...f, amount: e.target.value }))} className="input" placeholder="Amount" type="number" min="0" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Method</label>
+                <select name="method" value={payForm.method} onChange={e=>setPayForm(f=>({ ...f, method: e.target.value }))} className="input">
+                  <option value="cash">Cash</option>
+                  <option value="mpesa">M-Pesa</option>
+                  <option value="card">Card</option>
+                  <option value="insurance">Insurance</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Reference</label>
+                <input name="reference" value={payForm.reference} onChange={e=>setPayForm(f=>({ ...f, reference: e.target.value }))} className="input" placeholder="Reference / Transaction ID" />
+              </div>
+              <div className="col-span-3 mt-2 flex gap-2">
+                <button className="btn-brand" onClick={async ()=>{
+                  // simple validation
+                  if(!payForm.amount || Number(payForm.amount) <= 0){ setToast({ type: 'error', message: 'Enter a valid amount' }); return; }
+                  setPayLoading(true); setToast(null);
+                  try{
+                    const payload = { patientId: id, amount: Number(payForm.amount), method: payForm.method, reference: payForm.reference };
+                    // try POST /payments then fallback
+                    let res;
+                    try{ res = await axiosInstance.post('/payments', payload); }
+                    catch(err){ res = await axiosInstance.post(`/patients/${id}/payments`, payload).catch(e=>{ throw e; }); }
+                    const saved = res.data.payment || res.data || null;
+                    if(saved) setPayments(p=>[saved, ...(p||[])]);
+                    setPayForm({ amount: '', method: 'cash', reference: '' });
+                    setToast({ type: 'success', message: 'Payment recorded' });
+                    // optionally refresh patient summary
+                    try{ const r = await axiosInstance.get(`/patients/${id}`); setPatient(r.data.patient || r.data || patient); }catch(e){}
+                  }catch(e){ console.error(e); setToast({ type: 'error', message: e?.response?.data?.message || 'Failed to record payment' }); }
+                  finally{ setPayLoading(false); }
+                }} disabled={payLoading}>
+                  {payLoading ? 'Saving...' : 'Record Payment'}
+                </button>
+                <button type="button" className="btn-muted" onClick={()=>setPayForm({ amount: '', method: 'cash', reference: '' })}>Reset</button>
+              </div>
+            </div>
           </div>
 
         </div>
