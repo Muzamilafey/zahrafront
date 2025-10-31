@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 export default function Sidebar({ role }) {
   const { axiosInstance } = useContext(AuthContext);
@@ -89,8 +89,19 @@ export default function Sidebar({ role }) {
     ],
   };
 
-  const items = [...common, ...(itemsByRole[role] || [])];
+  // patient related links (shown under a collapsible group)
+  const patientItems = [
+    { to: '/patients', label: 'All Patients', icon: <FaUsers /> },
+    { to: '/patients/register', label: 'Register Patient', icon: <FaUserPlus /> },
+    { to: '/patients/admitted', label: 'Admitted Patients', icon: <FaUsers /> },
+    { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt /> },
+    { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar /> },
+  ];
+
+  const items = [...common, ...patientItems, ...(itemsByRole[role] || [])];
   const [admittedCount, setAdmittedCount] = useState(0);
+
+  const [patientsOpen, setPatientsOpen] = useState(true);
 
   useEffect(()=>{
     if(role === 'doctor'){
@@ -139,7 +150,7 @@ export default function Sidebar({ role }) {
           >
             <div className="flex justify-between items-center p-4">
               <div>
-                <div className="text-xl font-bold text-brand-700">GENZ</div>
+                <div className="text-xl font-bold text-brand-700">CoreCare</div>
                 <div className="text-sm text-gray-500">Community Hospital</div>
               </div>
               <button onClick={toggleCollapsed} className="p-2 text-gray-600 hover:bg-gray-100 rounded" title="Collapse sidebar">
@@ -147,7 +158,26 @@ export default function Sidebar({ role }) {
               </button>
             </div>
             <nav className="flex flex-col gap-2 p-2">
-              {items.map(i => (
+              {/* Patient management group in hover-expanded overlay */}
+              <div>
+                <button onClick={() => setPatientsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                  <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaUsers /></div><div>Patients</div></div>
+                  <div>{patientsOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                </button>
+                {patientsOpen && (
+                  <div className="pl-8 flex flex-col">
+                    {patientItems.map(i => (
+                      <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                        <div className="text-sm text-brand-600">{i.icon}</div>
+                        <div className="text-sm">{i.label}</div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* remaining items */}
+              {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                   <div className="text-sm text-brand-600">{i.icon}</div>
                   <div className="text-sm">{i.label}</div>
@@ -173,7 +203,26 @@ export default function Sidebar({ role }) {
       </div>
       
       <nav className="flex flex-col gap-2">
-        {items.map(i => (
+        {/* Patient management group */}
+        <div>
+          <button onClick={() => setPatientsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+            <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaUsers /></div><div>Patients</div></div>
+            <div>{patientsOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+          </button>
+          {patientsOpen && (
+            <div className="pl-4 flex flex-col">
+              {patientItems.map(i => (
+                <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                  <div className="text-sm text-brand-600">{i.icon}</div>
+                  <div className="text-sm">{i.label}</div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* remaining items */}
+        {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
           <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
             <div className="text-sm text-brand-600">{i.icon}</div>
             <div className="text-sm">{i.label}</div>
