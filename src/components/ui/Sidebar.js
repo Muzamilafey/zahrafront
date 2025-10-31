@@ -167,7 +167,7 @@ export default function Sidebar({ role }) {
                 {patientsOpen && (
                   <div className="pl-8 flex flex-col">
                     {patientItems.map(i => (
-                      <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                      <Link key={i.to} to={i.to} onClick={() => setPatientsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                         <div className="text-sm text-brand-600">{i.icon}</div>
                         <div className="text-sm">{i.label}</div>
                       </Link>
@@ -212,7 +212,7 @@ export default function Sidebar({ role }) {
           {patientsOpen && (
             <div className="pl-4 flex flex-col">
               {patientItems.map(i => (
-                <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                <Link key={i.to} to={i.to} onClick={() => setPatientsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                   <div className="text-sm text-brand-600">{i.icon}</div>
                   <div className="text-sm">{i.label}</div>
                 </Link>
