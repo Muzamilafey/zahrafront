@@ -35,7 +35,7 @@ import DoctorDashboard from './components/Dashboard/DoctorDashboard';
 import PatientsForMe from './pages/doctor/PatientsForMe';
 import AppointmentsForMe from './pages/doctor/AppointmentsForMe';
 import AdmitPatient from './pages/doctor/AdmitPatient';
-import AdmittedPatients from './pages/doctor/AdmittedPatients';
+import DoctorAdmittedPatients from './pages/doctor/AdmittedPatients';
 import PatientDashboard from './components/Dashboard/PatientDashboard';
 import PatientPrescriptions from './pages/patient/Prescriptions';
 import PharmacistDashboard from './components/Dashboard/PharmacistDashboard';
@@ -111,7 +111,7 @@ function App() {
           <Route path="/dashboard/doctor/patients" element={<PrivateRoute><Layout><PatientsForMe /></Layout></PrivateRoute>} />
           <Route path="/dashboard/doctor/appointments" element={<PrivateRoute><Layout><AppointmentsForMe /></Layout></PrivateRoute>} />
             <Route path="/dashboard/doctor/admitpatient" element={<PrivateRoute><Layout><AdmitPatient /></Layout></PrivateRoute>} />
-             <Route path="/dashboard/doctor/admitted" element={<PrivateRoute><Layout><AdmittedPatients /></Layout></PrivateRoute>} />
+             <Route path="/dashboard/doctor/admitted" element={<PrivateRoute><Layout><DoctorAdmittedPatients /></Layout></PrivateRoute>} />
 
           <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
           <Route path="/appointments" element={<PrivateRoute><Layout><Appointments /></Layout></PrivateRoute>} />
