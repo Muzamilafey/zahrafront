@@ -12,9 +12,30 @@ export default function LabRequests() {
   const [urgency, setUrgency] = useState('routine');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const { user } = useContext(AuthContext);
+  const [catalog, setCatalog] = useState([]);
+  const [searchCatalog, setSearchCatalog] = useState('');
+  const [selectedCatalog, setSelectedCatalog] = useState(null);
 
   useEffect(() => {
     loadLabRequests();
+    // load catalog for admins/doctors so they can pick registered tests
+    (async () => {
+      try {
+        if (user && ['admin','doctor','finance'].includes(user.role)) {
+          const r = await axiosInstance.get('/labs/catalog');
+          // r.data is expected to be { tests: [...] } or { catalog: [...] } or just array
+          const data = r.data;
+          if (Array.isArray(data)) setCatalog(data);
+          else if (Array.isArray(data.catalog)) setCatalog(data.catalog);
+          else if (Array.isArray(data.tests)) setCatalog(data.tests);
+          else if (Array.isArray(data.catalogs)) setCatalog(data.catalogs);
+          else if (Array.isArray(data.data)) setCatalog(data.data);
+        }
+      } catch (err) {
+        // non-fatal
+      }
+    })();
     // eslint-disable-next-line
   }, [patientId]);
 
@@ -31,15 +52,16 @@ export default function LabRequests() {
   };
 
   const handleAdd = async () => {
-    if (!testName) return setToast({ message: 'Enter test name', type: 'error' });
+    if (!testName && !selectedCatalog) return setToast({ message: 'Select or enter test name', type: 'error' });
     try {
       setLoading(true);
       const payload = { testName, qty, urgency };
+      if (selectedCatalog) payload.catalogId = selectedCatalog._id;
       const res = await axiosInstance.post(`/patients/${patientId}/lab-requests`, payload);
       const created = res.data.labTest || res.data.labTest || null;
       if (created) {
         setRequests(prev => [created, ...prev]);
-        setTestName(''); setQty(1); setUrgency('routine');
+        setTestName(''); setQty(1); setUrgency('routine'); setSelectedCatalog(null); setSearchCatalog('');
         setToast({ message: 'Added lab request', type: 'success' });
       } else {
         setToast({ message: 'Added (no response)', type: 'success' });
@@ -70,7 +92,24 @@ export default function LabRequests() {
         <div className="mb-4">
           <h2 className="font-semibold">INVESTIGATION</h2>
           <div className="flex items-center gap-2 mt-2">
-            <input type="text" value={testName} onChange={e => setTestName(e.target.value)} placeholder="Search By Name" className="input flex-1" />
+            {/* if catalog loaded, show searchable catalog picker for privileged users */}
+            {catalog && catalog.length > 0 ? (
+              <div className="flex-1 relative">
+                <input value={searchCatalog} onChange={e => { setSearchCatalog(e.target.value); setSelectedCatalog(null); setTestName(e.target.value); }} placeholder="Search registered tests or type new" className="input w-full" />
+                {searchCatalog && (
+                  <div className="absolute z-20 bg-white shadow rounded mt-1 max-h-48 overflow-auto w-full">
+                    {catalog.filter(c => (c.name || '').toLowerCase().includes(searchCatalog.toLowerCase()) || (c.code || '').toLowerCase().includes(searchCatalog.toLowerCase())).slice(0,50).map(c => (
+                      <div key={c._id} className="p-2 hover:bg-gray-100 cursor-pointer" onClick={() => { setSelectedCatalog(c); setSearchCatalog(c.name); setTestName(c.name); }}>
+                        <div className="text-sm font-medium">{c.name} {c.code ? `(${c.code})` : ''}</div>
+                        <div className="text-xs text-gray-500">Price: {Number(c.price || 0).toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <input type="text" value={testName} onChange={e => setTestName(e.target.value)} placeholder="Search By Name" className="input flex-1" />
+            )}
             <input type="number" value={qty} min={1} onChange={e => setQty(Number(e.target.value))} placeholder="Quantity" className="input w-28" />
             <select value={urgency} onChange={e => setUrgency(e.target.value)} className="input w-40">
               <option value="routine">Routine</option>
@@ -100,9 +139,9 @@ export default function LabRequests() {
                   <tr key={r._id}>
                     <td className="border px-3 py-2 text-sm">{new Date(r.createdAt || r.requestedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</td>
                     <td className="border px-3 py-2 text-sm">{r.testType || r.testName || 'Lab Test'}</td>
-                    <td className="border px-3 py-2 text-sm text-right">{(r.amount || 0).toFixed(2)}</td>
+                    <td className="border px-3 py-2 text-sm text-right">{(Number(r.amount || 0)).toFixed(2)}</td>
                     <td className="border px-3 py-2 text-center">{r.qty || 1}</td>
-                    <td className="border px-3 py-2 text-right">{(((r.amount || 0) * (r.qty || 1)) || 0).toFixed(2)}</td>
+                    <td className="border px-3 py-2 text-right">{((Number(r.amount || 0) * (r.qty || 1)) || 0).toFixed(2)}</td>
                     <td className="border px-3 py-2 text-center"><button className="btn-secondary">View Results</button></td>
                   </tr>
                 ))}

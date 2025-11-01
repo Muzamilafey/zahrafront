@@ -121,19 +121,7 @@ export default function Sidebar({ role }) {
 
   // collect lab-related links (those under /dashboard/lab)
   const labItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/dashboard/lab'));
-  // build collapsed display items: remove individual lab links and replace with a single Laboratory summary item
-  const itemsWithoutLab = items.filter(i => !(typeof i.to === 'string' && i.to.startsWith('/dashboard/lab')));
-  const collapsedItems = [...itemsWithoutLab];
-  if (labItems.length > 0) {
-    // try to insert after patient items if present
-    const lastPatientTo = (patientItems.length && patientItems[patientItems.length-1].to) || null;
-    let insertIndex = 2; // after common entries by default
-    if (lastPatientTo) {
-      const idx = collapsedItems.findIndex(i => i.to === lastPatientTo);
-      if (idx >= 0) insertIndex = idx + 1;
-    }
-    collapsedItems.splice(insertIndex, 0, { to: '/dashboard/lab', label: 'Laboratory', icon: <FaFolder /> });
-  }
+  // labItems is used to render the full Laboratory group; collapsed view will show icons as in original behaviour
 
   useEffect(()=>{
     if(role === 'doctor'){
@@ -151,25 +139,7 @@ export default function Sidebar({ role }) {
   if (collapsed) {
     return (<>
 
-            {/* Laboratory group in hover-expanded overlay */}
-            {labItems.length > 0 && (
-              <div>
-                <button onClick={() => setLabOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
-                  <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaFolder /></div><div>Laboratory</div></div>
-                  <div>{labOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
-                </button>
-                {labOpen && (
-                  <div className="pl-8 flex flex-col">
-                    {labItems.map(i => (
-                      <Link key={i.to} to={i.to} onClick={() => setLabOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
-                        <div className="text-sm text-brand-600">{i.icon}</div>
-                        <div className="text-sm">{i.label}</div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* (removed collapsed/hover-only Laboratory group - keep full group only) */}
       <div className="relative">
         <aside
           className="w-16 bg-white border-r min-h-screen p-2 hidden md:block"
@@ -179,8 +149,8 @@ export default function Sidebar({ role }) {
           <div className="mb-4 text-center">
             <div className="text-lg font-bold text-brand-700">CC</div>
           </div>
-          <nav className="flex flex-col gap-2 items-center">
-            {collapsedItems.map(i => (
+            <nav className="flex flex-col gap-2 items-center">
+            {items.map(i => (
               <Link key={i.to} to={i.to} className="flex flex-col items-center gap-1 p-2 rounded hover:bg-gray-100 w-full">
                 <div className="text-lg text-brand-600">{i.icon}</div>
                 <div className="text-xs text-gray-700">{i.label.split(' ')[0]}</div>
@@ -229,7 +199,7 @@ export default function Sidebar({ role }) {
               </div>
 
               {/* remaining items */}
-              {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to)).map(i => (
+              {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                   <div className="text-sm text-brand-600">{i.icon}</div>
                   <div className="text-sm">{i.label}</div>
