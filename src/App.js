@@ -180,6 +180,9 @@ function App() {
           <Route path="/admission/:id/billing/theatre" element={<PrivateRoute><Layout><ErrorBoundary>
             <NewTheatreBill />
           </ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/admission/:id/billing/meal" element={<PrivateRoute><Layout><ErrorBoundary>
+            <NewMealBill />
+          </ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/admission/:id/billing/lab" element={<PrivateRoute><Layout><ErrorBoundary>
             <NewLabBill />
           </ErrorBoundary></Layout></PrivateRoute>} />
