@@ -91,11 +91,12 @@ export default function Sidebar({ role }) {
 
   // patient related links (shown under a collapsible group)
   const patientItems = [
-    { to: '/patients', label: 'All Patients', icon: <FaUsers /> },
-    { to: '/patients/register', label: 'Register Patient', icon: <FaUserPlus /> },
-    { to: '/patients/admitted', label: 'Admitted Patients', icon: <FaUsers /> },
-    { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt /> },
-    { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar /> },
+  { to: '/patients', label: 'All Patients', icon: <FaUsers /> },
+  { to: '/patients/register', label: 'Register Patient', icon: <FaUserPlus /> },
+  { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus /> },
+  { to: '/patients/admitted', label: 'Admitted Patients', icon: <FaUsers /> },
+  { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt /> },
+  { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar /> },
   ];
 
   const items = [...common, ...patientItems, ...(itemsByRole[role] || [])];
