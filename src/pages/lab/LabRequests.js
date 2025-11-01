@@ -50,7 +50,9 @@ export default function LabRequests() {
   // Review modal state
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [resultValue, setResultValue] = useState('');
+  const [resultSummary, setResultSummary] = useState('');
   const [resultNotes, setResultNotes] = useState('');
+  const [cost, setCost] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const openReview = (request) => {
@@ -71,9 +73,13 @@ export default function LabRequests() {
     try {
       // backend expects PUT /api/labs/:id/results with multipart/form-data (multer)
       const form = new FormData();
-      const resultsText = `Value: ${resultValue}\nNotes: ${resultNotes}`;
+      const resultsText = JSON.stringify({
+        value: resultValue,
+        summary: resultSummary,
+        notes: resultNotes,
+        cost: parseFloat(cost) || selectedRequest.catalog?.price || 0
+      });
       form.append('resultsText', resultsText);
-      // no files for now, but field is ready
         await axiosInstance.put(`/lab/requests/${selectedRequest._id}/results`, form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -224,11 +230,34 @@ export default function LabRequests() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700">Summary</label>
+                <input
+                  type="text"
+                  value={resultSummary}
+                  onChange={(e) => setResultSummary(e.target.value)}
+                  placeholder="Brief result summary for discharge report"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Cost (KES)</label>
+                <input
+                  type="number"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  placeholder={selectedRequest.catalog?.price}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700">Notes</label>
                 <textarea
                   value={resultNotes}
                   onChange={(e) => setResultNotes(e.target.value)}
                   rows={4}
+                  placeholder="Detailed notes and observations"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 />
               </div>
