@@ -63,9 +63,15 @@ import ReceptionAppointments from './pages/reception/Appointments';
 import StaffRequests from './pages/staff/StaffRequests';
 import ChatPage from './pages/Chat';
 import AdmissionSummary from './pages/admission/AdmissionSummary';
+import OutpatientHistory from './pages/admission/patient-history/OutpatientHistory';
+import InpatientHistory from './pages/admission/patient-history/InpatientHistory';
+import BedReallocation from './pages/admission/patient-history/BedReallocation';
+import NewDoctorVisit from './pages/admission/clinical-services/NewDoctorVisit';
+import NewMealBill from './pages/admission/billing/NewMealBill';
 import NewTheatreBill from './pages/admission/billing/NewTheatreBill';
 import NewLabBill from './pages/admission/billing/NewLabBill';
 import NewPharmacyBill from './pages/admission/billing/NewPharmacyBill';
+import Placeholder from './components/Placeholder';
 
 function App() {
   return (
@@ -103,6 +109,67 @@ function App() {
           <Route path="/patients/visits/new" element={<PrivateRoute><Layout><NewVisit /></Layout></PrivateRoute>} />
           <Route path="/patients/:id" element={<PrivateRoute><Layout><ErrorBoundary><PatientDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
+          {/* Admission patient-specific pages (history, bed mgmt, visits, meal bills) */}
+          <Route path="/patients/:id/outpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><OutpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/inpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><InpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/bed-reallocation" element={<PrivateRoute><Layout><ErrorBoundary><BedReallocation /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-doctor-visit" element={<PrivateRoute><Layout><ErrorBoundary><NewDoctorVisit /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-meal-bill" element={<PrivateRoute><Layout><ErrorBoundary><NewMealBill /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/change-admission-date" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Change Admission Date" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-nurse-visit" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Nurse Visit" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-physio-visit" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Physiotherapist Visit" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/physio-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Physio Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Medical Records */}
+          <Route path="/patients/:id/allergies" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Patient Allergies" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/lab-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Lab Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/radiology-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Radiology Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/procedures" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Procedures Performed" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Service Records */}
+          <Route path="/patients/:id/pharmacy-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Pharmacy Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/transport-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Transport Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/previous-doctor-visits" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Previous Doctor Visits" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/previous-nurse-visits" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Previous Nurse Visits" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Additional Services */}
+          <Route path="/patients/:id/previous-physio-visits" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Previous Physio Visits" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/bill-exclusions" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Bill Exclusions" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-nutritionist-visit" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Nutritionist Visit" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/previous-nutritionist-visits" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Previous Nutritionist Visits" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Billing & Insurance */}
+          <Route path="/patients/:id/nhif-applicability" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="NHIF Applicability" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/nhif-rebate" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="NHIF Rebate" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-core-fee" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Inpatient Core Fee" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/core-fees" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Inpatient Core Fees" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Medical Documentation */}
+          <Route path="/patients/:id/new-operation-notes" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Operation Notes" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/operation-notes" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Operation Notes" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/uploads" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Patient Uploads" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/drug-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Department Drug Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Treatment Records */}
+          <Route path="/patients/:id/new-treatment" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Treatment Record" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/treatment-chart" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Treatment Chart" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/new-anaesthetic" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="New Anaesthetic Record" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/anaesthetic-records" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Anaesthetic Records" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* View Bills (lists) */}
+          <Route path="/patients/:id/meal-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Meal Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/theatre-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Theatre Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/misc-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Miscellaneous Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Billing Settings */}
+          <Route path="/patients/:id/set-bill-limit" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Set Inpatient Bill Limit" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/set-package" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Set Package Amount" /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Clinical Documentation */}
+          <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Clinical Summary" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Discharge Summary" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/diagnosis" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Diagnosis" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/referral-letter" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Referral Letter" /></ErrorBoundary></Layout></PrivateRoute>} />
           
           {/* Admission Summary Routes */}
           <Route path="/admission/:patientId/summary" element={<PrivateRoute><Layout><ErrorBoundary>
