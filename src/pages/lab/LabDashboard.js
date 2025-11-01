@@ -13,8 +13,17 @@ export default function LabDashboard() {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const response = await axiosInstance.get('/api/lab/dashboard/stats');
-        setStats(response.data);
+        // backend exposes /api/labs/orders -> { orders }
+  const resp = await axiosInstance.get('/labs/orders');
+        const orders = resp.data.orders || [];
+        const pendingTests = orders.filter(o => o.status === 'pending').length;
+        const totalRequests = orders.length;
+        const urgentTests = orders.filter(o => o.priority === 'urgent').length || 0;
+        // completed today: check updatedAt within today
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const completedToday = orders.filter(o => o.status === 'completed' && o.updatedAt && new Date(o.updatedAt) >= today).length;
+        setStats({ pendingTests, completedToday, totalRequests, urgentTests });
       } catch (error) {
         console.error('Error fetching lab stats:', error);
       }

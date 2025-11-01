@@ -21,8 +21,8 @@ export default function LabTests() {
 
   const fetchTests = async () => {
     try {
-      const response = await axiosInstance.get('/api/lab/tests/catalog');
-      setTests(response.data);
+  const response = await axiosInstance.get('/labs/catalog');
+      setTests(response.data.tests || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching tests:', error);
@@ -33,7 +33,7 @@ export default function LabTests() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.post('/api/lab/tests/catalog', newTest);
+  const resp = await axiosInstance.post('/labs/catalog', newTest);
       setNewTest({
         name: '',
         description: '',
@@ -43,6 +43,7 @@ export default function LabTests() {
         price: '',
         category: '',
       });
+      // fetch from server response if available
       fetchTests();
     } catch (error) {
       console.error('Error creating test:', error);
@@ -52,7 +53,7 @@ export default function LabTests() {
   const handleDelete = async (testId) => {
     if (window.confirm('Are you sure you want to delete this test?')) {
       try {
-        await axiosInstance.delete(`/api/lab/tests/catalog/${testId}`);
+  await axiosInstance.delete(`/labs/catalog/${testId}`);
         fetchTests();
       } catch (error) {
         console.error('Error deleting test:', error);

@@ -18,8 +18,9 @@ export default function LabRequests() {
           date: filters.date 
         }).toString();
         
-        const response = await axiosInstance.get(`/api/lab/requests?${params}`);
-        setRequests(response.data);
+  const response = await axiosInstance.get(`/labs/orders?${params}`);
+        // backend returns { orders: [...] }
+        setRequests(response.data.orders || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching lab requests:', error);
@@ -32,8 +33,10 @@ export default function LabRequests() {
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
+      case 'requested':
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
       case 'in-progress':
         return 'bg-blue-100 text-blue-800';
       case 'completed':
@@ -65,19 +68,19 @@ export default function LabRequests() {
     if (!selectedRequest) return;
     setSubmitting(true);
     try {
-      // POST results to backend. Endpoint assumed: /api/lab/requests/:id/results
-      await axiosInstance.post(`/api/lab/requests/${selectedRequest._id}/results`, {
-        value: resultValue,
-        notes: resultNotes,
+      // backend expects PUT /api/labs/:id/results with multipart/form-data (multer)
+      const form = new FormData();
+      const resultsText = `Value: ${resultValue}\nNotes: ${resultNotes}`;
+      form.append('resultsText', resultsText);
+      // no files for now, but field is ready
+        await axiosInstance.put(`/labs/${selectedRequest._id}/results`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-
-      // option: mark completed
-      await axiosInstance.patch(`/api/lab/requests/${selectedRequest._id}/status`, { status: 'completed' });
 
       // refresh list
       const params = new URLSearchParams({ status: filters.status, date: filters.date }).toString();
-      const resp = await axiosInstance.get(`/api/lab/requests?${params}`);
-      setRequests(resp.data);
+  const resp = await axiosInstance.get(`/labs/orders?${params}`);
+  setRequests(resp.data.orders || []);
       closeReview();
     } catch (err) {
       console.error('Error submitting lab results', err);
@@ -146,10 +149,10 @@ export default function LabRequests() {
                   <div className="text-sm text-gray-500">ID: {request.patient.hospitalId}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{request.doctor.name}</div>
+                  <div className="text-sm text-gray-900">{request.doctor?.user?.name || request.doctor?.name || '—'}</div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900">
-                  {request.test.name}
+                  {request.catalog?.name || request.testType || (request.test && request.test.name) || 'N/A'}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(request.status)}`}>

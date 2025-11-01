@@ -14,8 +14,9 @@ export default function LabTestReview() {
   useEffect(() => {
     const fetchPendingTests = async () => {
       try {
-        const response = await axiosInstance.get('/api/lab/tests/pending');
-        setTests(response.data);
+        // backend exposes /api/labs/orders; filter by status=pending
+  const response = await axiosInstance.get('/labs/orders?status=pending');
+        setTests(response.data.orders || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching pending tests:', error);
@@ -36,14 +37,14 @@ export default function LabTestReview() {
 
   const handleSubmitResults = async () => {
     try {
-      await axiosInstance.post(`/api/lab/tests/${selectedTest._id}/results`, {
-        value: resultData.value,
-        notes: resultData.notes,
-      });
+      // Use PUT /api/labs/:id/results with multipart/form-data
+      const form = new FormData();
+      form.append('resultsText', `Value: ${resultData.value}\nNotes: ${resultData.notes}`);
+  await axiosInstance.put(`/labs/${selectedTest._id}/results`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
       
       // Refresh the list
-      const response = await axiosInstance.get('/api/lab/tests/pending');
-      setTests(response.data);
+  const response = await axiosInstance.get('/labs/orders?status=pending');
+  setTests(response.data.orders || []);
       setSelectedTest(null);
       setResultData({ value: '', notes: '' });
     } catch (error) {
@@ -73,9 +74,9 @@ export default function LabTestReview() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium text-gray-900">{test.test.name}</h3>
-                    <p className="text-sm text-gray-500">Patient: {test.patient.name}</p>
-                    <p className="text-sm text-gray-500">ID: {test.patient.hospitalId}</p>
+                    <h3 className="font-medium text-gray-900">{test.catalog?.name || test.testType || (test.test && test.test.name) || 'N/A'}</h3>
+                    <p className="text-sm text-gray-500">Patient: {test.patient?.name || test.patient?.user?.name || 'N/A'}</p>
+                    <p className="text-sm text-gray-500">ID: {test.patient?.hospitalId || test.patient?._id || '—'}</p>
                   </div>
                   <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                     Pending
@@ -93,10 +94,10 @@ export default function LabTestReview() {
             
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-700">Test: {selectedTest.test.name}</p>
-                <p className="text-sm text-gray-500">Expected Range: {selectedTest.test.normalValue}</p>
-                <p className="text-sm text-gray-500">Start Value: {selectedTest.test.startValue}</p>
-                <p className="text-sm text-gray-500">End Value: {selectedTest.test.endValue}</p>
+                <p className="text-sm font-medium text-gray-700">Test: {selectedTest.catalog?.name || selectedTest.testType || (selectedTest.test && selectedTest.test.name) || 'N/A'}</p>
+                <p className="text-sm text-gray-500">Expected Range: {selectedTest.catalog?.normalValue || selectedTest.test?.normalValue || selectedTest.catalog?.normalValue || '—'}</p>
+                <p className="text-sm text-gray-500">Start Value: {selectedTest.catalog?.startValue || selectedTest.test?.startValue || '—'}</p>
+                <p className="text-sm text-gray-500">End Value: {selectedTest.catalog?.endValue || selectedTest.test?.endValue || '—'}</p>
               </div>
 
               <div>
@@ -113,7 +114,7 @@ export default function LabTestReview() {
                 <label className="block text-sm font-medium text-gray-700">Notes</label>
                 <textarea
                   value={resultData.notes}
-                  onChange={(e) => setResultData({ ...resultData, notes: e.target.notes })}
+                  onChange={(e) => setResultData({ ...resultData, notes: e.target.value })}
                   rows={4}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                   placeholder="Add any relevant notes or observations..."

@@ -10,8 +10,9 @@ export default function LabQueue() {
   useEffect(() => {
     const fetchQueue = async () => {
       try {
-        const response = await axiosInstance.get('/api/lab/queue');
-        setQueue(response.data);
+  const response = await axiosInstance.get('/labs/orders');
+        // backend returns { orders }
+        setQueue(response.data.orders || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching lab queue:', error);
@@ -27,10 +28,11 @@ export default function LabQueue() {
 
   const updateStatus = async (requestId, status) => {
     try {
-      await axiosInstance.patch(`/api/lab/requests/${requestId}/status`, { status });
-      // Refresh queue
-      const response = await axiosInstance.get('/api/lab/queue');
-      setQueue(response.data);
+  // backend expects PUT /labs/:id/status
+  await axiosInstance.put(`/labs/${requestId}/status`, { status });
+  // Refresh queue
+  const response = await axiosInstance.get('/labs/orders');
+      setQueue(response.data.orders || []);
     } catch (error) {
       console.error('Error updating status:', error);
     }
@@ -63,11 +65,11 @@ export default function LabQueue() {
                   {format(new Date(request.createdAt), 'HH:mm')}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{request.patient.name}</div>
-                  <div className="text-sm text-gray-500">ID: {request.patient.hospitalId}</div>
+                  <div className="text-sm font-medium text-gray-900">{request.patient?.user?.name || request.patient?.name || '—'}</div>
+                  <div className="text-sm text-gray-500">ID: {request.patient?.hospitalId || request.patient?._id || '—'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{request.test.name}</div>
+                  <div className="text-sm text-gray-900">{request.catalog?.name || request.testType || (request.test && request.test.name) || 'N/A'}</div>
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -77,22 +79,22 @@ export default function LabQueue() {
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    ${request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                      request.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
+                    ${request.status === 'requested' || request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                      request.status === 'processing' || request.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
                       'bg-green-100 text-green-800'}`}>
                     {request.status}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {request.status === 'pending' && (
+                  {request.status === 'requested' && (
                     <button
-                      onClick={() => updateStatus(request._id, 'in-progress')}
+                      onClick={() => updateStatus(request._id, 'processing')}
                       className="text-brand-600 hover:text-brand-900"
                     >
                       Start Test
                     </button>
                   )}
-                  {request.status === 'in-progress' && (
+                  {request.status === 'processing' && (
                     <button
                       onClick={() => updateStatus(request._id, 'completed')}
                       className="text-green-600 hover:text-green-900"
