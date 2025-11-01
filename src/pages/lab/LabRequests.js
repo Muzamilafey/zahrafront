@@ -71,15 +71,22 @@ export default function LabRequests() {
     if (!selectedRequest) return;
     setSubmitting(true);
     try {
-      // backend expects PUT /api/labs/:id/results with multipart/form-data (multer)
-      const form = new FormData();
-      const resultsText = JSON.stringify({
+      const results = {
         value: resultValue,
         summary: resultSummary,
         notes: resultNotes,
-        cost: parseFloat(cost) || selectedRequest.catalog?.price || 0
-      });
-      form.append('resultsText', resultsText);
+        cost: parseFloat(cost) || selectedRequest.catalog?.price || 0,
+        testName: selectedRequest.catalog?.name || selectedRequest.testType,
+        normalValue: selectedRequest.catalog?.normalValue,
+        startValue: selectedRequest.catalog?.startValue,
+        endValue: selectedRequest.catalog?.endValue,
+        timestamp: new Date().toISOString(),
+        technicianNotes: resultNotes,
+        reportSummary: `${selectedRequest.catalog?.name || selectedRequest.testType}: ${resultValue} (Normal Range: ${selectedRequest.catalog?.normalValue || 'N/A'})`
+      };
+
+      const form = new FormData();
+      form.append('resultsText', JSON.stringify(results));
         await axiosInstance.put(`/lab/requests/${selectedRequest._id}/results`, form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });

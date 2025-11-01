@@ -9,36 +9,81 @@ export default function DischargeSummary() {
   const [admission, setAdmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [services, setServices] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    const fetchAdmissionData = async () => {
+    const fetchAllData = async () => {
       try {
-        // Fetch admission details including services
-        const [admissionRes, servicesRes] = await Promise.all([
+        setLoading(true);
+        
+        // Fetch admission, lab results, and all other services in parallel
+        const [admissionRes, labRes, servicesRes] = await Promise.all([
           axiosInstance.get(`/admissions/${admissionId}`),
+          axiosInstance.get(`/lab/requests?admissionId=${admissionId}`),
           axiosInstance.get(`/admissions/${admissionId}/services`)
         ]);
 
         const admissionData = admissionRes.data;
-        const services = servicesRes.data;
+        const labTests = labRes.data || [];
+        const allServices = servicesRes.data || {};
 
-        // Organize all services by type
+        // Calculate room charges
+        const roomDays = admissionData.totalRoomDays || 0;
+        const dailyRate = admissionData.ward?.dailyRate || 0;
+        const roomCharge = roomDays * dailyRate;
+
+        // Organize all service charges
         const organizedServices = {
-          pharmacy: services.pharmacy || [],
-          lab: services.labTests || [],
-          meals: services.meals || [],
-          theatre: services.theatre || [],
-          procedures: services.procedures || [],
-          doctors: services.doctorVisits || [],
-          nurses: services.nurseVisits || [],
-          other: services.other || []
+          room: [{
+            name: 'Room Charges',
+            description: `${roomDays} days @ KES ${dailyRate}/day`,
+            amount: roomCharge,
+            date: admissionData.admissionDate
+          }],
+          lab: labTests.map(test => ({
+            name: test.catalog?.name || test.testType,
+            description: test.results?.reportSummary || 'No results recorded',
+            amount: test.results?.cost || test.catalog?.price || 0,
+            date: test.date || test.createdAt,
+            notes: test.results?.notes,
+            value: test.results?.value,
+            normalRange: test.catalog?.normalValue
+          })),
+          pharmacy: (allServices.pharmacy || []).map(item => ({
+            name: item.drugName || item.name,
+            description: `${item.quantity} units`,
+            amount: item.amount || item.cost || 0,
+            date: item.date || item.createdAt
+          })),
+          procedures: (allServices.procedures || []).map(proc => ({
+            name: proc.name,
+            description: proc.description || proc.notes,
+            amount: proc.cost || proc.amount || 0,
+            date: proc.date || proc.createdAt
+          })),
+          consultations: (allServices.consultations || []).map(visit => ({
+            name: 'Doctor Consultation',
+            description: `Dr. ${visit.doctor?.name}`,
+            amount: visit.cost || visit.amount || 0,
+            date: visit.date || visit.createdAt
+          })),
+          nursing: (allServices.nursing || []).map(care => ({
+            name: 'Nursing Care',
+            description: care.description || care.notes,
+            amount: care.cost || care.amount || 0,
+            date: care.date || care.createdAt
+          })),
+          other: (allServices.other || []).map(item => ({
+            name: item.name || 'Miscellaneous',
+            description: item.description,
+            amount: item.amount || 0,
+            date: item.date || item.createdAt
+          }))
         };
 
-        setAdmission({ 
-          ...admissionData, 
-          services: organizedServices,
-          roomCharge: (admissionData.totalRoomDays || 0) * (admissionData.ward?.dailyRate || 0)
-        });
+        setAdmission(admissionData);
+        setServices(organizedServices);
         console.log('Services loaded:', organizedServices); // Debug log
         setLoading(false);
       } catch (err) {
@@ -49,7 +94,7 @@ export default function DischargeSummary() {
     };
 
     if (admissionId) {
-      fetchAdmissionData();
+      fetchAllData();
     }
   }, [admissionId, axiosInstance]);
 
@@ -122,28 +167,42 @@ export default function DischargeSummary() {
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
   if (!admission) return <div className="p-4">No admission found</div>;
 
-  const totalLabCosts = admission.labTests?.reduce((sum, test) => {
-    return sum + (test.results?.cost || test.catalog?.price || 0);
-  }, 0) || 0;
+  // Remove unnecessary code since we already have calculateTotals function
 
-  const totalRoomCost = admission.totalRoomDays * (admission.ward?.dailyRate || 0);
-  const grandTotal = totalLabCosts + totalRoomCost + (admission.otherCharges || 0);
+  const calculateTotals = () => {
+    if (!services) return { categoryTotals: {}, grandTotal: 0 };
+
+    const categoryTotals = {};
+    let grandTotal = 0;
+
+    Object.entries(services).forEach(([category, items]) => {
+      const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+      categoryTotals[category] = total;
+      grandTotal += total;
+    });
+
+    return { categoryTotals, grandTotal };
+  };
+
+  const { categoryTotals, grandTotal } = calculateTotals();
 
   return (
-    <div id="discharge-summary" className="p-4 max-w-4xl mx-auto">
-      {/* Print Controls - hidden in print */}
-      <div className="print:hidden mb-4 flex justify-end gap-4">
+    <div className="p-4 max-w-4xl mx-auto bg-white">
+      {/* Print/Download Controls */}
+      <div className="print:hidden mb-6 flex justify-end gap-4">
         <button
-          onClick={handlePrint}
-          className="px-4 py-2 border border-brand-600 text-brand-600 rounded-md hover:bg-brand-50"
+          onClick={() => window.print()}
+          className="px-4 py-2 border border-brand-600 text-brand-600 rounded hover:bg-brand-50"
+          disabled={generating}
         >
           Print
         </button>
         <button
           onClick={handleDownloadPDF}
-          className="px-4 py-2 bg-brand-600 text-white rounded-md hover:bg-brand-700"
+          disabled={generating}
+          className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
         >
-          Download PDF
+          {generating ? 'Generating PDF...' : 'Download PDF'}
         </button>
       </div>
 
@@ -178,53 +237,11 @@ export default function DischargeSummary() {
         </div>
       </div>
 
-      {/* Laboratory Tests */}
-      {admission.labTests && admission.labTests.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Laboratory Tests</h2>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Summary</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {admission.labTests.map((test) => (
-                  <tr key={test._id}>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {test.catalog?.name || test.testType}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {format(new Date(test.date), 'PP')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{test.results?.summary || 'No summary'}</div>
-                      {test.results?.value && (
-                        <div className="text-xs text-gray-500">Value: {test.results.value}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900">
-                      KES {test.results?.cost || test.catalog?.price || 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* Service Details */}
-      {admission.services && Object.entries(admission.services).map(([category, items]) => {
+      {services && Object.entries(services).map(([category, items]) => {
         if (!items || items.length === 0) return null;
         
-        const categoryTotal = items.reduce((sum, item) => sum + (item.amount || item.cost || item.price || 0), 0);
+        const categoryTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
         if (categoryTotal === 0) return null;
 
         return (
@@ -242,18 +259,21 @@ export default function DischargeSummary() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {items.map((item, idx) => (
-                    <tr key={item._id || idx}>
+                    <tr key={idx}>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        {item.name || item.service || item.testType || item.drugName || 'Service'}
+                        {item.name}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {format(new Date(item.date || item.createdAt), 'PP')}
+                        {format(new Date(item.date), 'PP')}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {item.description || item.notes || item.summary || '-'}
+                        {item.description}
+                        {item.value && <div className="text-xs text-gray-500 mt-1">Value: {item.value}</div>}
+                        {item.notes && <div className="text-xs text-gray-500 mt-1">Notes: {item.notes}</div>}
+                        {item.normalRange && <div className="text-xs text-gray-500 mt-1">Normal Range: {item.normalRange}</div>}
                       </td>
                       <td className="px-6 py-4 text-right text-sm text-gray-900">
-                        KES {item.amount || item.cost || item.price || 0}
+                        KES {item.amount}
                       </td>
                     </tr>
                   ))}
@@ -277,12 +297,8 @@ export default function DischargeSummary() {
         <h2 className="text-xl font-semibold mb-4">Cost Summary</h2>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Room Charges ({admission.totalRoomDays} days @ KES {admission.ward?.dailyRate}/day)</span>
-              <span>KES {admission.roomCharge}</span>
-            </div>
-            {Object.entries(admission.services || {}).map(([category, items]) => {
-              const total = items?.reduce((sum, item) => sum + (item.amount || item.cost || item.price || 0), 0) || 0;
+            {Object.entries(services || {}).map(([category, items]) => {
+              const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
               if (total === 0) return null;
               return (
                 <div key={category} className="flex justify-between">
@@ -291,17 +307,9 @@ export default function DischargeSummary() {
                 </div>
               );
             })}
-            {admission.otherCharges > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Other Charges</span>
-                <span>KES {admission.otherCharges}</span>
-              </div>
-            )}
             <div className="border-t pt-4 flex justify-between font-semibold">
               <span>Grand Total</span>
-              <span>KES {Object.values(admission.services || {}).reduce((sum, items) => {
-                return sum + (items?.reduce((s, item) => s + (item.amount || item.cost || item.price || 0), 0) || 0);
-              }, admission.roomCharge + (admission.otherCharges || 0))}</span>
+              <span>KES {grandTotal}</span>
             </div>
           </div>
         </div>
