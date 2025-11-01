@@ -72,6 +72,7 @@ import NewTheatreBill from './pages/admission/billing/NewTheatreBill';
 import NewLabBill from './pages/admission/billing/NewLabBill';
 import NewPharmacyBill from './pages/admission/billing/NewPharmacyBill';
 import Placeholder from './components/Placeholder';
+import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 
 function App() {
   return (
@@ -127,7 +128,7 @@ function App() {
           <Route path="/patients/:id/procedures" element={<PrivateRoute><Layout><ErrorBoundary><Procedures /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Service Records */}
-          <Route path="/patients/:id/pharmacy-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Pharmacy Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/pharmacy-requests" element={<PrivateRoute><Layout><ErrorBoundary><InternalPharmacyRequests /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/transport-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Transport Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/previous-doctor-visits" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Previous Doctor Visits" /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/previous-nurse-visits" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Previous Nurse Visits" /></ErrorBoundary></Layout></PrivateRoute>} />

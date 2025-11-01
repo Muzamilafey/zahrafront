@@ -60,6 +60,10 @@ export default function Sidebar() {
         >
           <MenuItem to="/patients">All Patients</MenuItem>
           <MenuItem to="/patients/register">Register Patient</MenuItem>
+            {/* Admit Patient nav - visible to staff who can admit */}
+            {['admin','doctor','receptionist','nurse'].includes(user?.role) && (
+              <MenuItem to="/dashboard/doctor/admitpatient">Admit Patient</MenuItem>
+            )}
           <MenuItem to="/patients/admitted">Admitted Patients</MenuItem>
           <MenuItem to="/patients/visits">Patient Visits</MenuItem>
           <MenuItem to="/patients/visits/report">Visits Report</MenuItem>
