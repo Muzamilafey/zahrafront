@@ -79,6 +79,12 @@ export default function Sidebar({ role }) {
     ],
     lab: [
       { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder /> },
+      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder /> },
+      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder /> },
+      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar /> },
+      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt /> },
+      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder /> },
+      { to: '/patients', label: 'Inpatient Requests', icon: <FaUsers /> },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
     ],
     cleaning: [

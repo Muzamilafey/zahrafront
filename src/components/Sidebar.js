@@ -11,6 +11,7 @@ export default function Sidebar() {
     appointments: false,
     admin: false,
     billing: false,
+    lab: false,
   });
 
   const toggleMenu = (menu) => {
@@ -92,6 +93,22 @@ export default function Sidebar() {
           <MenuItem to="/appointments">View Appointments</MenuItem>
           <MenuItem to="/appointments/schedule">Schedule Appointment</MenuItem>
         </MenuGroup>
+
+        {/* Laboratory Section */}
+        {['admin','doctor','lab_technician','nurse','finance'].includes(user?.role) && (
+          <MenuGroup
+            title="Laboratory"
+            open={openMenus.lab}
+            onToggle={() => toggleMenu('lab')}
+          >
+            <MenuItem to="/dashboard/lab/queue">Lab Queue</MenuItem>
+            <MenuItem to="/dashboard/lab/requests">View Lab Requests</MenuItem>
+            <MenuItem to="/dashboard/lab/prices">Lab Tests Prices</MenuItem>
+            <MenuItem to="/dashboard/lab/patient-report">Lab Visits Report</MenuItem>
+            <MenuItem to="/dashboard/lab/templates">Register Lab Templates</MenuItem>
+            <MenuItem to="/patients">Inpatient Requests</MenuItem>
+          </MenuGroup>
+        )}
 
         {/* Billing Section */}
         {['admin', 'finance'].includes(user?.role) && (

@@ -46,6 +46,10 @@ import NurseDashboard from './components/Dashboard/NurseDashboard';
 import NurseAdmissionHistory from './pages/nurse/NurseAdmissionHistory';
 import LabDashboard from './components/Dashboard/LabDashboard';
 import LabQueue from './pages/LabQueue';
+import LabRequestsAll from './pages/lab/LabRequestsAll';
+import LabPrices from './pages/lab/LabPrices';
+import LabTemplates from './pages/lab/LabTemplates';
+import LabPatientReport from './pages/lab/LabPatientReport';
 import AdminPatient from './pages/admin/AdminPatient';
 import AdminAssignDoctor from './pages/admin/AdminAssignDoctor';
 import AdminUser from './pages/admin/AdminUser';
@@ -237,6 +241,10 @@ function App() {
 
           <Route path="*" element={<NotFound />} />
           <Route path="/dashboard/lab/queue" element={<PrivateRoute><Layout><LabQueue /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/requests" element={<PrivateRoute><Layout><LabRequestsAll /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/prices" element={<PrivateRoute><Layout><LabPrices /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/patient-report" element={<PrivateRoute><Layout><LabPatientReport /></Layout></PrivateRoute>} />
         </Routes>
         </Router>
       </UIProvider>
