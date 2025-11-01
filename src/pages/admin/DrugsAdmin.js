@@ -29,9 +29,36 @@ export default function DrugsAdmin(){
     finally{ setSaving(false); }
   };
 
+  const [newDrug, setNewDrug] = useState({ name: '', batchNumber: '', expiryDate: '', stockLevel: 0, supplier: '', price: 0 });
+
+  const createDrug = async () => {
+    if (!newDrug.name) return showToast({ message: 'Name is required', type: 'error' });
+    try{
+      const res = await axiosInstance.post('/pharmacy/drugs', newDrug);
+      setDrugs(prev => [res.data.drug, ...prev]);
+      setNewDrug({ name: '', batchNumber: '', expiryDate: '', stockLevel: 0, supplier: '', price: 0 });
+      showToast({ message: 'Drug added', type: 'success' });
+    }catch(e){ console.error(e); showToast({ message: e?.response?.data?.message || 'Failed to add drug', type: 'error' }); }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Drugs Inventory (Admin)</h1>
+      <div className="bg-white p-4 rounded shadow mb-4">
+        <h2 className="font-semibold mb-2">Add New Drug / Medicine</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input className="input" placeholder="Name" value={newDrug.name} onChange={e=>setNewDrug({...newDrug, name: e.target.value})} />
+          <input className="input" placeholder="Batch Number" value={newDrug.batchNumber} onChange={e=>setNewDrug({...newDrug, batchNumber: e.target.value})} />
+          <input type="date" className="input" placeholder="Expiry Date" value={newDrug.expiryDate} onChange={e=>setNewDrug({...newDrug, expiryDate: e.target.value})} />
+          <input type="number" className="input" placeholder="Stock Level" value={newDrug.stockLevel} onChange={e=>setNewDrug({...newDrug, stockLevel: Number(e.target.value)})} />
+          <input className="input" placeholder="Supplier" value={newDrug.supplier} onChange={e=>setNewDrug({...newDrug, supplier: e.target.value})} />
+          <input type="number" className="input" placeholder="Price" value={newDrug.price} onChange={e=>setNewDrug({...newDrug, price: Number(e.target.value)})} />
+        </div>
+        <div className="mt-3">
+          <button className="btn-brand" onClick={createDrug}>Add Drug</button>
+        </div>
+      </div>
+
       <div className="bg-white p-4 rounded shadow">
         {drugs.length === 0 ? <div>No drugs yet</div> : (
           <table className="table-auto w-full text-sm">
