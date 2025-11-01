@@ -18,9 +18,10 @@ export default function LabRequests() {
           date: filters.date 
         }).toString();
         
-  const response = await axiosInstance.get(`/labs/orders?${params}`);
-        // backend returns { orders: [...] }
-        setRequests(response.data.orders || []);
+  const response = await axiosInstance.get(`/lab/requests?${params}`);
+        // backend returns array of requests
+        setRequests(response.data || []);
+        console.log('Lab requests response:', response.data); // temporary debug log
         setLoading(false);
       } catch (error) {
         console.error('Error fetching lab requests:', error);
@@ -73,13 +74,13 @@ export default function LabRequests() {
       const resultsText = `Value: ${resultValue}\nNotes: ${resultNotes}`;
       form.append('resultsText', resultsText);
       // no files for now, but field is ready
-        await axiosInstance.put(`/labs/${selectedRequest._id}/results`, form, {
+        await axiosInstance.put(`/lab/requests/${selectedRequest._id}/results`, form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       // refresh list
       const params = new URLSearchParams({ status: filters.status, date: filters.date }).toString();
-  const resp = await axiosInstance.get(`/labs/orders?${params}`);
+      const resp = await axiosInstance.get(`/lab/requests?${params}`);
   setRequests(resp.data.orders || []);
       closeReview();
     } catch (err) {
