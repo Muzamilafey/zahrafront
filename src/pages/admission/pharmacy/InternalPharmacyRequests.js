@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { AuthContext } from '../../../../contexts/AuthContext';
-import inpatientApi from '../../../../services/inpatientApi';
+import { AuthContext } from '../../../contexts/AuthContext';
+import inpatientApi from '../../../services/inpatientApi';
 
 export default function InternalPharmacyRequests() {
   const { id: patientId } = useParams();
