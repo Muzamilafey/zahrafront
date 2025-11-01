@@ -73,7 +73,7 @@ import OutpatientHistory from './pages/admission/patient-history/OutpatientHisto
 import InpatientHistory from './pages/admission/patient-history/InpatientHistory';
 import BedReallocation from './pages/admission/patient-history/BedReallocation';
 import Allergies from './pages/admission/medical-records/Allergies';
-import LabRequests from './pages/admission/medical-records/LabRequests';
+import AdmissionLabRequests from './pages/admission/medical-records/LabRequests';
 import RadiologyRequests from './pages/admission/medical-records/RadiologyRequests';
 import Procedures from './pages/admission/medical-records/Procedures';
 import NewDoctorVisit from './pages/admission/clinical-services/NewDoctorVisit';
@@ -134,7 +134,7 @@ function App() {
 
           {/* Medical Records */}
           <Route path="/patients/:id/allergies" element={<PrivateRoute><Layout><ErrorBoundary><Allergies /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/lab-requests" element={<PrivateRoute><Layout><ErrorBoundary><LabRequests /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/lab-requests" element={<PrivateRoute><Layout><ErrorBoundary><AdmissionLabRequests /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/radiology-requests" element={<PrivateRoute><Layout><ErrorBoundary><RadiologyRequests /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/procedures" element={<PrivateRoute><Layout><ErrorBoundary><Procedures /></ErrorBoundary></Layout></PrivateRoute>} />
 
