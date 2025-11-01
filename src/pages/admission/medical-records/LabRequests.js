@@ -16,6 +16,9 @@ export default function LabRequests() {
   const [catalog, setCatalog] = useState([]);
   const [searchCatalog, setSearchCatalog] = useState('');
   const [selectedCatalog, setSelectedCatalog] = useState(null);
+  const [patient, setPatient] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
 
   useEffect(() => {
     loadLabRequests();
@@ -35,6 +38,26 @@ export default function LabRequests() {
       } catch (err) {
         // non-fatal
       }
+    })();
+    // fetch patient details for header
+    (async () => {
+      try {
+        const res = await axiosInstance.get(`/patients/${patientId}`);
+        setPatient(res.data.patient || res.data);
+      } catch (err) { /* ignore */ }
+    })();
+    // load doctors list for admin so they can select which doctor the request is for
+    (async () => {
+      try {
+        if (user && user.role === 'admin') {
+          const r2 = await axiosInstance.get('/doctors');
+          // r2.data may be { doctors: [...] } or array
+          const dd = r2.data;
+          if (Array.isArray(dd)) setDoctors(dd);
+          else if (Array.isArray(dd.doctors)) setDoctors(dd.doctors);
+          else if (Array.isArray(dd.data)) setDoctors(dd.data);
+        }
+      } catch (err) { /* ignore */ }
     })();
     // eslint-disable-next-line
   }, [patientId]);
@@ -57,6 +80,7 @@ export default function LabRequests() {
       setLoading(true);
       const payload = { testName, qty, urgency };
       if (selectedCatalog) payload.catalogId = selectedCatalog._id;
+      if (selectedDoctor) payload.doctorId = selectedDoctor._id || selectedDoctor;
       const res = await axiosInstance.post(`/patients/${patientId}/lab-requests`, payload);
       const created = res.data.labTest || res.data.labTest || null;
       if (created) {
@@ -80,13 +104,13 @@ export default function LabRequests() {
         <h1 className="text-3xl font-bold mb-2">Internal Lab Requests</h1>
         <hr className="mb-6" />
 
-        {/* Patient header summary (minimal) */}
+        {/* Patient header summary */}
         <div className="text-left bg-gray-50 p-4 rounded mb-6">
-          <p><strong>INPATIENT'S FILE NO :</strong> { /* Placeholder: patient hospital id or mrn */ }</p>
-          <p><strong>PATIENT'S NAME :</strong> {/* not loaded here; keep blank or pull from parent if needed */}</p>
-          <p><strong>PATIENT'S AGE :</strong> </p>
-          <p><strong>PATIENT'S PAYMENT DETAILS :</strong> </p>
-          <p><strong>SCHEME :</strong> </p>
+          <p><strong>INPATIENT'S FILE NO :</strong> {patient?.mrn || patient?.hospitalId || ''}</p>
+          <p><strong>PATIENT'S NAME :</strong> {patient ? `${patient.firstName || ''} ${patient.middleName || ''} ${patient.lastName || ''}`.replace(/\s+/g,' ').trim() : ''}</p>
+          <p><strong>PATIENT'S AGE :</strong> {patient ? (patient.age || (patient.dob ? Math.floor((Date.now() - new Date(patient.dob).getTime())/ (365.25*24*3600*1000)) : '')) : ''}</p>
+          <p><strong>PATIENT'S PAYMENT DETAILS :</strong> {patient?.paymentMode || ''}</p>
+          <p><strong>SCHEME :</strong> {patient?.insuranceProvider || ''}</p>
         </div>
 
         <div className="mb-4">
@@ -116,6 +140,20 @@ export default function LabRequests() {
               <option value="urgent">Urgent</option>
               <option value="stat">STAT</option>
             </select>
+            {/* doctor selector for admins */}
+            {user && user.role === 'admin' && (
+              <select value={selectedDoctor?._id || selectedDoctor || ''} onChange={e => {
+                const v = e.target.value;
+                // find object in doctors list
+                const sel = doctors.find(d => String(d._id) === String(v)) || doctors.find(d => String(d.user?._id) === String(v));
+                setSelectedDoctor(sel || v);
+              }} className="input w-48">
+                <option value="">Select Doctor (optional)</option>
+                {doctors.map(d => (
+                  <option key={d._id || d.user?._id} value={d._id || d.user?._id}>{(d.user && (d.user.name || `${d.user.firstName || ''} ${d.user.lastName || ''}`)) || d.name || d.fullName || d.displayName || `Dr. ${d._id}`}</option>
+                ))}
+              </select>
+            )}
             <button onClick={handleAdd} className="btn-brand">Add</button>
           </div>
         </div>
