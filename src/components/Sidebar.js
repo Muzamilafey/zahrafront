@@ -103,6 +103,7 @@ export default function Sidebar() {
           >
             <MenuItem to="/dashboard/lab/queue">Lab Queue</MenuItem>
             <MenuItem to="/dashboard/lab/requests">View Lab Requests</MenuItem>
+            <MenuItem to="/dashboard/lab/tests">Lab Tests Catalog</MenuItem>
             <MenuItem to="/dashboard/lab/prices">Lab Tests Prices</MenuItem>
             <MenuItem to="/dashboard/lab/patient-report">Lab Visits Report</MenuItem>
             <MenuItem to="/dashboard/lab/templates">Register Lab Templates</MenuItem>

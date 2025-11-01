@@ -45,6 +45,7 @@ export default function Sidebar({ role }) {
   { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder /> },
   { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder /> },
   { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder /> },
+  { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', icon: <FaFileInvoiceDollar /> },
   { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar /> },
   { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt /> },
   { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder /> },
@@ -120,6 +121,19 @@ export default function Sidebar({ role }) {
 
   // collect lab-related links (those under /dashboard/lab)
   const labItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/dashboard/lab'));
+  // build collapsed display items: remove individual lab links and replace with a single Laboratory summary item
+  const itemsWithoutLab = items.filter(i => !(typeof i.to === 'string' && i.to.startsWith('/dashboard/lab')));
+  const collapsedItems = [...itemsWithoutLab];
+  if (labItems.length > 0) {
+    // try to insert after patient items if present
+    const lastPatientTo = (patientItems.length && patientItems[patientItems.length-1].to) || null;
+    let insertIndex = 2; // after common entries by default
+    if (lastPatientTo) {
+      const idx = collapsedItems.findIndex(i => i.to === lastPatientTo);
+      if (idx >= 0) insertIndex = idx + 1;
+    }
+    collapsedItems.splice(insertIndex, 0, { to: '/dashboard/lab', label: 'Laboratory', icon: <FaFolder /> });
+  }
 
   useEffect(()=>{
     if(role === 'doctor'){
@@ -166,7 +180,7 @@ export default function Sidebar({ role }) {
             <div className="text-lg font-bold text-brand-700">CC</div>
           </div>
           <nav className="flex flex-col gap-2 items-center">
-            {items.map(i => (
+            {collapsedItems.map(i => (
               <Link key={i.to} to={i.to} className="flex flex-col items-center gap-1 p-2 rounded hover:bg-gray-100 w-full">
                 <div className="text-lg text-brand-600">{i.icon}</div>
                 <div className="text-xs text-gray-700">{i.label.split(' ')[0]}</div>
@@ -215,7 +229,7 @@ export default function Sidebar({ role }) {
               </div>
 
               {/* remaining items */}
-              {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
+              {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                   <div className="text-sm text-brand-600">{i.icon}</div>
                   <div className="text-sm">{i.label}</div>
@@ -280,7 +294,7 @@ export default function Sidebar({ role }) {
         )}
 
         {/* remaining items */}
-        {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
+        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to)).map(i => (
           <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
             <div className="text-sm text-brand-600">{i.icon}</div>
             <div className="text-sm">{i.label}</div>
