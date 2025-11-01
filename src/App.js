@@ -121,10 +121,10 @@ function App() {
           <Route path="/patients/:id/physio-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Physio Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Medical Records */}
-          <Route path="/patients/:id/allergies" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Patient Allergies" /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/lab-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Lab Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/radiology-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Radiology Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/procedures" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Procedures Performed" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/allergies" element={<PrivateRoute><Layout><ErrorBoundary><Allergies /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/lab-requests" element={<PrivateRoute><Layout><ErrorBoundary><LabRequests /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/radiology-requests" element={<PrivateRoute><Layout><ErrorBoundary><RadiologyRequests /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/procedures" element={<PrivateRoute><Layout><ErrorBoundary><Procedures /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Service Records */}
           <Route path="/patients/:id/pharmacy-requests" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Pharmacy Requests" /></ErrorBoundary></Layout></PrivateRoute>} />
