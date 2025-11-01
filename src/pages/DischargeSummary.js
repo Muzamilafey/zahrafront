@@ -11,20 +11,45 @@ export default function DischargeSummary() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchAdmission = async () => {
+    const fetchAdmissionData = async () => {
       try {
-        const response = await axiosInstance.get(`/admissions/${admissionId}`);
-        setAdmission(response.data);
+        // Fetch admission details including services
+        const [admissionRes, servicesRes] = await Promise.all([
+          axiosInstance.get(`/admissions/${admissionId}`),
+          axiosInstance.get(`/admissions/${admissionId}/services`)
+        ]);
+
+        const admissionData = admissionRes.data;
+        const services = servicesRes.data;
+
+        // Organize all services by type
+        const organizedServices = {
+          pharmacy: services.pharmacy || [],
+          lab: services.labTests || [],
+          meals: services.meals || [],
+          theatre: services.theatre || [],
+          procedures: services.procedures || [],
+          doctors: services.doctorVisits || [],
+          nurses: services.nurseVisits || [],
+          other: services.other || []
+        };
+
+        setAdmission({ 
+          ...admissionData, 
+          services: organizedServices,
+          roomCharge: (admissionData.totalRoomDays || 0) * (admissionData.ward?.dailyRate || 0)
+        });
+        console.log('Services loaded:', organizedServices); // Debug log
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching admission:', err);
+        console.error('Error fetching admission data:', err);
         setError(err.message);
         setLoading(false);
       }
     };
 
     if (admissionId) {
-      fetchAdmission();
+      fetchAdmissionData();
     }
   }, [admissionId, axiosInstance]);
 
@@ -33,24 +58,64 @@ export default function DischargeSummary() {
   };
 
   const handleDownloadPDF = async () => {
-    const { jsPDF } = await import('jspdf');
-    const html2canvas = (await import('html2canvas')).default;
-    
-    const element = document.getElementById('discharge-summary');
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      logging: false,
-      useCORS: true
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save('discharge-summary.pdf');
+    try {
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+      
+      // Get the summary container
+      const element = document.getElementById('discharge-summary');
+      if (!element) {
+        console.error('Could not find discharge summary element');
+        return;
+      }
+
+      // Configure html2canvas
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher scale for better quality
+        logging: false,
+        useCORS: true,
+        scrollY: -window.scrollY, // Handle scrolled content
+        windowHeight: element.scrollHeight
+      });
+      
+      // Create PDF with proper dimensions
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Handle multi-page content
+      let heightLeft = imgHeight;
+      let position = 0;
+      let pageNumber = 1;
+      
+      while (heightLeft >= 0) {
+        if (pageNumber > 1) {
+          pdf.addPage();
+        }
+        
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        position -= pageHeight;
+        pageNumber++;
+      }
+      
+      // Add page numbers
+      for (let i = 1; i < pageNumber; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.text(`Page ${i} of ${pageNumber - 1}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+      }
+      
+      // Save the PDF
+      pdf.save(`discharge-summary-${admission.patient?.hospitalId || 'patient'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
   };
 
   if (loading) return <div className="p-4">Loading discharge summary...</div>;
@@ -155,26 +220,88 @@ export default function DischargeSummary() {
         </div>
       )}
 
+      {/* Service Details */}
+      {admission.services && Object.entries(admission.services).map(([category, items]) => {
+        if (!items || items.length === 0) return null;
+        
+        const categoryTotal = items.reduce((sum, item) => sum + (item.amount || item.cost || item.price || 0), 0);
+        if (categoryTotal === 0) return null;
+
+        return (
+          <div key={category} className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 capitalize">{category} Services</h2>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {items.map((item, idx) => (
+                    <tr key={item._id || idx}>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {item.name || item.service || item.testType || item.drugName || 'Service'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {format(new Date(item.date || item.createdAt), 'PP')}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {item.description || item.notes || item.summary || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm text-gray-900">
+                        KES {item.amount || item.cost || item.price || 0}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-gray-50">
+                    <td colSpan={3} className="px-6 py-4 text-sm font-medium text-gray-900">
+                      {category.charAt(0).toUpperCase() + category.slice(1)} Total
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                      KES {categoryTotal}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+
       {/* Cost Summary */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Cost Summary</h2>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-gray-600">Room Charges ({admission.totalRoomDays} days)</span>
-              <span>KES {totalRoomCost}</span>
+              <span className="text-gray-600">Room Charges ({admission.totalRoomDays} days @ KES {admission.ward?.dailyRate}/day)</span>
+              <span>KES {admission.roomCharge}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Laboratory Tests</span>
-              <span>KES {totalLabCosts}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Other Charges</span>
-              <span>KES {admission.otherCharges || 0}</span>
-            </div>
+            {Object.entries(admission.services || {}).map(([category, items]) => {
+              const total = items?.reduce((sum, item) => sum + (item.amount || item.cost || item.price || 0), 0) || 0;
+              if (total === 0) return null;
+              return (
+                <div key={category} className="flex justify-between">
+                  <span className="text-gray-600 capitalize">{category} Charges</span>
+                  <span>KES {total}</span>
+                </div>
+              );
+            })}
+            {admission.otherCharges > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Other Charges</span>
+                <span>KES {admission.otherCharges}</span>
+              </div>
+            )}
             <div className="border-t pt-4 flex justify-between font-semibold">
-              <span>Total</span>
-              <span>KES {grandTotal}</span>
+              <span>Grand Total</span>
+              <span>KES {Object.values(admission.services || {}).reduce((sum, items) => {
+                return sum + (items?.reduce((s, item) => s + (item.amount || item.cost || item.price || 0), 0) || 0);
+              }, admission.roomCharge + (admission.otherCharges || 0))}</span>
             </div>
           </div>
         </div>
