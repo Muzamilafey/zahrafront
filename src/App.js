@@ -241,12 +241,15 @@ function App() {
           <Route path="/dashboard/messages" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
 
           <Route path="*" element={<NotFound />} />
+          {/* Laboratory Routes */}
+          <Route path="/dashboard/lab" element={<PrivateRoute><Layout><LabDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/queue" element={<PrivateRoute><Layout><LabQueue /></Layout></PrivateRoute>} />
-          <Route path="/dashboard/lab/requests" element={<PrivateRoute><Layout><LabRequestsAll /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/requests" element={<PrivateRoute><Layout><LabRequests /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/review" element={<PrivateRoute><Layout><LabTestReview /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/tests" element={<PrivateRoute><Layout><LabTests /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/prices" element={<PrivateRoute><Layout><LabPrices /></Layout></PrivateRoute>} />
-          <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/patient-report" element={<PrivateRoute><Layout><LabPatientReport /></Layout></PrivateRoute>} />
-          <Route path="/dashboard/lab/tests" element={<PrivateRoute><Layout><LabTestsCatalog /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
         </Routes>
         </Router>
       </UIProvider>
