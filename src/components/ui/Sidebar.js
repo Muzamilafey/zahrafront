@@ -116,6 +116,10 @@ export default function Sidebar({ role }) {
   const [admittedCount, setAdmittedCount] = useState(0);
 
   const [patientsOpen, setPatientsOpen] = useState(true);
+  const [labOpen, setLabOpen] = useState(false);
+
+  // collect lab-related links (those under /dashboard/lab)
+  const labItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/dashboard/lab'));
 
   useEffect(()=>{
     if(role === 'doctor'){
@@ -131,7 +135,27 @@ export default function Sidebar({ role }) {
   const [hovered, setHovered] = useState(false);
 
   if (collapsed) {
-    return (
+    return (<>
+
+            {/* Laboratory group in hover-expanded overlay */}
+            {labItems.length > 0 && (
+              <div>
+                <button onClick={() => setLabOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                  <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaFolder /></div><div>Laboratory</div></div>
+                  <div>{labOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                </button>
+                {labOpen && (
+                  <div className="pl-8 flex flex-col">
+                    {labItems.map(i => (
+                      <Link key={i.to} to={i.to} onClick={() => setLabOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                        <div className="text-sm text-brand-600">{i.icon}</div>
+                        <div className="text-sm">{i.label}</div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
       <div className="relative">
         <aside
           className="w-16 bg-white border-r min-h-screen p-2 hidden md:block"
@@ -201,7 +225,7 @@ export default function Sidebar({ role }) {
           </div>
         )}
       </div>
-    );
+    </>);
   }
 
   return (
@@ -234,6 +258,26 @@ export default function Sidebar({ role }) {
             </div>
           )}
         </div>
+
+        {/* Laboratory collapsible group */}
+        {labItems.length > 0 && (
+          <div>
+            <button onClick={() => setLabOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+              <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaFolder /></div><div>Laboratory</div></div>
+              <div>{labOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+            </button>
+            {labOpen && (
+              <div className="pl-4 flex flex-col">
+                {labItems.map(i => (
+                  <Link key={i.to} to={i.to} onClick={() => setLabOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="text-sm text-brand-600">{i.icon}</div>
+                    <div className="text-sm">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* remaining items */}
         {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
