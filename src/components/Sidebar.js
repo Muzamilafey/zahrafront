@@ -60,9 +60,9 @@ export default function Sidebar() {
         >
           <MenuItem to="/patients">All Patients</MenuItem>
           <MenuItem to="/patients/register">Register Patient</MenuItem>
-          {/* Admit Patient link - visible to staff who can admit */}
+          {/* Make Admit Patient always visible for allowed roles, right after Register */}
           {['admin', 'doctor', 'receptionist', 'nurse'].includes(user?.role) && (
-            <MenuItem to="/dashboard/doctor/admitpatient">Admit Patient</MenuItem>
+            <MenuItem to="/dashboard/doctor/admitpatient"><span className="font-semibold text-brand-700">Admit Patient</span></MenuItem>
           )}
           <MenuItem to="/patients/admitted">Admitted Patients</MenuItem>
           <MenuItem to="/patients/visits">Patient Visits</MenuItem>
