@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import { registerAdmitAndBill } from '../../services/inpatientApi';
 
 export default function AdmitPatient(){
   const { axiosInstance } = useContext(AuthContext);
@@ -65,8 +64,20 @@ export default function AdmitPatient(){
         bedId: selectedBed,
         medications: [] // Optionally, collect from UI
       };
-      await registerAdmitAndBill(data);
-      alert('Patient admitted and billed successfully');
+      try {
+        // Use the authenticated axiosInstance from AuthContext so auth headers/cookies are included
+        const res = await axiosInstance.post('/inpatient/register-admit-bill', data);
+        console.log('admit response', res);
+        alert('Patient admitted and billed successfully');
+      } catch (err) {
+        console.error('Failed to admit and bill', err);
+        if (err.response) {
+          const msg = err.response.data?.message || JSON.stringify(err.response.data);
+          alert(`Failed to admit and bill patient: (${err.response.status}) ${msg}`);
+        } else {
+          alert(err.message || 'Failed to admit and bill patient');
+        }
+      }
       // Reset form
       setSelectedWard('');
       setSelectedRoom('');
