@@ -1,5 +1,7 @@
+
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
+import { registerAdmitAndBill } from '../../services/inpatientApi';
 
 export default function AdmitPatient(){
   const { axiosInstance } = useContext(AuthContext);
@@ -39,33 +41,32 @@ export default function AdmitPatient(){
   const handleWardChange = (v)=>{ setSelectedWard(v); setSelectedRoom(''); setBeds([]); if(v) loadRooms(v); };
   const handleRoomChange = (v)=>{ setSelectedRoom(v); setBeds([]); if(v) loadBeds(selectedWard, v); };
 
-  const admit = async ()=>{
-    if(!selectedBed || !patientId || !admissionType || !paymentMode) {
+  const admit = async () => {
+    if (!selectedBed || !patientId || !admissionType || !paymentMode) {
       alert('Please fill in all required fields');
       return;
     }
-    
     setLoading(true);
-    try{
-      // Create admission request with all details
+    try {
+      // Compose patientData and admissionData for the new API
+      const patientData = { _id: patientId }; // If registering new, fill all fields; for existing, just id
       const admissionData = {
-        patientId,
-        bedId: selectedBed,
-        wardId: selectedWard,
-        roomId: selectedRoom,
         admissionType,
         expectedStayDays: expectedStay || undefined,
-        admissionReason,
+        reason: admissionReason,
         clinicalNotes,
-        paymentInfo: {
-          mode: paymentMode,
-          insuranceDetails: paymentMode === 'insurance' ? insuranceDetails : undefined
-        }
+        paymentMode,
+        insuranceDetails: paymentMode === 'insurance' ? insuranceDetails : undefined
       };
-
-      await axiosInstance.post('/admissions', admissionData);
-      alert('Patient admitted successfully');
-      
+      const data = {
+        patientData,
+        admissionData,
+        roomId: selectedRoom,
+        bedId: selectedBed,
+        medications: [] // Optionally, collect from UI
+      };
+      await registerAdmitAndBill(data);
+      alert('Patient admitted and billed successfully');
       // Reset form
       setSelectedWard('');
       setSelectedRoom('');
@@ -78,10 +79,9 @@ export default function AdmitPatient(){
       setClinicalNotes('');
       setPaymentMode('');
       setInsuranceDetails('');
-      
-    }catch(e){ 
-      console.error(e); 
-      alert(e.response?.data?.message || 'Failed to admit patient');
+    } catch (e) {
+      console.error(e);
+      alert(e.response?.data?.message || 'Failed to admit and bill patient');
     } finally {
       setLoading(false);
     }
