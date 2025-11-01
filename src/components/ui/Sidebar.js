@@ -41,6 +41,13 @@ export default function Sidebar({ role }) {
       { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes /> },
   { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills /> },
   { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+  // Laboratory links for admins
+  { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder /> },
+  { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder /> },
+  { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder /> },
+  { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar /> },
+  { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt /> },
+  { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder /> },
     ],
     doctor: [
       { to: '/dashboard/doctor/appointments', label: 'Appointments', icon: <FaCalendarAlt /> },
