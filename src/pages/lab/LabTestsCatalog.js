@@ -31,7 +31,7 @@ export default function LabTestsCatalog(){
   }
 
   async function remove(id){
-    if(!confirm('Delete test?')) return;
+    if(!window.confirm('Delete test?')) return;
     try{
       await axiosInstance.delete(`/labs/catalog/${id}`);
       setTests(prev=>prev.filter(t=>t._id !== id));
