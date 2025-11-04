@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 
 export default function DischargeSummary() {
   const { axiosInstance } = useContext(AuthContext);
   const { admissionId } = useParams();
+  const navigate = useNavigate();
   const [admission, setAdmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,6 +25,10 @@ export default function DischargeSummary() {
           axiosInstance.get(`/admissions/${admissionId}/services`)
         ]);
 
+        console.log('Admission Response:', admissionRes.data);
+        console.log('Lab Tests Response:', labRes.data);
+        console.log('Services Response:', servicesRes.data);
+
         const admissionData = admissionRes.data;
         const labTests = labRes.data || [];
         const allServices = servicesRes.data || {};
@@ -32,6 +37,13 @@ export default function DischargeSummary() {
         const roomDays = admissionData.totalRoomDays || 0;
         const dailyRate = admissionData.ward?.dailyRate || 0;
         const roomCharge = roomDays * dailyRate;
+        
+        console.log('Room calculation:', {
+          roomDays,
+          dailyRate,
+          roomCharge,
+          ward: admissionData.ward,
+        });
 
         // Organize all service charges
         const organizedServices = {
@@ -167,43 +179,57 @@ export default function DischargeSummary() {
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
   if (!admission) return <div className="p-4">No admission found</div>;
 
-  // Remove unnecessary code since we already have calculateTotals function
+  // Calculate totals from services
+  const calculateServiceTotals = () => {
+    if (!services) {
+      console.log('No services available');
+      return { totalsByCategory: {}, grandTotal: 0 };
+    }
 
-  const calculateTotals = () => {
-    if (!services) return { categoryTotals: {}, grandTotal: 0 };
-
-    const categoryTotals = {};
+    const totalsByCategory = {};
     let grandTotal = 0;
 
     Object.entries(services).forEach(([category, items]) => {
-      const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-      categoryTotals[category] = total;
-      grandTotal += total;
+      console.log(`Calculating total for ${category}:`, items);
+      const categoryTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      if (categoryTotal > 0) {
+        totalsByCategory[category] = categoryTotal;
+        grandTotal += categoryTotal;
+      }
     });
 
-    return { categoryTotals, grandTotal };
+    console.log('Calculated totals:', { totalsByCategory, grandTotal });
+    return { totalsByCategory, grandTotal };
   };
 
-  const { categoryTotals, grandTotal } = calculateTotals();
+  const { totalsByCategory, grandTotal } = calculateServiceTotals();
 
   return (
-    <div className="p-4 max-w-4xl mx-auto bg-white">
+    <div id="discharge-summary" className="p-4 max-w-4xl mx-auto bg-white">
       {/* Print/Download Controls */}
-      <div className="print:hidden mb-6 flex justify-end gap-4">
+      <div className="print:hidden mb-6 flex justify-between items-center">
         <button
-          onClick={() => window.print()}
-          className="px-4 py-2 border border-brand-600 text-brand-600 rounded hover:bg-brand-50"
-          disabled={generating}
+          onClick={() => navigate(`/clinical-summary/${admissionId}`)}
+          className="px-4 py-2 bg-white border border-brand-600 text-brand-600 rounded hover:bg-brand-50"
         >
-          Print
+          Edit Clinical Summary
         </button>
-        <button
-          onClick={handleDownloadPDF}
-          disabled={generating}
-          className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
-        >
-          {generating ? 'Generating PDF...' : 'Download PDF'}
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 border border-brand-600 text-brand-600 rounded hover:bg-brand-50"
+            disabled={generating}
+          >
+            Print
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={generating}
+            className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
+          >
+            {generating ? 'Generating PDF...' : 'Download PDF'}
+          </button>
+        </div>
       </div>
 
       {/* Header */}
@@ -213,6 +239,16 @@ export default function DischargeSummary() {
           Date: {format(new Date(admission.dischargeDate || new Date()), 'PPP')}
         </p>
       </div>
+
+      {/* Clinical Summary */}
+      {admission.clinicalSummary && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Clinical Summary</h2>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="whitespace-pre-wrap">{admission.clinicalSummary}</p>
+          </div>
+        </div>
+      )}
 
       {/* Patient Info */}
       <div className="mb-8">

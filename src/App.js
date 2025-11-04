@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import { UIProvider } from './contexts/UIContext';
+import ClinicalSummary from './pages/ClinicalSummary';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -178,7 +179,7 @@ function App() {
           <Route path="/patients/:id/set-package" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Set Package Amount" /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Clinical Documentation */}
-          <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Clinical Summary" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/diagnosis" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Diagnosis" /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/referral-letter" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Referral Letter" /></ErrorBoundary></Layout></PrivateRoute>} />
