@@ -18,7 +18,7 @@ export default function DischargeSummary() {
     const fetchAdmission = async () => {
       try {
         setLoading(true);
-        const admissionRes = await axiosInstance.get(`/admissions/${admissionId}`);
+  const admissionRes = await axiosInstance.get(`/admission/${admissionId}`);
         const admissionData = admissionRes.data;
         setAdmission(admissionData);
         setLoading(false);
@@ -28,7 +28,7 @@ export default function DischargeSummary() {
           try {
             const [labRes, servicesRes] = await Promise.all([
               axiosInstance.get(`/lab/requests?admissionId=${admissionId}`),
-              axiosInstance.get(`/admissions/${admissionId}/services`)
+              axiosInstance.get(`/admission/${admissionId}/services`)
             ]);
             const labTests = labRes.data || [];
             const allServices = servicesRes.data || {};

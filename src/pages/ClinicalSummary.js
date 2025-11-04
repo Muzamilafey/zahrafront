@@ -18,7 +18,7 @@ export default function ClinicalSummary() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get(`/admissions/${admissionId}`);
+  const response = await axiosInstance.get(`/admission/${admissionId}`);
         const data = response.data;
         setPatient(data.patient);
         setClinicalSummary(data.clinicalSummary || '');
@@ -44,7 +44,7 @@ export default function ClinicalSummary() {
     e.preventDefault();
     try {
       setSaving(true);
-      await axiosInstance.patch(`/admissions/${admissionId}`, { clinicalSummary });
+  await axiosInstance.patch(`/admission/${admissionId}`, { clinicalSummary });
       navigate(`/discharge/${admissionId}`);
     } catch (err) {
       console.error('Error saving clinical summary:', err);
