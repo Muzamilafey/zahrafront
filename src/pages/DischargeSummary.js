@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -14,90 +14,86 @@ export default function DischargeSummary() {
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    const fetchAllData = async () => {
+    // Fetch admission first (fast render), then fetch heavier service lists
+    const fetchAdmission = async () => {
       try {
         setLoading(true);
-        
-        // Fetch admission, lab results, and all other services in parallel
-        const [admissionRes, labRes, servicesRes] = await Promise.all([
-          axiosInstance.get(`/admissions/${admissionId}`),
-          axiosInstance.get(`/lab/requests?admissionId=${admissionId}`),
-          axiosInstance.get(`/admissions/${admissionId}/services`)
-        ]);
-
-        console.log('Admission Response:', admissionRes.data);
-        console.log('Lab Tests Response:', labRes.data);
-        console.log('Services Response:', servicesRes.data);
-
+        const admissionRes = await axiosInstance.get(`/admissions/${admissionId}`);
         const admissionData = admissionRes.data;
-        const labTests = labRes.data || [];
-        const allServices = servicesRes.data || {};
-
-        // Calculate room charges
-        const roomDays = admissionData.totalRoomDays || 0;
-        const dailyRate = admissionData.ward?.dailyRate || 0;
-        const roomCharge = roomDays * dailyRate;
-        
-        console.log('Room calculation:', {
-          roomDays,
-          dailyRate,
-          roomCharge,
-          ward: admissionData.ward,
-        });
-
-        // Organize all service charges
-        const organizedServices = {
-          room: [{
-            name: 'Room Charges',
-            description: `${roomDays} days @ KES ${dailyRate}/day`,
-            amount: roomCharge,
-            date: admissionData.admissionDate
-          }],
-          lab: labTests.map(test => ({
-            name: test.catalog?.name || test.testType,
-            description: test.results?.reportSummary || 'No results recorded',
-            amount: test.results?.cost || test.catalog?.price || 0,
-            date: test.date || test.createdAt,
-            notes: test.results?.notes,
-            value: test.results?.value,
-            normalRange: test.catalog?.normalValue
-          })),
-          pharmacy: (allServices.pharmacy || []).map(item => ({
-            name: item.drugName || item.name,
-            description: `${item.quantity} units`,
-            amount: item.amount || item.cost || 0,
-            date: item.date || item.createdAt
-          })),
-          procedures: (allServices.procedures || []).map(proc => ({
-            name: proc.name,
-            description: proc.description || proc.notes,
-            amount: proc.cost || proc.amount || 0,
-            date: proc.date || proc.createdAt
-          })),
-          consultations: (allServices.consultations || []).map(visit => ({
-            name: 'Doctor Consultation',
-            description: `Dr. ${visit.doctor?.name}`,
-            amount: visit.cost || visit.amount || 0,
-            date: visit.date || visit.createdAt
-          })),
-          nursing: (allServices.nursing || []).map(care => ({
-            name: 'Nursing Care',
-            description: care.description || care.notes,
-            amount: care.cost || care.amount || 0,
-            date: care.date || care.createdAt
-          })),
-          other: (allServices.other || []).map(item => ({
-            name: item.name || 'Miscellaneous',
-            description: item.description,
-            amount: item.amount || 0,
-            date: item.date || item.createdAt
-          }))
-        };
-
         setAdmission(admissionData);
-        setServices(organizedServices);
-        console.log('Services loaded:', organizedServices); // Debug log
         setLoading(false);
+
+        // fetch other service groups in background to avoid blocking initial render
+        (async () => {
+          try {
+            const [labRes, servicesRes] = await Promise.all([
+              axiosInstance.get(`/lab/requests?admissionId=${admissionId}`),
+              axiosInstance.get(`/admissions/${admissionId}/services`)
+            ]);
+            const labTests = labRes.data || [];
+            const allServices = servicesRes.data || {};
+
+            // Calculate room charges
+            const roomDays = admissionData.totalRoomDays || 0;
+            const dailyRate = admissionData.ward?.dailyRate || 0;
+            const roomCharge = roomDays * dailyRate;
+
+            const organizedServices = {
+              room: [{
+                name: 'Room Charges',
+                description: `${roomDays} days @ KES ${dailyRate}/day`,
+                amount: roomCharge,
+                date: admissionData.admissionDate
+              }],
+              lab: labTests.map(test => ({
+                name: test.catalog?.name || test.testType,
+                description: test.results?.reportSummary || 'No results recorded',
+                amount: test.results?.cost || test.catalog?.price || 0,
+                date: test.date || test.createdAt,
+                notes: test.results?.notes,
+                value: test.results?.value,
+                normalRange: test.catalog?.normalValue
+              })),
+              pharmacy: (allServices.pharmacy || []).map(item => ({
+                name: item.drugName || item.name,
+                description: `${item.quantity} units`,
+                amount: item.amount || item.cost || 0,
+                date: item.date || item.createdAt
+              })),
+              procedures: (allServices.procedures || []).map(proc => ({
+                name: proc.name,
+                description: proc.description || proc.notes,
+                amount: proc.cost || proc.amount || 0,
+                date: proc.date || proc.createdAt
+              })),
+              consultations: (allServices.consultations || []).map(visit => ({
+                name: 'Doctor Consultation',
+                description: `Dr. ${visit.doctor?.name}`,
+                amount: visit.cost || visit.amount || 0,
+                date: visit.date || visit.createdAt
+              })),
+              nursing: (allServices.nursing || []).map(care => ({
+                name: 'Nursing Care',
+                description: care.description || care.notes,
+                amount: care.cost || care.amount || 0,
+                date: care.date || care.createdAt
+              })),
+              other: (allServices.other || []).map(item => ({
+                name: item.name || 'Miscellaneous',
+                description: item.description,
+                amount: item.amount || 0,
+                date: item.date || item.createdAt
+              }))
+            };
+
+            setServices(organizedServices);
+          } catch (err) {
+            console.error('Error fetching services or lab results:', err);
+            // don't block the main admission render; just surface tiny error
+            setError(prev => prev || (err.message || 'Failed to load some service details'));
+          }
+        })();
+
       } catch (err) {
         console.error('Error fetching admission data:', err);
         setError(err.message);
@@ -106,13 +102,11 @@ export default function DischargeSummary() {
     };
 
     if (admissionId) {
-      fetchAllData();
+      fetchAdmission();
     }
   }, [admissionId, axiosInstance]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const handleDownloadPDF = async () => {
     try {
@@ -179,30 +173,21 @@ export default function DischargeSummary() {
   if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
   if (!admission) return <div className="p-4">No admission found</div>;
 
-  // Calculate totals from services
-  const calculateServiceTotals = () => {
-    if (!services) {
-      console.log('No services available');
-      return { totalsByCategory: {}, grandTotal: 0 };
-    }
+  // Memoize organized services and totals to avoid recalculations on every render
+  const { totalsByCategory, grandTotal } = useMemo(() => {
+    if (!services) return { totalsByCategory: {}, grandTotal: 0 };
 
-    const totalsByCategory = {};
-    let grandTotal = 0;
-
-    Object.entries(services).forEach(([category, items]) => {
-      console.log(`Calculating total for ${category}:`, items);
-      const categoryTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      if (categoryTotal > 0) {
-        totalsByCategory[category] = categoryTotal;
-        grandTotal += categoryTotal;
+    const totals = {};
+    let grand = 0;
+    for (const [category, items] of Object.entries(services)) {
+      const cTotal = (items || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      if (cTotal > 0) {
+        totals[category] = cTotal;
+        grand += cTotal;
       }
-    });
-
-    console.log('Calculated totals:', { totalsByCategory, grandTotal });
-    return { totalsByCategory, grandTotal };
-  };
-
-  const { totalsByCategory, grandTotal } = calculateServiceTotals();
+    }
+    return { totalsByCategory: totals, grandTotal: grand };
+  }, [services]);
 
   return (
     <div id="discharge-summary" className="p-4 max-w-4xl mx-auto bg-white">

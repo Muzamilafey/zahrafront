@@ -41,8 +41,27 @@ export default function DischargeSummary(){
 
   const handlePrint = ()=>{
     if (!invoice) return setToast({ message: 'No invoice available to print', type: 'error' });
-    const url = `/api/billing/${invoice._id}/print`;
-    window.open(url, '_blank');
+
+    // Fetch PDF using axiosInstance so Authorization header is included
+    (async () => {
+      try {
+        const resp = await axiosInstance.get(`/billing/${invoice._id}/print`, { responseType: 'blob' });
+        const blob = new Blob([resp.data], { type: resp.headers['content-type'] || 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+
+        // Open in a new tab
+        const w = window.open(url, '_blank');
+        if (!w) {
+          // Fallback: if popups blocked, open in same tab
+          window.location.href = url;
+        }
+        // Revoke object URL after a short delay to allow the new tab to load
+        setTimeout(() => { try { window.URL.revokeObjectURL(url); } catch (e) {} }, 10000);
+      } catch (e) {
+        console.error('Failed to fetch invoice PDF for printing', e);
+        setToast({ message: e?.response?.data?.message || 'Failed to load invoice for printing', type: 'error' });
+      }
+    })();
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
