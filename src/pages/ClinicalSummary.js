@@ -5,7 +5,8 @@ import { format } from 'date-fns';
 
 export default function ClinicalSummary() {
   const { axiosInstance } = useContext(AuthContext);
-  const { admissionId } = useParams();
+  const params = useParams();
+  const admissionId = params.admissionId || params.id; // support routes using either param name
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,18 +30,21 @@ export default function ClinicalSummary() {
       }
     };
 
-    if (admissionId) {
-      fetchData();
+    if (!admissionId) {
+      // avoid leaving the page stuck in loading state when route param is missing
+      setLoading(false);
+      setError('Admission id missing in route');
+      return;
     }
+
+    fetchData();
   }, [admissionId, axiosInstance]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSaving(true);
-      await axiosInstance.patch(`/admissions/${admissionId}`, {
-        clinicalSummary
-      });
+      await axiosInstance.patch(`/admissions/${admissionId}`, { clinicalSummary });
       navigate(`/discharge/${admissionId}`);
     } catch (err) {
       console.error('Error saving clinical summary:', err);
