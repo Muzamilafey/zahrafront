@@ -20,7 +20,8 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      // AuthContext.login now throws normalized Error messages (including timeout)
+      setError(err?.message || err?.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,25 @@ export default function Login() {
 
           <form onSubmit={submit} className="card">
             <h2 className="text-2xl mb-4 font-bold text-center text-brand-700">Login</h2>
-            {error && <p className="text-red-600 mb-4">{error}</p>}
+            {error && (
+              <div className="mb-4 rounded p-3 bg-red-50 border border-red-200">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="text-sm text-red-700">{error}</div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="text-sm underline text-red-600"
+                      onClick={() => setError(null)}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  If this is a network or timeout error, verify your API is reachable and that the environment variable REACT_APP_API_BASE is correct.
+                </div>
+              </div>
+            )}
             <input
               type="email"
               placeholder="Email"

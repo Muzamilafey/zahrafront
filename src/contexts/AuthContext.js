@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem('accessToken');
   }, [accessToken]);
 
-  // 🔐 Axios instance with token
-  const axiosInstance = axios.create({ baseURL: API_BASE });
+  // 🔐 Axios instance with token and sensible timeout to avoid hanging requests
+  const axiosInstance = axios.create({ baseURL: API_BASE, timeout: 15000 });
   axiosInstance.interceptors.request.use(
     (config) => {
       if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
@@ -45,13 +45,32 @@ export const AuthProvider = ({ children }) => {
 
   // 🧠 Login
   const login = async (email, password) => {
-    const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
-    const token = res.data.accessToken;
+    try {
+      const res = await axios.post(`${API_BASE}/auth/login`, { email, password }, { timeout: 15000 });
+      const token = res.data.accessToken;
 
-    setAccessToken(token);
+      if (!token) throw new Error('No access token returned from server');
 
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    setUser({ _id: payload.id, role: payload.role });
+      setAccessToken(token);
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({ _id: payload.id, role: payload.role });
+      } catch (e) {
+        console.warn('Failed to parse access token payload', e);
+        setUser(null);
+        throw new Error('Invalid access token received');
+      }
+    } catch (err) {
+      // Normalize common network errors for UI
+      if (err.code === 'ECONNABORTED') {
+        throw new Error('Login request timed out. Check your network or try again.');
+      }
+      if (err.response && err.response.data && err.response.data.message) {
+        throw new Error(err.response.data.message);
+      }
+      throw new Error(err.message || 'Login failed');
+    }
   };
 
   // 🚪 Logout
