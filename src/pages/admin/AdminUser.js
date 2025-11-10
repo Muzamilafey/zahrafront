@@ -9,6 +9,7 @@ export default function AdminUser(){
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({ name:'', email:'', phone:'', role:'' });
   const [permissions, setPermissions] = useState({ sidebar: {} });
+  const [originalPermissions, setOriginalPermissions] = useState(null);
 
   useEffect(()=>{
     const load = async ()=>{
@@ -16,18 +17,50 @@ export default function AdminUser(){
         const res = await axiosInstance.get(`/users/${id}`);
         setUser(res.data.user);
         setForm({ name: res.data.user.name || '', email: res.data.user.email || '', phone: res.data.user.phone || '', role: res.data.user.role || '' });
-        setPermissions(res.data.user.permissions || { sidebar: {} });
+        const perms = res.data.user.permissions || { sidebar: {} };
+        setPermissions(perms);
+        setOriginalPermissions(JSON.parse(JSON.stringify(perms)));
       }catch(e){ console.error(e); }
     };
     load();
   },[id]);
 
   const save = async ()=>{
+    // if permissions changed dramatically, ask for confirmation before saving
+    try{
+      const changes = countPermissionChanges(originalPermissions || {}, permissions || {});
+      if (changes > 3) {
+        setConfirmAction('save');
+        setConfirmOpen(true);
+        return;
+      }
+      await performSave();
+    }catch(e){ console.error(e); alert(e?.response?.data?.message || 'Update failed'); }
+  };
+
+  const performSave = async () => {
     try{
       await axiosInstance.put(`/users/${id}`, { ...form, permissions });
-      alert('User updated');
+      showToast('User updated', 'success');
       navigate('/dashboard/admin/users');
     }catch(e){ console.error(e); alert(e?.response?.data?.message || 'Update failed'); }
+  };
+
+  const countPermissionChanges = (a, b) => {
+    // shallow compare keys in sidebar and actions
+    const keys = new Set();
+    (a.sidebar && Object.keys(a.sidebar)).forEach(k=>keys.add(`s:${k}`));
+    (b.sidebar && Object.keys(b.sidebar)).forEach(k=>keys.add(`s:${k}`));
+    (a.actions && Object.keys(a.actions)).forEach(k=>keys.add(`a:${k}`));
+    (b.actions && Object.keys(b.actions)).forEach(k=>keys.add(`a:${k}`));
+    let changes = 0;
+    keys.forEach(k=>{
+      const [type, key] = k.split(':');
+      const aVal = (type==='s' ? (a.sidebar||{})[key] : (a.actions||{})[key]);
+      const bVal = (type==='s' ? (b.sidebar||{})[key] : (b.actions||{})[key]);
+      if (String(aVal) !== String(bVal)) changes++;
+    });
+    return changes;
   };
 
   const copyMyPermissions = () => {
@@ -42,6 +75,43 @@ export default function AdminUser(){
 
   const resetPermissions = () => {
     setPermissions({ sidebar: {}, actions: {} });
+  };
+
+  // confirmation modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(''); // 'copy' | 'reset'
+
+  // toast state
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+
+  const handleConfirmOpen = (action) => {
+    setConfirmAction(action);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setConfirmOpen(false);
+    setConfirmAction('');
+  };
+
+  const showToast = (message, type = 'info') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 3500);
+  };
+
+  const handleConfirmProceed = () => {
+    setConfirmOpen(false);
+    if (confirmAction === 'copy') {
+      copyMyPermissions();
+      showToast('Permissions copied to user', 'success');
+    } else if (confirmAction === 'reset') {
+      resetPermissions();
+      showToast('Permissions reset', 'warning');
+    } else if (confirmAction === 'save') {
+      // proceed with save despite dramatic changes
+      performSave();
+    }
+    setConfirmAction('');
   };
 
   if (!user) return <div className="p-6">Loading...</div>;
@@ -136,10 +206,38 @@ export default function AdminUser(){
         <div className="flex gap-2 items-center">
           <button className="btn-brand" onClick={save}>Save</button>
           <button className="btn-outline" onClick={()=>navigate('/dashboard/admin/users')}>Cancel</button>
-          <button className="btn-secondary" onClick={copyMyPermissions} title="Copy your own permissions into this user">Copy my permissions</button>
-          <button className="btn-danger" onClick={resetPermissions} title="Clear all permissions">Reset permissions</button>
+          <button className="btn-secondary" onClick={()=>handleConfirmOpen('copy')} title="Copy your own permissions into this user">Copy my permissions</button>
+          <button className="btn-danger" onClick={()=>handleConfirmOpen('reset')} title="Clear all permissions">Reset permissions</button>
         </div>
       </div>
+      {/* confirmation modal */}
+      {confirmOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded shadow p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-2">{
+              confirmAction === 'copy' ? 'Confirm Copy Permissions' : confirmAction === 'reset' ? 'Confirm Reset Permissions' : 'Confirm Save'
+            }</h3>
+            <p className="mb-4 text-sm text-gray-700">{
+              confirmAction === 'copy' ? 'Are you sure you want to copy your permissions into this user? This can be undone by editing the user again.' :
+              confirmAction === 'reset' ? 'Are you sure you want to reset this user\'s permissions to none? This action can be undone by editing the user again.' :
+              'You have made large permission changes. Are you sure you want to save these changes?'
+            }</p>
+            <div className="flex justify-end gap-2">
+              <button className="btn-outline" onClick={handleConfirmCancel}>Cancel</button>
+              <button className="btn-brand" onClick={handleConfirmProceed}>{confirmAction === 'save' ? 'Save changes' : confirmAction === 'copy' ? 'Copy permissions' : 'Reset permissions'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* toast */}
+      {toast.visible && (
+        <div className="fixed right-4 top-4 z-50">
+          <div className={`p-3 rounded shadow-sm text-white ${toast.type === 'success' ? 'bg-green-600' : toast.type === 'warning' ? 'bg-yellow-600 text-black' : 'bg-blue-600'}`}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

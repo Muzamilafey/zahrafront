@@ -55,6 +55,18 @@ export default function AdminUsers() {
     }catch(e){ alert('Update failed'); }
   };
 
+  const togglePatientsPermission = async (u) => {
+    try {
+      const current = !!(u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients);
+      const updated = { ...(u.permissions || {}), sidebar: { ...(u.permissions?.sidebar || {}), patients: !current } };
+      // send sanitized update to backend
+      await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
+      // optimistic update in UI
+      const res = await axiosInstance.get('/users');
+      setUsers(res.data.users || []);
+    } catch (e) { console.error(e); alert('Failed to update permission'); }
+  };
+
   const deleteUser = async (id) => {
     // eslint-disable-next-line no-restricted-globals
     if (!confirm('Delete this user and all related data? This cannot be undone.')) return;
@@ -93,11 +105,10 @@ export default function AdminUsers() {
     role: u.role || '-',
     patients: (
       <div>
-        {u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
-        ) : (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
-        )}
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={!!(u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients)} onChange={()=>togglePatientsPermission(u)} />
+          <span className="text-sm">Patients</span>
+        </label>
       </div>
     ),
     actions: (<div>
