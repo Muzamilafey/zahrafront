@@ -55,21 +55,67 @@ export default function AdminUser(){
         <div className="mt-4">
           <h3 className="font-semibold mb-2">Sidebar Permissions</h3>
           <div className="space-y-2">
+            {(() => {
+              const sidebarOptions = [
+                { key: 'overview', label: 'Overview' },
+                { key: 'profile', label: 'Profile' },
+                { key: 'appointments', label: 'Appointments' },
+                { key: 'patients', label: 'Patient Management' },
+                { key: 'manageUsers', label: 'Manage Users' },
+                { key: 'settings', label: 'Settings' },
+                { key: 'doctors', label: 'Doctors' },
+                { key: 'departments', label: 'Departments' },
+                { key: 'doctorsSchedule', label: "Doctors' Schedule" },
+                { key: 'consultations', label: 'Consultations' },
+                { key: 'availableSlots', label: 'Available Slots' },
+                { key: 'billing', label: 'Payments / Invoices' },
+                { key: 'manageWards', label: 'Manage Wards' },
+                { key: 'nurseAssignment', label: 'Nurse Assignment' },
+                { key: 'inventory', label: 'Inventory' },
+                { key: 'drugs', label: 'Drugs' },
+                { key: 'messages', label: 'Messages' },
+                { key: 'lab', label: 'Laboratory' },
+                { key: 'labQueue', label: 'Lab Queue' },
+                { key: 'labRequests', label: 'Lab Requests' },
+              ];
+
+              return sidebarOptions.map(opt => (
+                <label key={opt.key} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!!permissions?.sidebar?.[opt.key]}
+                    onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), [opt.key]: e.target.checked } }))}
+                  />
+                  <span>{opt.label}</span>
+                </label>
+              ));
+            })()}
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <h3 className="font-semibold mb-2">Action Permissions (line-by-line)</h3>
+          <div className="space-y-2">
+            {/* these are granular action-level permissions admins may want to toggle */}
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={!!permissions?.sidebar?.patients} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), patients: e.target.checked } }))} />
-              <span>Patient Management</span>
+              <input type="checkbox" checked={!!permissions?.actions?.admitPatient} onChange={e=>setPermissions(p=>({ ...p, actions: { ...(p.actions||{}), admitPatient: e.target.checked } }))} />
+              <span>Can admit patients</span>
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={!!permissions?.sidebar?.appointments} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), appointments: e.target.checked } }))} />
-              <span>Appointments</span>
+              <input type="checkbox" checked={!!permissions?.actions?.registerPatient} onChange={e=>setPermissions(p=>({ ...p, actions: { ...(p.actions||{}), registerPatient: e.target.checked } }))} />
+              <span>Can register patients</span>
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={!!permissions?.sidebar?.lab} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), lab: e.target.checked } }))} />
-              <span>Laboratory</span>
+              <input type="checkbox" checked={!!permissions?.actions?.createVisit} onChange={e=>setPermissions(p=>({ ...p, actions: { ...(p.actions||{}), createVisit: e.target.checked } }))} />
+              <span>Can create visits / appointments for others</span>
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={!!permissions?.sidebar?.billing} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), billing: e.target.checked } }))} />
-              <span>Billing</span>
+              <input type="checkbox" checked={!!permissions?.actions?.manageBilling} onChange={e=>setPermissions(p=>({ ...p, actions: { ...(p.actions||{}), manageBilling: e.target.checked } }))} />
+              <span>Can access billing / invoices</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={!!permissions?.actions?.manageUsers} onChange={e=>setPermissions(p=>({ ...p, actions: { ...(p.actions||{}), manageUsers: e.target.checked } }))} />
+              <span>Can manage users (create/edit/delete)</span>
             </label>
           </div>
         </div>
