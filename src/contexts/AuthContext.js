@@ -54,12 +54,25 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(token);
 
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ _id: payload.id, role: payload.role });
+        // fetch full user profile (includes permissions) using axiosInstance which will attach the token
+        const profile = await axiosInstance.get('/users/me');
+        if (profile && profile.data && profile.data.user) {
+          setUser(profile.data.user);
+        } else {
+          // fallback to parsing token payload if profile not returned
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setUser({ _id: payload.id || payload._id || payload.sub, role: payload.role });
+        }
       } catch (e) {
-        console.warn('Failed to parse access token payload', e);
-        setUser(null);
-        throw new Error('Invalid access token received');
+        // If fetching profile fails, fall back to token payload
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setUser({ _id: payload.id || payload._id || payload.sub, role: payload.role });
+        } catch (errPayload) {
+          console.warn('Failed to parse access token payload', errPayload);
+          setUser(null);
+          throw new Error('Invalid access token received');
+        }
       }
     } catch (err) {
       // Normalize common network errors for UI

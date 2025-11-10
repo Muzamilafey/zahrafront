@@ -20,6 +20,14 @@ export default function Sidebar() {
 
   const isActive = (path) => location.pathname === path;
 
+  const hasAccess = (key, defaultCheck = true) => {
+    // if permissions are defined on the user, prefer them
+    if (user?.permissions && typeof user.permissions === 'object') {
+      const sb = user.permissions.sidebar || {};
+      if (typeof sb[key] !== 'undefined') return !!sb[key];
+    }
+    return defaultCheck;
+  };
   const MenuItem = ({ to, children }) => (
     <Link
       to={to}
@@ -54,6 +62,7 @@ export default function Sidebar() {
     <div className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="flex-1 overflow-y-auto">
         {/* Patients Section */}
+        {hasAccess('patients', true) && (
         <MenuGroup
           title="Patient Management"
           open={openMenus.patients}
@@ -68,10 +77,11 @@ export default function Sidebar() {
           <MenuItem to="/patients/admitted">Admitted Patients</MenuItem>
           <MenuItem to="/patients/visits">Patient Visits</MenuItem>
           <MenuItem to="/patients/visits/report">Visits Report</MenuItem>
-        </MenuGroup>
+  </MenuGroup>
+  )}
 
         {/* Admin Section */}
-        {user?.role === 'admin' && (
+        {hasAccess('admin', user?.role === 'admin') && (
           <MenuGroup
             title="Administration"
             open={openMenus.admin}
@@ -85,6 +95,7 @@ export default function Sidebar() {
         )}
 
         {/* Appointments Section */}
+        {hasAccess('appointments', true) && (
         <MenuGroup
           title="Appointments"
           open={openMenus.appointments}
@@ -92,10 +103,11 @@ export default function Sidebar() {
         >
           <MenuItem to="/appointments">View Appointments</MenuItem>
           <MenuItem to="/appointments/schedule">Schedule Appointment</MenuItem>
-        </MenuGroup>
+  </MenuGroup>
+  )}
 
         {/* Laboratory Section */}
-        {['admin','doctor','lab_technician','nurse','finance'].includes(user?.role) && (
+        {hasAccess('lab', ['admin','doctor','lab_technician','nurse','finance'].includes(user?.role)) && (
           <MenuGroup
             title="Laboratory"
             open={openMenus.lab}
@@ -112,7 +124,7 @@ export default function Sidebar() {
         )}
 
         {/* Billing Section */}
-        {['admin', 'finance'].includes(user?.role) && (
+        {hasAccess('billing', ['admin', 'finance'].includes(user?.role)) && (
           <MenuGroup
             title="Billing"
             open={openMenus.billing}

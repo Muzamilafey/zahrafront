@@ -144,7 +144,7 @@ export default function AdminUsers() {
               <option value="receptionist">Receptionist</option>
               <option value="nurse">Nurse</option>
               <option value="lab_technician">Lab Technician</option>
-              <option value="patient">Patient</option>
+              {/* patients are removed from admin users list by backend */}
             </select>
           </div>
           {view === 'all' ? (

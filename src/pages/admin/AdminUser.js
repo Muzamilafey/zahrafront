@@ -8,6 +8,7 @@ export default function AdminUser(){
   const { axiosInstance } = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({ name:'', email:'', phone:'', role:'' });
+  const [permissions, setPermissions] = useState({ sidebar: {} });
 
   useEffect(()=>{
     const load = async ()=>{
@@ -15,6 +16,7 @@ export default function AdminUser(){
         const res = await axiosInstance.get(`/users/${id}`);
         setUser(res.data.user);
         setForm({ name: res.data.user.name || '', email: res.data.user.email || '', phone: res.data.user.phone || '', role: res.data.user.role || '' });
+        setPermissions(res.data.user.permissions || { sidebar: {} });
       }catch(e){ console.error(e); }
     };
     load();
@@ -22,7 +24,7 @@ export default function AdminUser(){
 
   const save = async ()=>{
     try{
-      await axiosInstance.put(`/users/${id}`, form);
+      await axiosInstance.put(`/users/${id}`, { ...form, permissions });
       alert('User updated');
       navigate('/dashboard/admin/users');
     }catch(e){ console.error(e); alert(e?.response?.data?.message || 'Update failed'); }
@@ -50,6 +52,27 @@ export default function AdminUser(){
           <option value="patient">patient</option>
           <option value="nurse">nurse</option>
         </select>
+        <div className="mt-4">
+          <h3 className="font-semibold mb-2">Sidebar Permissions</h3>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={!!permissions?.sidebar?.patients} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), patients: e.target.checked } }))} />
+              <span>Patient Management</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={!!permissions?.sidebar?.appointments} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), appointments: e.target.checked } }))} />
+              <span>Appointments</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={!!permissions?.sidebar?.lab} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), lab: e.target.checked } }))} />
+              <span>Laboratory</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={!!permissions?.sidebar?.billing} onChange={e=>setPermissions(p=>({ ...p, sidebar: { ...(p.sidebar||{}), billing: e.target.checked } }))} />
+              <span>Billing</span>
+            </label>
+          </div>
+        </div>
         <div className="flex gap-2">
           <button className="btn-brand" onClick={save}>Save</button>
           <button className="btn-outline" onClick={()=>navigate('/dashboard/admin/users')}>Cancel</button>
