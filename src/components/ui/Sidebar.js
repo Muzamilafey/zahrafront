@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 export default function Sidebar({ role }) {
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, user } = useContext(AuthContext);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('sidebarCollapsed') === 'true';
@@ -115,10 +115,20 @@ export default function Sidebar({ role }) {
   { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar /> },
   ];
 
-  const items = [...common, ...patientItems, ...(itemsByRole[role] || [])];
+  // decide if patient management should be shown
+  const patientVisible = (() => {
+    // if we have an authenticated user, prefer their explicit per-user permission when set
+    if (user && user.permissions && user.permissions.sidebar && typeof user.permissions.sidebar.patients !== 'undefined') {
+      return !!user.permissions.sidebar.patients;
+    }
+    // otherwise fall back to role defaults: admin and doctor see it by default
+    return role === 'admin' || role === 'doctor';
+  })();
+
+  const items = [...common, ...(patientVisible ? patientItems : []), ...(itemsByRole[role] || [])];
   const [admittedCount, setAdmittedCount] = useState(0);
 
-  const [patientsOpen, setPatientsOpen] = useState(true);
+  const [patientsOpen, setPatientsOpen] = useState(false);
   const [labOpen, setLabOpen] = useState(false);
 
   // collect lab-related links (those under /dashboard/lab)
