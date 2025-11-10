@@ -61,8 +61,8 @@ export default function Sidebar() {
   return (
     <div className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        {/* Patients Section - visible only to admin and doctor by default (can be overridden by user.permissions) */}
-              {hasAccess('patients', ['admin','doctor'].includes(user?.role)) && (
+        {/* Patients Section - hidden by default for non-admins until admin grants permission */}
+              {hasAccess('patients', user?.role === 'admin') && (
         <MenuGroup
           title="Patient Management"
           open={openMenus.patients}
@@ -71,7 +71,10 @@ export default function Sidebar() {
           <MenuItem to="/patients">All Patients</MenuItem>
           <MenuItem to="/patients/register">Register Patient</MenuItem>
           {/* Make Admit Patient always visible for allowed roles, right after Register */}
-                {['admin', 'doctor'].includes(user?.role) && (
+                {(
+                  user?.role === 'admin' ||
+                  (user?.role === 'doctor' && !!user?.permissions?.sidebar?.patients)
+                ) && (
                   <MenuItem to="/dashboard/doctor/admitpatient"><span className="font-semibold text-brand-700">Admit Patient</span></MenuItem>
                 )}
           <MenuItem to="/patients/admitted">Admitted Patients</MenuItem>
