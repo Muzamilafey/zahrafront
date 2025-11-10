@@ -102,7 +102,7 @@ export default function Sidebar() {
           onToggle={() => toggleMenu('appointments')}
         >
           <MenuItem to="/appointments">View Appointments</MenuItem>
-          <MenuItem to="/appointments/schedule">Schedule Appointment</MenuItem>
+          <MenuItem to="/appointments">Schedule Appointment</MenuItem>
   </MenuGroup>
   )}
 
