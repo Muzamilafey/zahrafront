@@ -7,7 +7,7 @@ export default function Sidebar() {
   const location = useLocation();
   const { user } = useContext(AuthContext);
   const [openMenus, setOpenMenus] = useState({
-    patients: true,
+    patients: false,
     appointments: false,
     admin: false,
     billing: false,
