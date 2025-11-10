@@ -83,6 +83,7 @@ export default function AdminUsers() {
     { header: 'Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
     { header: 'Role', accessor: 'role' },
+    { header: 'Patients', accessor: 'patients' },
     { header: 'Actions', accessor: 'actions' },
   ];
 
@@ -90,6 +91,15 @@ export default function AdminUsers() {
     name: u.name || '-',
     email: u.email || '-',
     role: u.role || '-',
+    patients: (
+      <div>
+        {u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+        )}
+      </div>
+    ),
     actions: (<div>
       <button className="btn-brand mr-2" onClick={()=>changeRole(u._id)}>Change Role</button>
       <button className="btn-outline mr-2" onClick={()=>window.location.href = `/dashboard/admin/users/${u._id}`}>Edit</button>
@@ -101,6 +111,7 @@ export default function AdminUsers() {
     { header: 'Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
     { header: 'Role', accessor: 'role' },
+    { header: 'Patients', accessor: 'patients' },
     { header: 'Actions', accessor: 'actions' },
   ];
 
@@ -108,6 +119,15 @@ export default function AdminUsers() {
     name: u.name || '-',
     email: u.email || '-',
     role: u.role || '-',
+    patients: (
+      <div>
+        {u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
+        )}
+      </div>
+    ),
     actions: (<div>
       <button className="btn-brand mr-2" onClick={()=>activateUser(u._id)}>Activate</button>
       <button className="btn-outline text-red-600" onClick={()=>deleteUser(u._id)}>Delete</button>
