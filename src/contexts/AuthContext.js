@@ -33,6 +33,63 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem('accessToken');
   }, [accessToken]);
 
+  // Server-Sent Events: subscribe to permission/role updates so changes made by admin
+  // are reflected immediately in the client's UI without a full reload.
+  useEffect(() => {
+    if (!accessToken) return;
+
+    // EventSource can't send Authorization headers, so we pass token as a query param.
+    const streamUrl = `${API_BASE}/notifications/stream?token=${accessToken}`;
+    let es;
+    try {
+      es = new EventSource(streamUrl);
+    } catch (err) {
+      console.warn('Failed to create EventSource for notifications', err);
+      return;
+    }
+
+    const onPermissions = (e) => {
+      try {
+        const payload = JSON.parse(e.data || '{}');
+        if (payload && payload.permissions) {
+          setUser((u) => {
+            const next = { ...(u || {}), permissions: payload.permissions };
+            localStorage.setItem('user', JSON.stringify(next));
+            return next;
+          });
+        }
+      } catch (err) {
+        console.warn('Invalid permissions event received', err);
+      }
+    };
+
+    const onRoleChanged = (e) => {
+      try {
+        const payload = JSON.parse(e.data || '{}');
+        if (payload && payload.role) {
+          setUser((u) => {
+            const next = { ...(u || {}), role: payload.role };
+            localStorage.setItem('user', JSON.stringify(next));
+            return next;
+          });
+        }
+      } catch (err) {
+        console.warn('Invalid roleChanged event received', err);
+      }
+    };
+
+    es.addEventListener('permissionsUpdated', onPermissions);
+    es.addEventListener('roleChanged', onRoleChanged);
+    es.onerror = (err) => {
+      // keep console noise minimal; EventSource will try to reconnect automatically
+      console.warn('SSE connection error for notifications', err);
+    };
+
+    return () => {
+      try { es.close(); } catch (e) {}
+    };
+  }, [accessToken]);
+
   // 🔐 Axios instance with token and sensible timeout to avoid hanging requests
   const axiosInstance = axios.create({ baseURL: API_BASE, timeout: 15000 });
   axiosInstance.interceptors.request.use(
