@@ -5,7 +5,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 export default function AdminUser(){
   const { id } = useParams();
   const navigate = useNavigate();
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, user: me } = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({ name:'', email:'', phone:'', role:'' });
   const [permissions, setPermissions] = useState({ sidebar: {} });
@@ -28,6 +28,20 @@ export default function AdminUser(){
       alert('User updated');
       navigate('/dashboard/admin/users');
     }catch(e){ console.error(e); alert(e?.response?.data?.message || 'Update failed'); }
+  };
+
+  const copyMyPermissions = () => {
+    if (!me) return alert('Unable to read your permissions');
+    const myPerms = me.permissions || { sidebar: {}, actions: {} };
+    // shallow copy to avoid shared references
+    setPermissions({
+      sidebar: { ...(myPerms.sidebar || {}) },
+      actions: { ...(myPerms.actions || {}) }
+    });
+  };
+
+  const resetPermissions = () => {
+    setPermissions({ sidebar: {}, actions: {} });
   };
 
   if (!user) return <div className="p-6">Loading...</div>;
@@ -119,9 +133,11 @@ export default function AdminUser(){
             </label>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button className="btn-brand" onClick={save}>Save</button>
           <button className="btn-outline" onClick={()=>navigate('/dashboard/admin/users')}>Cancel</button>
+          <button className="btn-secondary" onClick={copyMyPermissions} title="Copy your own permissions into this user">Copy my permissions</button>
+          <button className="btn-danger" onClick={resetPermissions} title="Clear all permissions">Reset permissions</button>
         </div>
       </div>
     </div>
