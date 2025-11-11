@@ -117,12 +117,14 @@ export default function Sidebar({ role }) {
 
   // decide if patient management should be shown
   const patientVisible = (() => {
+    // admin should always see patient management
+    if (user && user.role === 'admin') return true;
     // if we have an authenticated user, prefer their explicit per-user permission when set
     if (user && user.permissions && user.permissions.sidebar && typeof user.permissions.sidebar.patients !== 'undefined') {
       return !!user.permissions.sidebar.patients;
     }
-    // otherwise fall back to role defaults: admin and doctor see it by default
-    return role === 'admin' || role === 'doctor';
+    // strict mode: hide unless explicitly assigned
+    return false;
   })();
 
   // helper to check if a sidebar item should be visible based on explicit permissions
@@ -137,6 +139,8 @@ export default function Sidebar({ role }) {
 
   // helper to filter items based on whether user has any explicit permission assignments
   const filterByPermissions = (itemList) => {
+    // admin sees everything
+    if (user && user.role === 'admin') return itemList;
     // STRICT MODE: Always require explicit permission for all items
     // Only show items if user has explicit permission OR if they are common items (Overview, Profile)
     if (!user || !user.permissions || !user.permissions.sidebar) {

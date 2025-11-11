@@ -49,10 +49,10 @@ export default function AdminUser(){
   const countPermissionChanges = (a, b) => {
     // shallow compare keys in sidebar and actions
     const keys = new Set();
-    (a.sidebar && Object.keys(a.sidebar)).forEach(k=>keys.add(`s:${k}`));
-    (b.sidebar && Object.keys(b.sidebar)).forEach(k=>keys.add(`s:${k}`));
-    (a.actions && Object.keys(a.actions)).forEach(k=>keys.add(`a:${k}`));
-    (b.actions && Object.keys(b.actions)).forEach(k=>keys.add(`a:${k}`));
+    Object.keys(a.sidebar || {}).forEach(k=>keys.add(`s:${k}`));
+    Object.keys(b.sidebar || {}).forEach(k=>keys.add(`s:${k}`));
+    Object.keys(a.actions || {}).forEach(k=>keys.add(`a:${k}`));
+    Object.keys(b.actions || {}).forEach(k=>keys.add(`a:${k}`));
     let changes = 0;
     keys.forEach(k=>{
       const [type, key] = k.split(':');
