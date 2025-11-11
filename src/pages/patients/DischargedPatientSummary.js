@@ -191,12 +191,59 @@ export default function DischargedPatientSummary() {
           </div>
           <div>
             <div className="text-sm text-gray-600">Status</div>
-            <div className="text-lg font-semibold text-green-600">
-              ✓ Discharged
-            </div>
+            <div className="text-lg font-semibold text-green-600">✓ Discharged</div>
+            <div className="text-sm text-gray-600 mt-2">Age / Gender</div>
+            <div className="font-medium">{patient.age ? `${patient.age} yrs` : '-'} / {patient.gender || '-'}</div>
+            <div className="text-sm text-gray-600 mt-2">Attending Doctor</div>
+            <div className="font-medium">{admission?.attendingDoctor?.name || admission?.doctorName || '-'}</div>
+            <div className="text-sm text-gray-600 mt-2">Diagnosis at Admission</div>
+            <div className="font-medium">{admission?.admissionDiagnosis || admission?.presentingDiagnosis || '-'}</div>
           </div>
         </div>
       </div>
+
+          {/* Discharge Details */}
+          <div className="bg-white rounded-lg shadow mb-6 p-6">
+            <h2 className="text-lg font-semibold mb-4">Discharge Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <div className="text-sm text-gray-600">Patient Number</div>
+                <div className="font-medium">{patient.mrn || patient.hospitalId || patient._id}</div>
+                <div className="text-sm text-gray-600 mt-2">Admission Number</div>
+                <div className="font-medium">{admission?.admissionNumber || admission?._id || '-'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Patient Demographics</div>
+                <div className="font-medium">{patient.user?.name || '-'} • {patient.age ? `${patient.age} yrs` : '-'} • {patient.gender || '-'}</div>
+                <div className="text-sm text-gray-600 mt-2">Contact</div>
+                <div className="font-medium">{patient.phone || patient.contact || '-'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Attending Doctor</div>
+                <div className="font-medium">{admission?.attendingDoctor?.name || admission?.doctorName || '-'}</div>
+                <div className="text-sm text-gray-600 mt-2">Ward / Bed</div>
+                <div className="font-medium">{bedSummary?.ward || '-'} / {bedSummary?.bed || '-'}</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <div className="text-sm text-gray-600">Admission Date & Time</div>
+                <div className="font-medium">{bedSummary?.admittedAt ? new Date(bedSummary.admittedAt).toLocaleString() : '-'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Discharge Date & Time</div>
+                <div className="font-medium">{bedSummary?.dischargedAt ? new Date(bedSummary.dischargedAt).toLocaleString() : '-'}</div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-sm text-gray-600">Diagnosis at Admission</div>
+              <div className="font-medium">{admission?.admissionDiagnosis || admission?.presentingDiagnosis || '-'}</div>
+            </div>
+            <div className="mt-2">
+              <div className="text-sm text-gray-600">Final Diagnosis</div>
+              <div className="font-medium">{admission?.finalDiagnosis || admission?.dischargeDiagnosis || '-'}</div>
+            </div>
+          </div>
 
       {/* Admission & Discharge Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -296,6 +343,166 @@ export default function DischargedPatientSummary() {
         </div>
       </div>
 
+      {/* Hospital Stay Summary */}
+      <div className="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 className="text-lg font-semibold mb-4">Hospital Stay Summary</h2>
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm text-gray-600">Reason for Admission</div>
+            <div className="font-medium">{admission?.reasonForAdmission || admission?.presentingComplaint || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Summary of Clinical Findings</div>
+            <div className="font-medium">{admission?.clinicalFindings || admission?.summary || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Major Events During Stay</div>
+            <div className="font-medium">{(admission?.majorEvents && admission.majorEvents.length) ? admission.majorEvents.join('; ') : (admission?.events ? admission.events.join('; ') : '-')}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Key Investigations</div>
+            <div className="font-medium">{labTests.length > 0 ? labTests.map(t => t.name || t.testName).join(', ') : '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Procedures Performed</div>
+            <div className="font-medium">{(admission?.procedures && admission.procedures.length) ? admission.procedures.join('; ') : (admission?.proceduresPerformed ? admission.proceduresPerformed.join('; ') : '-')}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Final Primary Diagnosis</div>
+            <div className="font-medium">{admission?.finalDiagnosis || admission?.dischargeDiagnosis || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Secondary / Additional Diagnoses</div>
+            <div className="font-medium">{(admission?.secondaryDiagnoses && admission.secondaryDiagnoses.length) ? admission.secondaryDiagnoses.join('; ') : '-'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Treatment Given */}
+      <div className="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 className="text-lg font-semibold mb-4">Treatment Given</h2>
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm text-gray-600">Medications Given During Admission</div>
+            <div className="font-medium">{medications.length > 0 ? medications.map(m => m.name || m.medicationName).join(', ') : '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Treatments / Interventions</div>
+            <div className="font-medium">{(admission?.treatments && admission.treatments.length) ? admission.treatments.join('; ') : (admission?.interventions ? admission.interventions.join('; ') : '-')}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Surgery / Procedure Notes</div>
+            <div className="font-medium">{admission?.surgeryNotes || admission?.operationNotes || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Response to Treatment</div>
+            <div className="font-medium">{admission?.responseToTreatment || admission?.treatmentResponse || '-'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Discharge Medications (structured) */}
+      <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
+        <div className="bg-gray-100 border-b px-6 py-4">
+          <h2 className="text-lg font-semibold text-gray-800">Discharge Medications</h2>
+        </div>
+        <div className="p-6">
+          {medications.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No discharge medications recorded</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Drug Name</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Dosage</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Frequency</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Duration</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Instructions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medications.map((m, idx) => (
+                    <tr key={idx} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3">{m.name || m.medicationName || '-'}</td>
+                      <td className="px-4 py-3">{m.dosage || m.dose || '-'}</td>
+                      <td className="px-4 py-3">{m.frequency || '-'}</td>
+                      <td className="px-4 py-3">{m.daysSupplied || m.duration || '-'}</td>
+                      <td className="px-4 py-3">{m.instructions || m.specialInstructions || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Condition at Discharge */}
+      <div className="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 className="text-lg font-semibold mb-4">Condition at Discharge</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div className="text-sm text-gray-600">Physical Examination Status</div>
+            <div className="font-medium">{admission?.physicalExam || admission?.dischargePhysical || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Stability of the Patient</div>
+            <div className="font-medium">{admission?.stability || admission?.dischargeStability || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Discharge Mode</div>
+            <div className="font-medium">{admission?.dischargeMode || admission?.dischargedTo || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Mobility and Functional Status</div>
+            <div className="font-medium">{admission?.mobilityStatus || admission?.functionalStatus || '-'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Follow-Up Plan */}
+      <div className="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 className="text-lg font-semibold mb-4">Follow-Up Plan</h2>
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm text-gray-600">Clinic / Doctor to Review</div>
+            <div className="font-medium">{admission?.followUp?.clinic || admission?.followUpDoctor || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Follow-Up Date</div>
+            <div className="font-medium">{admission?.followUp?.date ? new Date(admission.followUp.date).toLocaleDateString() : (admission?.followUpDate ? new Date(admission.followUpDate).toLocaleDateString() : '-')}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Required Investigations Before Follow-Up</div>
+            <div className="font-medium">{(admission?.followUp?.requiredInvestigations && admission.followUp.requiredInvestigations.length) ? admission.followUp.requiredInvestigations.join(', ') : (admission?.requiredInvestigations ? admission.requiredInvestigations.join(', ') : '-')}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Patient Instructions */}
+      <div className="bg-white rounded-lg shadow mb-6 p-6">
+        <h2 className="text-lg font-semibold mb-4">Patient Instructions</h2>
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm text-gray-600">Diet Recommendations</div>
+            <div className="font-medium">{admission?.instructions?.diet || admission?.dietInstructions || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Activity / Mobility Guidance</div>
+            <div className="font-medium">{admission?.instructions?.activity || admission?.activityInstructions || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Wound Care Instructions</div>
+            <div className="font-medium">{admission?.instructions?.woundCare || admission?.woundCare || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Red Flags / Danger Signs</div>
+            <div className="font-medium">{admission?.instructions?.redFlags || admission?.redFlags || '-'}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Lab Tests Taken */}
       <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
         <div className="bg-gray-100 border-b px-6 py-4">
@@ -359,6 +566,30 @@ export default function DischargedPatientSummary() {
         </div>
       </div>
 
+      {/* Radiology Summary & Pending Tests */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Radiology Summary</h2>
+          <div className="space-y-3">
+            <div className="font-medium">{(admission?.radiologyReports && admission.radiologyReports.length) ? admission.radiologyReports.map(r => r.title || r.name).join('; ') : (labTests.filter(t => (t.category || t.type || '').toLowerCase().includes('radi')).length ? labTests.filter(t => (t.category || t.type || '').toLowerCase().includes('radi')).map(t => t.name || t.testName).join(', ') : '-')}</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Pending / Uncompleted Tests</h2>
+          <div className="space-y-3">
+            {labTests.filter(t => (t.status || 'pending') !== 'completed').length === 0 ? (
+              <div className="font-medium">None</div>
+            ) : (
+              <ul className="list-disc pl-5">
+                {labTests.filter(t => (t.status || 'pending') !== 'completed').map((t, i) => (
+                  <li key={i} className="font-medium">{t.name || t.testName} — {t.status || 'pending'}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Summary Totals */}
       <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-300 rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">Discharge Summary Totals</h2>
@@ -380,6 +611,21 @@ export default function DischargedPatientSummary() {
         </div>
       </div>
 
+      {/* Referral & Sign-off */}
+      <div className="bg-white rounded-lg shadow mt-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div className="text-sm text-gray-600">Referral Information</div>
+            <div className="font-medium">{admission?.referral || admission?.referredTo || '-'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Doctor's Signature</div>
+            <div className="font-medium mt-6">{admission?.attendingDoctor?.name || admission?.doctorName || '-'}</div>
+            <div className="text-sm text-gray-600">Timestamp</div>
+            <div className="font-medium">{bedSummary?.dischargedAt ? new Date(bedSummary.dischargedAt).toLocaleString() : new Date().toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
       {/* Print Styles */}
       <style>{`
         @media print {
