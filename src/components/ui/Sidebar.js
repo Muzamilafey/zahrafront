@@ -18,84 +18,82 @@ export default function Sidebar({ role }) {
   const toggleCollapsed = () => setCollapsed(s => !s);
 
   const common = [
-    { to: '/dashboard', label: 'Overview', icon: <FaTachometerAlt /> },
-    { to: '/profile', label: 'Profile', icon: <FaUsers /> },
+    { to: '/dashboard', label: 'Overview', icon: <FaTachometerAlt />, perm: 'overview' },
+    { to: '/profile', label: 'Profile', icon: <FaUsers />, perm: 'profile' },
   ];
 
   const itemsByRole = {
     admin: [
-      
-  { to: '/appointments', label: 'Appointments', icon: <FaCalendarAlt /> },
-  { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers /> },
-  { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers /> },
-  { to: '/dashboard/admin/settings', label: 'Settings', icon: <FaCog /> },
-  { to: '/dashboard/admin/doctors', label: 'Doctors', icon: <FaUserPlus /> },
-  { to: '/dashboard/admin/departments', label: 'Departments', icon: <FaFolder /> },
-      
-      { to: '/dashboard/admin/doctors', label: "Doctors' Schedule", icon: <FaClock /> },
-  { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder /> },
-    { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock /> },
-  { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/admin/managewards', label: 'Manage Wards', icon: <FaFolder /> },
-  { to: '/dashboard/admin/nurseassignment', label: 'Nurse Assignment', icon: <FaUsers /> },
-      { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes /> },
-  { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills /> },
-  { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
-  // Laboratory links for admins
-  { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder /> },
-  { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder /> },
-  { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder /> },
-  { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder /> },
-  { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', icon: <FaFileInvoiceDollar /> },
-  { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar /> },
-  { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt /> },
-  { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder /> },
+      { to: '/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers />, perm: 'manageUsers' },
+      { to: '/dashboard/admin/settings', label: 'Settings', icon: <FaCog />, perm: 'settings' },
+      { to: '/dashboard/admin/doctors', label: 'Doctors', icon: <FaUserPlus />, perm: 'doctors' },
+      { to: '/dashboard/admin/departments', label: 'Departments', icon: <FaFolder />, perm: 'departments' },
+      { to: '/dashboard/admin/doctors', label: "Doctors' Schedule", icon: <FaClock />, perm: 'doctorsSchedule' },
+      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock />, perm: 'availableSlots' },
+      { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/admin/managewards', label: 'Manage Wards', icon: <FaFolder />, perm: 'manageWards' },
+      { to: '/dashboard/admin/nurseassignment', label: 'Nurse Assignment', icon: <FaUsers />, perm: 'nurseAssignment' },
+      { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // Laboratory links for admins
+      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
+      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
+      { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', icon: <FaFileInvoiceDollar />, perm: 'lab' },
+      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
+      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
+      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
     ],
     doctor: [
-      { to: '/dashboard/doctor/appointments', label: 'Appointments', icon: <FaCalendarAlt /> },
-      { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus /> },
-      { to: '/dashboard/doctor/admitted', label: 'Admitted Patients', icon: <FaUsers /> },
-      { to: '/dashboard/doctor/patients', label: 'Patients', icon: <FaUsers /> },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+      { to: '/dashboard/doctor/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus />, perm: 'patients' },
+      { to: '/dashboard/doctor/admitted', label: 'Admitted Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/doctor/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
     ],
     pharmacist: [
-      { to: '/dashboard/pharmacy', label: 'Inventory', icon: <FaPills /> },
-      { to: '/pharmacy/pos', label: 'POS', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/pharmacy/transactions', label: 'Transactions', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+      { to: '/dashboard/pharmacy', label: 'Inventory', icon: <FaPills />, perm: 'inventory' },
+      { to: '/pharmacy/pos', label: 'POS', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
+      { to: '/dashboard/pharmacy/transactions', label: 'Transactions', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
     ],
     finance: [
-      { to: '/billing', label: 'Billing', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/finance/transactions', label: 'Transactions', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/finance/appointments', label: 'Bill Appointments', icon: <FaCalendarAlt /> },
-      { to: '/dashboard/finance/reports', label: 'Reports', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/finance/refunds', label: 'Refunds', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+      { to: '/billing', label: 'Billing', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/finance/transactions', label: 'Transactions', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/finance/appointments', label: 'Bill Appointments', icon: <FaCalendarAlt />, perm: 'billing' },
+      { to: '/dashboard/finance/reports', label: 'Reports', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/finance/refunds', label: 'Refunds', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
     ],
     receptionist: [
-      { to: '/dashboard/reception', label: 'Registration', icon: <FaUserPlus /> },
-      { to: '/dashboard/reception/appointments', label: 'Appointments', icon: <FaCalendarAlt /> },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+      { to: '/dashboard/reception', label: 'Registration', icon: <FaUserPlus />, perm: 'patients' },
+      { to: '/dashboard/reception/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
     ],
     patient: [
-      { to: '/dashboard/patient/appointments', label: 'My Appointments', icon: <FaCalendarAlt /> },
-      { to: '/dashboard/patient/prescriptions', label: 'Prescriptions', icon: <FaPills /> },
+      { to: '/dashboard/patient/appointments', label: 'My Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/patient/prescriptions', label: 'Prescriptions', icon: <FaPills />, perm: 'drugs' },
     ],
     nurse: [
-      { to: '/dashboard/nurse', label: 'Nurse Dashboard', icon: <FaUsers /> },
-      { to: '/dashboard/nurse/admissions', label: 'Admission History', icon: <FaClock /> },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+      { to: '/dashboard/nurse', label: 'Nurse Dashboard', icon: <FaUsers />, perm: 'nurse' },
+      { to: '/dashboard/nurse/admissions', label: 'Admission History', icon: <FaClock />, perm: 'patients' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
     ],
     lab: [
-      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder /> },
-      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder /> },
-      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder /> },
-      { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder /> },
-      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar /> },
-      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt /> },
-      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder /> },
-      { to: '/patients', label: 'Inpatient Requests', icon: <FaUsers /> },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope /> },
+      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
+      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
+      { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
+      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
+      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
+      { to: '/patients', label: 'Inpatient Requests', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
     ],
     cleaning: [
       { to: '/dashboard/staff', label: 'My Tasks', icon: <FaBoxes /> },
@@ -107,12 +105,12 @@ export default function Sidebar({ role }) {
 
   // patient related links (shown under a collapsible group)
   const patientItems = [
-  { to: '/patients', label: 'All Patients', icon: <FaUsers /> },
-  { to: '/patients/register', label: 'Register Patient', icon: <FaUserPlus /> },
-  { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus /> },
-  { to: '/patients/admitted', label: 'Admitted Patients', icon: <FaUsers /> },
-  { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt /> },
-  { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar /> },
+    { to: '/patients', label: 'All Patients', icon: <FaUsers />, perm: 'patients' },
+    { to: '/patients/register', label: 'Register Patient', icon: <FaUserPlus />, perm: 'patients' },
+    { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus />, perm: 'patients' },
+    { to: '/patients/admitted', label: 'Admitted Patients', icon: <FaUsers />, perm: 'patients' },
+    { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt />, perm: 'patients' },
+    { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar />, perm: 'patients' },
   ];
 
   // decide if patient management should be shown
@@ -147,52 +145,14 @@ export default function Sidebar({ role }) {
       return itemList.filter(item => item === common[0] || item === common[1]);
     }
 
-    // helper to map an item's path to a permission key
-    const permKeyFor = (item) => {
-      if (!item || !item.to) return null;
-      const t = item.to;
-      if (t.startsWith('/patients') || t.includes('/patients') || t.includes('/admitpatient')) return 'patients';
-      if (t === '/appointments' || t.includes('/appointments')) return 'appointments';
-      if (t.includes('/dashboard/admin/users')) return 'manageUsers';
-      if (t.includes('/dashboard/admin/settings')) return 'settings';
-      if (t.includes('/dashboard/admin/doctors') || t.includes('/dashboard/doctor')) return 'doctors';
-      if (t.includes('/dashboard/admin/departments')) return 'departments';
-      if (t.includes('/dashboard/admin/slots') || t.includes('/slots')) return 'availableSlots';
-      if (t === '/billing' || t.includes('/billing')) return 'billing';
-      if (t.includes('/dashboard/admin/managewards') || t.includes('/wards')) return 'manageWards';
-      if (t.includes('/dashboard/admin/nurseassignment') || t.includes('nurseassignment')) return 'nurseAssignment';
-      if (t.includes('/pharmacy') || t.includes('/dashboard/pharmacy')) return 'inventory';
-      if (t.includes('/dashboard/admin/drugs') || t.includes('/drugs')) return 'drugs';
-      if (t.includes('/dashboard/messages') || t.includes('/messages')) return 'messages';
-      // lab sub-sections
-      if (t.includes('/dashboard/lab/queue')) return 'labQueue';
-      if (t.includes('/dashboard/lab/requests')) return 'labRequests';
-      if (t.includes('/dashboard/lab')) return 'lab';
-      // fallback: try to match by label words
-      const label = (item.label || '').toLowerCase();
-      if (label.includes('appointment')) return 'appointments';
-      if (label.includes('patient')) return 'patients';
-      if (label.includes('consult')) return 'consultations';
-      if (label.includes('slot')) return 'availableSlots';
-      if (label.includes('ward')) return 'manageWards';
-      if (label.includes('nurse')) return 'nurseAssignment';
-      if (label.includes('inventory') || label.includes('pharmacy')) return 'inventory';
-      if (label.includes('drug')) return 'drugs';
-      if (label.includes('message')) return 'messages';
-      if (label.includes('lab queue')) return 'labQueue';
-      if (label.includes('lab request') || label.includes('lab requests')) return 'labRequests';
-      if (label.includes('lab')) return 'lab';
-      if (label.includes('billing') || label.includes('invoice')) return 'billing';
-      if (label.includes('user')) return 'manageUsers';
-      return null;
-    };
-
-    // user has explicit permissions: show only items they have permission for + common
+    // user has explicit permissions: show only items that have a perm key and
+    // which the user has been granted, plus the common overview/profile links
     return itemList.filter(item => {
       if (item === common[0] || item === common[1]) return true;
-      const key = permKeyFor(item);
-      if (!key) return false;
-      return hasPermissionFor(key);
+      // if item has an explicit perm field, use it
+      if (item && item.perm) return hasPermissionFor(item.perm);
+      // no explicit perm -> hide by default in strict mode
+      return false;
     });
   };
 
