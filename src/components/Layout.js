@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Sidebar from './ui/Sidebar';
 import Topbar from './ui/Topbar';
 import { AuthContext } from '../contexts/AuthContext';
@@ -9,16 +9,7 @@ import Toasts from './ui/Toasts';
 export default function Layout({ children }){
   const { user, logout, socket } = React.useContext(AuthContext);
   const role = user?.role || 'patient';
-  // Track sidebar collapsed state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem('sidebarCollapsed') === 'true';
-    } catch (e) { return false; }
-  });
-  // Listen for sidebar collapse changes from Sidebar
-  const handleSidebarCollapse = (collapsed) => {
-    setSidebarCollapsed(collapsed);
-  };
+  // layout uses flexbox; sidebar is part of the flow so it will push content
 
   // push socket events into Notifications context
   function SocketListener(){
@@ -39,9 +30,9 @@ export default function Layout({ children }){
       <div className="min-h-screen bg-gray-50">
         <Topbar user={user} onLogout={logout} />
         <div className="flex min-h-screen">
-    <Sidebar role={role} onCollapse={handleSidebarCollapse} />
+          <Sidebar role={role} />
           {/* make the right pane a separate scroll container so the sidebar doesn't scroll with content */}
-          <div className={`flex-1 overflow-auto transition-all duration-200 md:${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+          <div className="flex-1 overflow-auto">
             <main className="p-6">
               {children}
               <Toasts />
