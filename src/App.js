@@ -85,6 +85,7 @@ import NewPharmacyBill from './pages/admission/billing/NewPharmacyBill';
 import Placeholder from './components/Placeholder';
 import DischargeSummary from './pages/patients/DischargeSummary';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
+import RegisterUser from './pages/admin/RegisterUser';
 
 function App() {
   return (
@@ -113,6 +114,7 @@ function App() {
           <Route path="/dashboard/admin" element={<PrivateRoute><Layout><AdminDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/users" element={<PrivateRoute><Layout><AdminUsers /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/doctors" element={<PrivateRoute><Layout><AdminDoctors /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/admin/register" element={<PrivateRoute><Layout><RegisterUser /></Layout></PrivateRoute>} />
           {/* Patient Management Routes */}
           <Route path="/patients" element={<PrivateRoute><Layout><PatientList /></Layout></PrivateRoute>} />
           <Route path="/patients/register" element={<PrivateRoute><Layout><RegisterPatient /></Layout></PrivateRoute>} />
