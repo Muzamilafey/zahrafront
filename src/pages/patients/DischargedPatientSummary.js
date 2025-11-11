@@ -2,6 +2,8 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { FaArrowLeft, FaPrint, FaDownload } from 'react-icons/fa';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function DischargedPatientSummary() {
   const { id: patientId } = useParams();
@@ -14,6 +16,7 @@ export default function DischargedPatientSummary() {
   const [bedSummary, setBedSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hospital, setHospital] = useState(null);
 
   useEffect(() => {
     loadPatientData();
@@ -98,6 +101,11 @@ export default function DischargedPatientSummary() {
         // Set empty array instead of error
         setLabTests([]);
       }
+      // load hospital settings for header/logo
+      try{
+        const hRes = await axiosInstance.get('/setting/hospital-details');
+        setHospital(hRes.data || null);
+      }catch(err){ /* ignore */ }
     } catch (e) {
       setError(e?.response?.data?.message || 'Failed to load patient data');
     } finally {
@@ -123,6 +131,39 @@ export default function DischargedPatientSummary() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleGeneratePdf = async () => {
+    const element = document.getElementById('discharge-summary');
+    if (!element) return alert('Nothing to generate');
+    try {
+      // render element to canvas
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      const filename = `discharge-${patient?.mrn || patient?._id || 'summary'}.pdf`;
+      pdf.save(filename);
+    } catch (err) {
+      console.error('PDF generation failed', err);
+      alert('Failed to generate PDF');
+    }
   };
 
   if (loading) {
@@ -168,6 +209,12 @@ export default function DischargedPatientSummary() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={handleGeneratePdf}
+            className="btn-brand flex items-center gap-2"
+          >
+            <FaDownload /> Generate PDF
+          </button>
+          <button
             onClick={handlePrint}
             className="btn-outline flex items-center gap-2"
           >
@@ -176,8 +223,24 @@ export default function DischargedPatientSummary() {
         </div>
       </div>
 
+      {/* Printable container (wrapped so html2canvas captures only this) */}
+      <div id="discharge-summary">
       {/* Patient Header Card */}
       <div className="bg-gradient-to-r from-brand-50 to-brand-100 border border-brand-200 rounded-lg p-6 mb-6">
+        {/* render hospital header/logo if available */}
+        {hospital && (hospital.name || hospital.logo || hospital.logoUrl) && (
+          <div className="mb-4 flex justify-between items-start">
+            <div>
+              <div className="text-lg font-bold">{hospital.name}</div>
+              {hospital.location && <div className="text-sm text-gray-600">{hospital.location}</div>}
+            </div>
+            { (hospital.logo || hospital.logoUrl) && (
+              <div className="w-24 h-24 ml-4">
+                <img src={hospital.logo || hospital.logoUrl} alt="hospital logo" className="object-contain w-full h-full" />
+              </div>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <div className="text-sm text-gray-600">Patient Name</div>
@@ -625,6 +688,7 @@ export default function DischargedPatientSummary() {
             <div className="font-medium">{bedSummary?.dischargedAt ? new Date(bedSummary.dischargedAt).toLocaleString() : new Date().toLocaleString()}</div>
           </div>
         </div>
+      </div>
       </div>
       {/* Print Styles */}
       <style>{`

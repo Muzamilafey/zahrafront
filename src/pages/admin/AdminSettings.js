@@ -6,6 +6,8 @@ export default function AdminSettings(){
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [details, setDetails] = useState({ name: '', location: '', contacts: '' });
+  const [selectedLogo, setSelectedLogo] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [message, setMessage] = useState(null);
 
   useEffect(()=>{
@@ -19,6 +21,10 @@ export default function AdminSettings(){
           location: res.data.location || '',
           contacts: Array.isArray(res.data.contacts) ? res.data.contacts.join('\n') : (res.data.contacts || '')
         });
+        // if backend returns a logo url, set preview
+        if (res.data.logo || res.data.logoUrl) {
+          setLogoPreview(res.data.logo || res.data.logoUrl);
+        }
       }catch(e){
         // ignore
       }finally{ if(mounted) setLoading(false); }
@@ -28,14 +34,37 @@ export default function AdminSettings(){
 
   const onChange = (e) => setDetails(d => ({ ...d, [e.target.name]: e.target.value }));
 
+  const onLogoChange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    setSelectedLogo(f);
+    const url = URL.createObjectURL(f);
+    setLogoPreview(url);
+  };
+
   const save = async (e) => {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
     try{
+      // If a logo was selected, upload it first as multipart/form-data
+      if (selectedLogo) {
+        try {
+          const fd = new FormData();
+          fd.append('logo', selectedLogo);
+          // backend should handle this route - if not present, this will fail silently and we'll continue
+          await axiosInstance.post('/setting/hospital-details/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        } catch (e) {
+          console.warn('Logo upload failed:', e?.response?.data || e.message || e);
+          // continue to save other settings even if logo upload failed
+        }
+      }
+
       const payload = { ...details, contacts: details.contacts.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) };
       const res = await axiosInstance.post('/setting/hospital-details', payload);
       setMessage({ type: 'success', text: res.data.message || 'Saved' });
+      // if save successful, try refresh to pick up new logo url
+      try{ const r = await axiosInstance.get('/setting/hospital-details'); if (r.data.logo || r.data.logoUrl) setLogoPreview(r.data.logo || r.data.logoUrl); }catch(e){}
     }catch(err){
       setMessage({ type: 'error', text: err?.response?.data?.message || err.message || 'Failed to save' });
     }finally{ setSaving(false); }
@@ -59,6 +88,18 @@ export default function AdminSettings(){
 
             <label className="block mb-2 text-sm font-medium">Contacts (one per line)</label>
             <textarea name="contacts" value={details.contacts} onChange={onChange} className="w-full p-2 border rounded mb-4" rows={3} />
+
+            <label className="block mb-2 text-sm font-medium">Hospital Logo (optional)</label>
+            <div className="mb-3 flex items-center gap-4">
+              <input type="file" accept="image/*" onChange={onLogoChange} />
+              {logoPreview ? (
+                <div className="w-24 h-24 border rounded overflow-hidden flex items-center justify-center bg-white">
+                  <img src={logoPreview} alt="logo preview" className="object-contain w-full h-full" />
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">No logo set</div>
+              )}
+            </div>
 
             <div className="flex gap-2">
               <button className="btn-brand" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
