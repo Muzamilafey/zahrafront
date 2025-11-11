@@ -81,6 +81,7 @@ export default function Sidebar() {
         { to: '/dashboard/admin/users', label: 'Users', perm: 'manageUsers' },
         { to: '/dashboard/admin/doctors', label: 'Doctors', perm: 'doctors' },
         { to: '/dashboard/admin/settings', label: 'Settings', perm: 'settings' },
+        { to: '/dashboard/admin/register', label: 'Register User', perm: 'manageUsers' },
       ],
     },
     {
