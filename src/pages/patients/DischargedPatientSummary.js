@@ -25,41 +25,78 @@ export default function DischargedPatientSummary() {
     try {
       // Load patient details
       const patientRes = await axiosInstance.get(`/patients/${patientId}`);
-      setPatient(patientRes.data.patient);
+      const patientData = patientRes.data.patient;
+      setPatient(patientData);
       
-      if (patientRes.data.patient?.admission) {
-        setAdmission(patientRes.data.patient.admission);
+      // Get the most recent admission (which should be discharged)
+      let admissionData = null;
+      if (patientData?.admissionHistory && patientData.admissionHistory.length > 0) {
+        // Get the last (most recent) admission from history
+        admissionData = patientData.admissionHistory[patientData.admissionHistory.length - 1];
+      } else if (patientData?.admission?.dischargedAt) {
+        // Fallback to current admission if it's discharged
+        admissionData = patientData.admission;
+      }
+      
+      if (admissionData) {
+        setAdmission(admissionData);
+        setBedSummary({
+          ward: admissionData.ward || '-',
+          bed: admissionData.bed || '-',
+          roomNumber: admissionData.room || '-',
+          admittedAt: admissionData.admittedAt,
+          dischargedAt: admissionData.dischargedAt,
+        });
       }
 
-      // Load medications/prescriptions for this admission
+      // Load prescriptions for this patient (which should include medications)
       try {
-        const medicinesRes = await axiosInstance.get(`/patients/${patientId}/medications`);
-        setMedications(medicinesRes.data.medications || []);
-      } catch (e) {
-        console.warn('Could not load medications:', e.message);
-      }
-
-      // Load lab tests for this admission
-      try {
-        const labRes = await axiosInstance.get(`/patients/${patientId}/lab-tests`);
-        setLabTests(labRes.data.tests || []);
-      } catch (e) {
-        console.warn('Could not load lab tests:', e.message);
-      }
-
-      // Load bed summary (ward/bed usage during admission)
-      try {
-        if (patientRes.data.patient?.admission) {
-          setBedSummary({
-            ward: patientRes.data.patient.admission.ward || '-',
-            bed: patientRes.data.patient.admission.bed || '-',
-            roomNumber: patientRes.data.patient.admission.roomNumber || '-',
-            admittedAt: patientRes.data.patient.admission.admittedAt,
-            dischargedAt: patientRes.data.patient.admission.dischargedAt,
-          });
+        const prescRes = await axiosInstance.get(`/prescriptions`);
+        if (prescRes.data.prescriptions && admissionData) {
+          // Filter prescriptions from the discharge period for this patient
+          const relevantPrescriptions = prescRes.data.prescriptions
+            .filter(p => {
+              // Check if prescription's appointment's patient matches
+              if (p.appointment?.patient?._id !== patientData._id) return false;
+              // Check if prescription is within admission period
+              if (!admissionData?.admittedAt || !admissionData?.dischargedAt) return true;
+              const pDate = new Date(p.createdAt || p.appointment?.date || p.prescribedDate);
+              const admitDate = new Date(admissionData.admittedAt);
+              const dischargeDate = new Date(admissionData.dischargedAt);
+              return pDate >= admitDate && pDate <= dischargeDate;
+            })
+            .flatMap(p => p.drugs || []);
+          
+          setMedications(relevantPrescriptions);
         }
       } catch (e) {
-        console.warn('Could not load bed summary:', e.message);
+        console.warn('Could not load prescriptions:', e.message);
+        // Set empty array instead of error
+        setMedications([]);
+      }
+
+      // Load lab tests/orders for this patient
+      try {
+        const labRes = await axiosInstance.get(`/lab/orders`);
+        if (labRes.data.orders || labRes.data.tests) {
+          const allTests = labRes.data.orders || labRes.data.tests || [];
+          // Filter lab tests from the discharge period for this patient
+          const relevantTests = allTests.filter(t => {
+            // Check if test's patient matches
+            if (t.patient?._id !== patientData._id && t.patient !== patientData._id) return false;
+            // Check if test is within admission period
+            if (!admissionData?.admittedAt || !admissionData?.dischargedAt) return true;
+            const tDate = new Date(t.createdAt || t.date || t.requestedAt);
+            const admitDate = new Date(admissionData.admittedAt);
+            const dischargeDate = new Date(admissionData.dischargedAt);
+            return tDate >= admitDate && tDate <= dischargeDate;
+          });
+          setLabTests(relevantTests);
+        }
+      } catch (e) {
+        console.warn('Could not load lab tests:', e.message);
+        // Set empty array instead of error
+        setLabTests([]);
       }
     } catch (e) {
       setError(e?.response?.data?.message || 'Failed to load patient data');

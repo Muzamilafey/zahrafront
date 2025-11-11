@@ -1,20 +1,42 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
 
 export default function PatientList() {
   const { axiosInstance } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  
+  const status = searchParams.get('status') || 'all';
 
   useEffect(() => {
     loadPatients();
-  }, []);
+  }, [status]);
 
   const loadPatients = async () => {
     try {
-      const res = await axiosInstance.get('/patients');
+      let res;
+      if (status === 'admitted') {
+        res = await axiosInstance.get('/patients/admitted');
+      } else if (status === 'discharged') {
+        // Load all patients and filter those with admission history or past discharges
+        res = await axiosInstance.get('/patients');
+        // Filter to show only discharged patients
+        res.data.patients = (res.data.patients || []).filter(p => {
+          // A patient is discharged if:
+          // 1. They have admissionHistory (past admissions), OR
+          // 2. Their current admission has dischargedAt, OR
+          // 3. They have isAdmitted = false and admissionHistory is not empty
+          return (p.admissionHistory && p.admissionHistory.length > 0) || 
+                 (p.admission && p.admission.dischargedAt && !p.admission.isAdmitted);
+        });
+      } else {
+        res = await axiosInstance.get('/patients');
+      }
       setPatients(res.data.patients || []);
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to load patients', type: 'error' });
@@ -27,12 +49,30 @@ export default function PatientList() {
     return new Date(date).toLocaleDateString();
   };
 
+  const getPatientStatus = (patient) => {
+    if (patient.admission?.isAdmitted) {
+      return 'Admitted';
+    }
+    return 'Discharged';
+  };
+
+  const handleViewDischargeSummary = (patientId) => {
+    navigate(`/patients/${patientId}/discharge-summary`);
+  };
+
+  const pageTitle = 
+    status === 'admitted' ? 'Currently Admitted Patients' :
+    status === 'discharged' ? 'Discharged Patients' :
+    'All Patients';
+
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">All Patients</h2>
+      <h2 className="text-2xl font-semibold mb-4">{pageTitle}</h2>
       
       {loading ? (
         <div className="text-center">Loading patients...</div>
+      ) : patients.length === 0 ? (
+        <div className="text-center text-gray-500">No patients found</div>
       ) : (
         <div className="bg-white shadow overflow-hidden rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
@@ -72,13 +112,26 @@ export default function PatientList() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                       ${patient.admission?.isAdmitted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {patient.admission?.isAdmitted ? 'Admitted' : 'Not Admitted'}
+                      {getPatientStatus(patient)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-brand-600 hover:text-brand-900 mr-4">View Details</button>
-                    {!patient.admission?.isAdmitted && (
-                      <button className="text-brand-600 hover:text-brand-900">Admit</button>
+                    <button 
+                      onClick={() => navigate(`/patients/${patient._id}`)}
+                      className="text-brand-600 hover:text-brand-900 mr-4"
+                    >
+                      View Details
+                    </button>
+                    {!patient.admission?.isAdmitted && (patient.admissionHistory?.length > 0 || patient.admission?.dischargedAt) && (
+                      <button 
+                        onClick={() => handleViewDischargeSummary(patient._id)}
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        Discharge Summary
+                      </button>
+                    )}
+                    {patient.admission?.isAdmitted && (
+                      <button className="text-red-600 hover:text-red-900">Discharge</button>
                     )}
                   </td>
                 </tr>
