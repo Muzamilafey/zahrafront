@@ -302,7 +302,7 @@ export default function Sidebar({ role }) {
   }
 
   return (
-    <aside className="w-64 bg-white border-r min-h-screen p-4 hidden md:block sticky top-14" style={{ alignSelf: 'flex-start' }}>
+    <aside className="w-64 bg-white border-r h-screen p-4 hidden md:flex flex-col fixed left-0 top-14 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
           <div className="text-xl font-bold text-brand-700">CoreCare</div>
@@ -313,7 +313,7 @@ export default function Sidebar({ role }) {
         </button>
       </div>
       
-      <nav className="flex flex-col gap-2">
+      <nav className="flex flex-col gap-2 flex-1">
         {/* Patient management group - only show if user has permission */}
         {patientVisible && (
         <div>
