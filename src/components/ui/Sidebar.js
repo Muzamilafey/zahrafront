@@ -203,6 +203,7 @@ export default function Sidebar({ role }) {
 
   const [patientsOpen, setPatientsOpen] = useState(false);
   const [labOpen, setLabOpen] = useState(false);
+  const [admittedCount, setAdmittedCount] = useState(0);
 
   // collect lab-related links (those under /dashboard/lab) and filter by permissions
   const labItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/dashboard/lab'));
