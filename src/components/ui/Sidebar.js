@@ -163,11 +163,12 @@ export default function Sidebar({ role }) {
   // helper to check if a sidebar item should be visible based on explicit permissions
   const hasPermissionFor = (key) => {
     // if user has explicit permission set, use that
-    if (user && user.permissions && user.permissions.sidebar && typeof user.permissions.sidebar[key] !== 'undefined') {
-      return !!user.permissions.sidebar[key];
+    const allowed = user && user.permissions && user.permissions.sidebar && typeof user.permissions.sidebar[key] !== 'undefined' ? !!user.permissions.sidebar[key] : false;
+    if (user && user._id && !allowed && user.permissions?.sidebar) {
+      // debug: log denied permissions
+      // console.debug(`User ${user._id}: permission denied for key "${key}", current sidebar:`, user.permissions.sidebar);
     }
-    // by default, hide items unless explicitly assigned by admin
-    return false;
+    return allowed;
   };
 
   // helper to filter items based on whether user has any explicit permission assignments
@@ -192,7 +193,13 @@ export default function Sidebar({ role }) {
   };
 
   const items = filterByPermissions([...common, ...(patientVisible ? patientItems : []), ...(itemsByRole[role] || [])]);
-  const [admittedCount, setAdmittedCount] = useState(0);
+  
+  // DEBUG: log final filtered items
+  useEffect(() => {
+    if (user) {
+      console.debug(`[Sidebar] User: ${user._id}, Role: ${user.role}, Permissions:`, user.permissions?.sidebar || {}, 'Final items count:', items.length);
+    }
+  }, [user, items]);
 
   const [patientsOpen, setPatientsOpen] = useState(false);
   const [labOpen, setLabOpen] = useState(false);

@@ -24,7 +24,11 @@ export default function Sidebar() {
     // if permissions are defined on the user, prefer them
     if (user?.permissions && typeof user.permissions === 'object') {
       const sb = user.permissions.sidebar || {};
-      if (typeof sb[key] !== 'undefined') return !!sb[key];
+      if (typeof sb[key] !== 'undefined') {
+        const allowed = !!sb[key];
+        console.debug(`[Sidebar] hasAccess("${key}") =`, allowed, 'for user', user?._id);
+        return allowed;
+      }
     }
     return defaultCheck;
   };
@@ -137,9 +141,11 @@ export default function Sidebar() {
           }
           return visible ? (
             <MenuGroup key={g.id} title={g.title} open={openMenus[g.id]} onToggle={() => toggleMenu(g.id)}>
-              {g.items.map(it => (
-                <MenuItem key={it.to} to={it.to}>{it.label}</MenuItem>
-              ))}
+              {g.items.map(it => {
+                // show item if: admin (bypass), or user has explicit permission granted
+                const showItem = user?.role === 'admin' || hasAccess(it.perm, false);
+                return showItem ? <MenuItem key={it.to} to={it.to}>{it.label}</MenuItem> : null;
+              })}
             </MenuGroup>
           ) : null;
         })}
