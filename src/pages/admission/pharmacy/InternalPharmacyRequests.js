@@ -69,7 +69,16 @@ export default function InternalPharmacyRequests() {
 
     // send to backend to bill and deduct stock
     try {
-      await axiosInstance.post('/inpatient/internal-pharmacy', { patientId, drugId: selectedDrug._id, qty });
+      await axiosInstance.post('/inpatient/internal-pharmacy', { 
+        patientId, 
+        drugId: selectedDrug._id, 
+        qty,
+        batchNumber: selectedDrug.batchNumber,
+        prescriptionTerm,
+        duration,
+        instructions,
+        includeInDischarge: dischargeDrug === 'yes'
+      });
     } catch (e) {
       console.error('Failed to create internal pharmacy request', e);
       alert(e.response?.data?.message || 'Failed to add medication to inpatient bill');

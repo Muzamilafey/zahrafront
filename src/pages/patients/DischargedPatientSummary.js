@@ -116,6 +116,32 @@ export default function DischargedPatientSummary() {
         setMedications([]);
       }
 
+      // Load internal pharmacy requests for this patient
+      try {
+        const internalPharmRes = await axiosInstance.get(`/inpatient/internal-pharmacy/${patientId}`);
+        if (internalPharmRes.data.requests && Array.isArray(internalPharmRes.data.requests)) {
+          // Convert internal pharmacy requests to medication format
+          const internalMeds = internalPharmRes.data.requests.map(req => ({
+            _id: req._id,
+            name: req.drugName,
+            batchNumber: req.batchNumber,
+            quantity: req.quantity,
+            prescriptionTerm: req.prescriptionTerm,
+            duration: req.duration,
+            instructions: req.instructions,
+            totalCost: (req.price || 0) * (req.quantity || 1),
+            price: req.price,
+            isInternalRequest: true,
+            internalRequestId: req._id,
+            createdAt: req.createdAt
+          }));
+          // Merge with prescriptions
+          setMedications(prev => [...prev, ...internalMeds]);
+        }
+      } catch (e) {
+        console.warn('Could not load internal pharmacy requests:', e.message);
+      }
+
       // Load lab tests/orders for this patient
       try {
         const labRes = await axiosInstance.get(`/lab/orders`);
@@ -139,6 +165,28 @@ export default function DischargedPatientSummary() {
         // Set empty array instead of error
         setLabTests([]);
       }
+
+      // Load internal lab requests for this patient
+      try {
+        const internalLabRes = await axiosInstance.get(`/inpatient/internal-lab/${patientId}`);
+        if (internalLabRes.data.requests && Array.isArray(internalLabRes.data.requests)) {
+          // Convert internal lab requests to test format
+          const internalTests = internalLabRes.data.requests.map(req => ({
+            _id: req._id,
+            name: req.testName,
+            testType: req.testType,
+            isInternalRequest: true,
+            internalRequestId: req._id,
+            createdAt: req.createdAt,
+            status: req.status
+          }));
+          // Merge with lab tests
+          setLabTests(prev => [...prev, ...internalTests]);
+        }
+      } catch (e) {
+        console.warn('Could not load internal lab requests:', e.message);
+      }
+
       // load hospital settings for header/logo
       try{
         const hRes = await axiosInstance.get('/setting/hospital-details');
