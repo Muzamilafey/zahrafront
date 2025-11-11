@@ -149,10 +149,12 @@ export default function AdminUsers() {
     <div className="p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold mb-4 text-brand-700">Users</h2>
-          <div className="flex items-center gap-2">
-            <button className={`text-sm px-3 py-1 rounded ${view==='all'? 'bg-brand-600 text-white':'bg-gray-100'}`} onClick={()=>setView('all')}>All</button>
-            <button className={`text-sm px-3 py-1 rounded ${view==='inactive'? 'bg-brand-600 text-white':'bg-gray-100'}`} onClick={()=>setView('inactive')}>Inactive</button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button className={`text-sm px-3 py-1 rounded ${view==='all'? 'bg-brand-600 text-white':'bg-gray-100'}`} onClick={()=>setView('all')}>All</button>
+          <button className={`text-sm px-3 py-1 rounded ${view==='inactive'? 'bg-brand-600 text-white':'bg-gray-100'}`} onClick={()=>setView('inactive')}>Inactive</button>
+          {/* Register User button for admins */}
+          <a href="/dashboard/admin/register" className="text-sm px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700">Register User</a>
+        </div>
       </div>
         <div className="bg-white rounded p-4 shadow">
           <div className="mb-3 flex gap-2 items-center">
