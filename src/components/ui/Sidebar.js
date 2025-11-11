@@ -37,6 +37,7 @@ export default function Sidebar({ role }) {
       { to: '/dashboard/admin/managewards', label: 'Manage Wards', icon: <FaFolder />, perm: 'manageWards' },
       { to: '/dashboard/admin/nurseassignment', label: 'Nurse Assignment', icon: <FaUsers />, perm: 'nurseAssignment' },
       { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/pos', label: 'POS', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       // Laboratory links for admins
