@@ -125,6 +125,16 @@ export default function Sidebar({ role }) {
     return role === 'admin' || role === 'doctor';
   })();
 
+  // helper to check if a sidebar item should be visible based on explicit permissions
+  const hasPermissionFor = (key) => {
+    // if user has explicit permission set, use that
+    if (user && user.permissions && user.permissions.sidebar && typeof user.permissions.sidebar[key] !== 'undefined') {
+      return !!user.permissions.sidebar[key];
+    }
+    // by default, hide items unless explicitly assigned by admin
+    return false;
+  };
+
   const items = [...common, ...(patientVisible ? patientItems : []), ...(itemsByRole[role] || [])];
   const [admittedCount, setAdmittedCount] = useState(0);
 
@@ -192,7 +202,8 @@ export default function Sidebar({ role }) {
               </button>
             </div>
             <nav className="flex flex-col gap-2 p-2">
-              {/* Patient management group in hover-expanded overlay */}
+              {/* Patient management group in hover-expanded overlay - only show if user has permission */}
+              {patientVisible && (
               <div>
                 <button onClick={() => setPatientsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
                   <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaUsers /></div><div>Patients</div></div>
@@ -209,6 +220,7 @@ export default function Sidebar({ role }) {
                   </div>
                 )}
               </div>
+              )}
 
               {/* remaining items */}
               {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
@@ -237,7 +249,8 @@ export default function Sidebar({ role }) {
       </div>
       
       <nav className="flex flex-col gap-2">
-        {/* Patient management group */}
+        {/* Patient management group - only show if user has permission */}
+        {patientVisible && (
         <div>
           <button onClick={() => setPatientsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
             <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaUsers /></div><div>Patients</div></div>
@@ -254,6 +267,7 @@ export default function Sidebar({ role }) {
             </div>
           )}
         </div>
+        )}
 
         {/* Laboratory collapsible group */}
         {labItems.length > 0 && (

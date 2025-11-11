@@ -137,7 +137,7 @@ export default function Profile() {
 
         {/* Footer */}
         <div className="bg-gray-100 px-6 py-4 text-center text-sm text-gray-500">
-          GENZ Community Hospital • Patient/Staff Portal
+          CoreCare • Hospital Management Informatio System
         </div>
       </div>
       {patientRecords && (
