@@ -295,7 +295,6 @@ export default function Sidebar({ role }) {
       </div>
     );
   }
-  }
 
   return (
     <aside className="w-64 bg-white border-r h-screen p-4 hidden md:flex flex-col fixed left-0 top-14 overflow-y-auto">
