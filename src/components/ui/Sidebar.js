@@ -141,57 +141,46 @@ export default function Sidebar({ role }) {
   const filterByPermissions = (itemList) => {
     // admin sees everything
     if (user && user.role === 'admin') return itemList;
-    // STRICT MODE: Always require explicit permission for all items
-    // Only show items if user has explicit permission OR if they are common items (Overview, Profile)
-    if (!user || !user.permissions || !user.permissions.sidebar) {
-      // no permissions set → only show common items (Overview, Profile)
+
+    // STRICT MODE: Only show Overview/Profile when no permissions set
+    if (!user || !user.permissions || !user.permissions.sidebar || Object.keys(user.permissions.sidebar).length === 0) {
       return itemList.filter(item => item === common[0] || item === common[1]);
     }
-    
-    // user has permissions object → only show items they have explicit permission for + common items
+
+    // helper to map an item's path to a permission key
+    const permKeyFor = (item) => {
+      if (!item || !item.to) return null;
+      const t = item.to;
+      if (t.startsWith('/patients') || t.includes('/patients') || t.includes('/admitpatient')) return 'patients';
+      if (t === '/appointments' || t.includes('/appointments')) return 'appointments';
+      if (t.includes('/dashboard/admin/users')) return 'manageUsers';
+      if (t.includes('/dashboard/admin/settings')) return 'settings';
+      if (t.includes('/dashboard/admin/doctors') || t.includes("/dashboard/doctor")) return 'doctors';
+      if (t.includes('/dashboard/admin/departments')) return 'departments';
+      if (t.includes('/dashboard/admin/slots') || t.includes('/slots')) return 'availableSlots';
+      if (t === '/billing' || t.includes('/billing')) return 'billing';
+      if (t.includes('/dashboard/admin/managewards')) return 'manageWards';
+      if (t.includes('/dashboard/admin/nurseassignment')) return 'nurseAssignment';
+      if (t.includes('/pharmacy') || t.includes('/dashboard/pharmacy')) return 'inventory';
+      if (t.includes('/dashboard/admin/drugs') || t.includes('/drugs')) return 'drugs';
+      if (t.includes('/dashboard/messages') || t.includes('/messages')) return 'messages';
+      if (t.startsWith('/dashboard/lab') || t.includes('/dashboard/lab')) return 'lab';
+      // fallback: try to match by label words
+      const label = (item.label || '').toLowerCase();
+      if (label.includes('appointment')) return 'appointments';
+      if (label.includes('patient')) return 'patients';
+      if (label.includes('lab')) return 'lab';
+      if (label.includes('billing') || label.includes('invoice')) return 'billing';
+      if (label.includes('user')) return 'manageUsers';
+      return null;
+    };
+
+    // user has explicit permissions: show only items they have permission for + common
     return itemList.filter(item => {
-      // always show common items
       if (item === common[0] || item === common[1]) return true;
-      
-      // map item label to permission key
-      const permKey = {
-        'All Patients': 'patients',
-        'Register Patient': 'patients',
-        'Admit Patient': 'patients',
-        'Admitted Patients': 'patients',
-        'Patient Visits': 'patients',
-        'Visits Report': 'patients',
-        'Appointments': 'appointments',
-        'Manage Users': 'manageUsers',
-        'Settings': 'settings',
-        'Doctors': 'doctors',
-        'Departments': 'departments',
-        "Doctors' Schedule": 'doctorsSchedule',
-        'Consultations': 'consultations',
-        'Available Slots': 'availableSlots',
-        'Payments / Invoices': 'billing',
-        'Manage Wards': 'manageWards',
-        'Nurse Assignment': 'nurseAssignment',
-        'Inventory': 'inventory',
-        'Drugs': 'drugs',
-        'Messages': 'messages',
-        'Lab Dashboard': 'lab',
-        'Lab Queue': 'labQueue',
-        'View Lab Requests': 'labRequests',
-        'Review Lab Tests': 'lab',
-        'Lab Tests Catalog': 'lab',
-        'Lab Tests Prices': 'lab',
-        'Lab Visits Report': 'lab',
-        'Lab Templates': 'lab',
-      }[item.label];
-      
-      // require explicit permission for the item
-      if (permKey) {
-        return hasPermissionFor(permKey);
-      }
-      
-      // unlabeled items: hide by default
-      return false;
+      const key = permKeyFor(item);
+      if (!key) return false;
+      return hasPermissionFor(key);
     });
   };
 
