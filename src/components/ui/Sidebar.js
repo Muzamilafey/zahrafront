@@ -3,7 +3,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
-export default function Sidebar({ role }) {
+export default function Sidebar({ role, onCollapse }) {
   const { axiosInstance, user } = useContext(AuthContext);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -13,7 +13,8 @@ export default function Sidebar({ role }) {
 
   useEffect(()=>{
     try { localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false'); } catch(e){}
-  },[collapsed]);
+    if (onCollapse) onCollapse(collapsed);
+  },[collapsed, onCollapse]);
 
   const toggleCollapsed = () => setCollapsed(s => !s);
 
