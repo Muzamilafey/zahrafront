@@ -55,16 +55,16 @@ export default function AdminUsers() {
     }catch(e){ alert('Update failed'); }
   };
 
-  const togglePatientsPermission = async (u) => {
+  const togglePermission = async (u, key) => {
     try {
-      const current = !!(u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients);
-      const updated = { ...(u.permissions || {}), sidebar: { ...(u.permissions?.sidebar || {}), patients: !current } };
+      const current = !!(u.permissions && u.permissions.sidebar && u.permissions.sidebar[key]);
+      const updated = { ...(u.permissions || {}), sidebar: { ...(u.permissions?.sidebar || {}), [key]: !current } };
       // send sanitized update to backend
-  const putRes = await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
-  console.debug('togglePatientsPermission response', putRes?.data);
-  // optimistic update in UI
-  const getRes = await axiosInstance.get('/users');
-  setUsers(getRes.data.users || []);
+      const putRes = await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
+      console.debug('togglePermission response', putRes?.data);
+      // refresh list
+      const getRes = await axiosInstance.get('/users');
+      setUsers(getRes.data.users || []);
     } catch (e) { console.error(e); alert('Failed to update permission'); }
   };
 
@@ -105,11 +105,14 @@ export default function AdminUsers() {
     email: u.email || '-',
     role: u.role || '-',
     patients: (
-      <div>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" checked={!!(u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients)} onChange={()=>togglePatientsPermission(u)} />
-          <span className="text-sm">Patients</span>
-        </label>
+      <div className="flex flex-col gap-2">
+        {/* show a handful of common sidebar permission toggles inline for quick admin access */}
+        {['patients','messages','appointments','availableSlots','manageUsers','billing','lab','drugs','inventory'].map(k => (
+          <label key={k} className="flex items-center gap-2">
+            <input type="checkbox" checked={!!(u.permissions && u.permissions.sidebar && u.permissions.sidebar[k])} onChange={()=>togglePermission(u, k)} />
+            <span className="text-sm">{k}</span>
+          </label>
+        ))}
       </div>
     ),
     actions: (<div>
@@ -133,8 +136,14 @@ export default function AdminUsers() {
     role: u.role || '-',
     patients: (
       <div>
-        {u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
+        {u.permissions && u.permissions.sidebar && Object.keys(u.permissions.sidebar).length > 0 ? (
+          <div className="flex gap-1 flex-wrap">
+            {['patients','messages','appointments','availableSlots','manageUsers','billing','lab','drugs','inventory'].map(k => (
+              u.permissions.sidebar[k] ? (
+                <span key={k} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{k}</span>
+              ) : null
+            ))}
+          </div>
         ) : (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
         )}
