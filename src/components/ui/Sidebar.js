@@ -55,12 +55,29 @@ export default function Sidebar({ role }) {
       { to: '/dashboard/doctor/admitted', label: 'Admitted Patients', icon: <FaUsers />, perm: 'patients' },
       { to: '/dashboard/doctor/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // admin-grantable permissions for doctors
+      { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock />, perm: 'availableSlots' },
+      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
+      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
+      { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
+      { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers />, perm: 'manageUsers' },
     ],
     pharmacist: [
       { to: '/dashboard/pharmacy', label: 'Inventory', icon: <FaPills />, perm: 'inventory' },
       { to: '/pharmacy/pos', label: 'POS', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
       { to: '/dashboard/pharmacy/transactions', label: 'Transactions', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // admin-grantable permissions
+      { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock />, perm: 'availableSlots' },
+      { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+      { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
     ],
     finance: [
       { to: '/billing', label: 'Billing', icon: <FaFileInvoiceDollar />, perm: 'billing' },
@@ -69,11 +86,19 @@ export default function Sidebar({ role }) {
       { to: '/dashboard/finance/reports', label: 'Reports', icon: <FaFileInvoiceDollar />, perm: 'billing' },
       { to: '/dashboard/finance/refunds', label: 'Refunds', icon: <FaFileInvoiceDollar />, perm: 'billing' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // admin-grantable permissions
+      { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers />, perm: 'manageUsers' },
     ],
     receptionist: [
       { to: '/dashboard/reception', label: 'Registration', icon: <FaUserPlus />, perm: 'patients' },
       { to: '/dashboard/reception/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // admin-grantable permissions
+      { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock />, perm: 'availableSlots' },
+      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
     ],
     patient: [
       { to: '/dashboard/patient/appointments', label: 'My Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
@@ -83,6 +108,11 @@ export default function Sidebar({ role }) {
       { to: '/dashboard/nurse', label: 'Nurse Dashboard', icon: <FaUsers />, perm: 'nurse' },
       { to: '/dashboard/nurse/admissions', label: 'Admission History', icon: <FaClock />, perm: 'patients' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // admin-grantable permissions
+      { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
     ],
     lab: [
       { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
@@ -94,6 +124,11 @@ export default function Sidebar({ role }) {
       { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
       { to: '/patients', label: 'Inpatient Requests', icon: <FaUsers />, perm: 'patients' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      // admin-grantable permissions
+      { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
     ],
     cleaning: [
       { to: '/dashboard/staff', label: 'My Tasks', icon: <FaBoxes /> },
