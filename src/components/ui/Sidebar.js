@@ -137,13 +137,19 @@ export default function Sidebar({ role }) {
 
   // helper to filter items based on whether user has any explicit permission assignments
   const filterByPermissions = (itemList) => {
-    // if user has no explicit permissions at all, show all role-based items
-    if (!user || !user.permissions || !user.permissions.sidebar || Object.keys(user.permissions.sidebar).length === 0) {
-      return itemList;
+    // STRICT MODE: Always require explicit permission for all items
+    // Only show items if user has explicit permission OR if they are common items (Overview, Profile)
+    if (!user || !user.permissions || !user.permissions.sidebar) {
+      // no permissions set → only show common items (Overview, Profile)
+      return itemList.filter(item => item === common[0] || item === common[1]);
     }
-    // if user has explicit permissions, only show items they have permission for
+    
+    // user has permissions object → only show items they have explicit permission for + common items
     return itemList.filter(item => {
-      // map item label to permission key (e.g., "Patient Management" -> "patients", "Manage Users" -> "manageUsers")
+      // always show common items
+      if (item === common[0] || item === common[1]) return true;
+      
+      // map item label to permission key
       const permKey = {
         'All Patients': 'patients',
         'Register Patient': 'patients',
@@ -174,11 +180,14 @@ export default function Sidebar({ role }) {
         'Lab Visits Report': 'lab',
         'Lab Templates': 'lab',
       }[item.label];
-      // if item has a permission key, check it; otherwise, always show common items (Overview, Profile)
+      
+      // require explicit permission for the item
       if (permKey) {
         return hasPermissionFor(permKey);
       }
-      return true; // common items always shown
+      
+      // unlabeled items: hide by default
+      return false;
     });
   };
 
