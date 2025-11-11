@@ -17,10 +17,46 @@ export default function DischargedPatientSummary() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hospital, setHospital] = useState(null);
+  const [editingDiagnoses, setEditingDiagnoses] = useState(false);
+  const [draftFinalDiagnosis, setDraftFinalDiagnosis] = useState('');
+  const [draftSecondaryDiagnoses, setDraftSecondaryDiagnoses] = useState([]);
+  const [diagSaving, setDiagSaving] = useState(false);
+  const [diagMessage, setDiagMessage] = useState(null);
+  const [diagSuggestions, setDiagSuggestions] = useState([]);
+  const [diagLoadingSuggestions, setDiagLoadingSuggestions] = useState(false);
+  const [diagSugForIndex, setDiagSugForIndex] = useState(null); // null = none, -1 = final diagnosis, >=0 = secondary index
+  const diagSugTimer = React.useRef(null);
 
   useEffect(() => {
     loadPatientData();
   }, [patientId]);
+
+  // when admission changes, initialize drafts
+  useEffect(() => {
+    if (admission) {
+      setDraftFinalDiagnosis(admission.finalDiagnosis || admission.dischargeDiagnosis || '');
+      const secs = (admission.secondaryDiagnoses && admission.secondaryDiagnoses.length) ? admission.secondaryDiagnoses.slice() : [];
+      setDraftSecondaryDiagnoses(secs);
+    }
+  }, [admission]);
+
+  // ICD-10 / diagnosis autocomplete
+  const fetchDiagSuggestions = async (q, forIndex = -1) => {
+    if (!q || q.trim().length < 2) { setDiagSuggestions([]); setDiagLoadingSuggestions(false); return; }
+    setDiagLoadingSuggestions(true);
+    try {
+      const resp = await axiosInstance.get(`/diagnoses?q=${encodeURIComponent(q)}`);
+      setDiagSuggestions(resp.data.results || []);
+      setDiagSugForIndex(forIndex);
+    } catch (e) {
+      setDiagSuggestions([]);
+    } finally { setDiagLoadingSuggestions(false); }
+  };
+
+  const scheduleFetchDiag = (q, forIndex = -1) => {
+    if (diagSugTimer.current) clearTimeout(diagSugTimer.current);
+    diagSugTimer.current = setTimeout(()=>fetchDiagSuggestions(q, forIndex), 300);
+  };
 
   const loadPatientData = async () => {
     setLoading(true);
@@ -304,7 +340,63 @@ export default function DischargedPatientSummary() {
             </div>
             <div className="mt-2">
               <div className="text-sm text-gray-600">Final Diagnosis</div>
-              <div className="font-medium">{admission?.finalDiagnosis || admission?.dischargeDiagnosis || '-'}</div>
+              <div className="font-medium">
+                { !editingDiagnoses ? (
+                  (admission?.finalDiagnosis || admission?.dischargeDiagnosis) || '-'
+                ) : (
+                  <div className="relative">
+                    <input value={draftFinalDiagnosis} onChange={e=>{ setDraftFinalDiagnosis(e.target.value); scheduleFetchDiag(e.target.value, -1); }} className="w-full p-2 border rounded" />
+                    {diagSugForIndex === -1 && diagSuggestions && diagSuggestions.length > 0 && (
+                      <div className="absolute z-20 bg-white border mt-1 w-full shadow rounded max-h-48 overflow-auto">
+                        {diagSuggestions.map((s, i) => (
+                          <div key={i} className="p-2 hover:bg-gray-100 cursor-pointer" onClick={()=>{
+                            const val = s.code ? `${s.code} ${s.term}` : s.term;
+                            setDraftFinalDiagnosis(val);
+                            setDiagSuggestions([]);
+                            setDiagSugForIndex(null);
+                          }}>{s.code ? `${s.code} — ${s.term}` : s.term}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="mt-2">
+                <div className="text-sm text-gray-600">Secondary / Additional Diagnoses</div>
+                {!editingDiagnoses ? (
+                  <div className="font-medium">{(admission?.secondaryDiagnoses && admission.secondaryDiagnoses.length) ? admission.secondaryDiagnoses.join('; ') : '-'}</div>
+                ) : (
+                  <div>
+                    {draftSecondaryDiagnoses.map((d, idx) => (
+                      <div key={idx} className="flex gap-2 items-center mb-2">
+                        <div className="relative flex-1">
+                          <input value={d} onChange={e=>{
+                            const v = e.target.value;
+                            setDraftSecondaryDiagnoses(s => { const copy = s.slice(); copy[idx]=v; return copy; });
+                            scheduleFetchDiag(v, idx);
+                          }} className="w-full p-2 border rounded" />
+                          {diagSugForIndex === idx && diagSuggestions && diagSuggestions.length > 0 && (
+                            <div className="absolute z-20 bg-white border mt-1 w-full shadow rounded max-h-48 overflow-auto">
+                              {diagSuggestions.map((s, i) => (
+                                <div key={i} className="p-2 hover:bg-gray-100 cursor-pointer" onClick={()=>{
+                                  const val = s.code ? `${s.code} ${s.term}` : s.term;
+                                  setDraftSecondaryDiagnoses(sList => { const copy = sList.slice(); copy[idx] = val; return copy; });
+                                  setDiagSuggestions([]);
+                                  setDiagSugForIndex(null);
+                                }}>{s.code ? `${s.code} — ${s.term}` : s.term}</div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button type="button" className="btn-outline" onClick={()=>setDraftSecondaryDiagnoses(s=>s.filter((_,i)=>i!==idx))}>Remove</button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <button type="button" className="btn-outline" onClick={()=>setDraftSecondaryDiagnoses(s=>[...s,''])}>Add diagnosis</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -337,6 +429,51 @@ export default function DischargedPatientSummary() {
               </span>
             </div>
           </div>
+        </div>
+        <div className="mt-4">
+          {!editingDiagnoses ? (
+            <div className="flex gap-2">
+              <button className="btn-brand" onClick={()=>setEditingDiagnoses(true)}>Edit Diagnoses</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button className="btn-brand" disabled={diagSaving} onClick={async ()=>{
+                setDiagSaving(true); setDiagMessage(null);
+                const payload = { finalDiagnosis: draftFinalDiagnosis, secondaryDiagnoses: draftSecondaryDiagnoses.filter(Boolean) };
+                try{
+                  // Try updating admission record first
+                  if (admission?._id) {
+                    try{
+                      await axiosInstance.put(`/admissions/${admission._id}`, payload);
+                    }catch(e){
+                      // if admission endpoint not available, try patient admission endpoint
+                      if (e?.response?.status === 404 || e?.response?.status === 400) {
+                        await axiosInstance.put(`/patients/${patientId}/admission`, payload);
+                      } else throw e;
+                    }
+                  } else {
+                    // fallback: update patient admission resource
+                    await axiosInstance.put(`/patients/${patientId}/admission`, payload);
+                  }
+                  // optimistic UI update
+                  setAdmission(a => ({ ...(a||{}), ...payload }));
+                  setEditingDiagnoses(false);
+                  setDiagMessage({ type:'success', text:'Saved diagnoses' });
+                }catch(err){
+                  console.error('Save diagnoses failed', err);
+                  setDiagMessage({ type:'error', text: err?.response?.data?.message || 'Failed to save diagnoses' });
+                }finally{ setDiagSaving(false); setTimeout(()=>setDiagMessage(null),3000); }
+              }}>{diagSaving ? 'Saving…' : 'Save'}</button>
+              <button className="btn-outline" disabled={diagSaving} onClick={()=>{
+                // revert drafts to current admission values
+                setDraftFinalDiagnosis(admission?.finalDiagnosis || admission?.dischargeDiagnosis || '');
+                setDraftSecondaryDiagnoses((admission?.secondaryDiagnoses && admission.secondaryDiagnoses.length) ? admission.secondaryDiagnoses.slice() : []);
+                setEditingDiagnoses(false);
+                setDiagMessage(null);
+              }}>Cancel</button>
+              {diagMessage && <div className={`p-2 rounded ${diagMessage.type==='error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{diagMessage.text}</div>}
+            </div>
+          )}
         </div>
 
         {/* Bed Summary */}
