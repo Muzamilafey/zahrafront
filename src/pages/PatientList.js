@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function PatientList() {
   const { axiosInstance } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, admitted, discharged
@@ -97,9 +98,17 @@ export default function PatientList() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link to={`/patients/${patient._id}`} className="text-brand-600 hover:text-brand-900">
+                    <Link to={`/patients/${patient._id}`} className="text-brand-600 hover:text-brand-900 mr-4">
                       View Details
                     </Link>
+                    {!patient.isAdmitted && patient.admission?.dischargedAt && (
+                      <button
+                        onClick={() => navigate(`/patients/${patient._id}/discharge-summary`)}
+                        className="text-green-600 hover:text-green-900 font-semibold"
+                      >
+                        View Discharge Summary
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

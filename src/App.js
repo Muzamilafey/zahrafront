@@ -84,6 +84,7 @@ import NewLabBill from './pages/admission/billing/NewLabBill';
 import NewPharmacyBill from './pages/admission/billing/NewPharmacyBill';
 import Placeholder from './components/Placeholder';
 import DischargeSummary from './pages/patients/DischargeSummary';
+import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
 
@@ -182,7 +183,7 @@ function App() {
 
           {/* Clinical Documentation */}
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargedPatientSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/diagnosis" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Diagnosis" /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/referral-letter" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Referral Letter" /></ErrorBoundary></Layout></PrivateRoute>} />
           
