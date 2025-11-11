@@ -155,20 +155,32 @@ export default function Sidebar({ role }) {
       if (t === '/appointments' || t.includes('/appointments')) return 'appointments';
       if (t.includes('/dashboard/admin/users')) return 'manageUsers';
       if (t.includes('/dashboard/admin/settings')) return 'settings';
-      if (t.includes('/dashboard/admin/doctors') || t.includes("/dashboard/doctor")) return 'doctors';
+      if (t.includes('/dashboard/admin/doctors') || t.includes('/dashboard/doctor')) return 'doctors';
       if (t.includes('/dashboard/admin/departments')) return 'departments';
       if (t.includes('/dashboard/admin/slots') || t.includes('/slots')) return 'availableSlots';
       if (t === '/billing' || t.includes('/billing')) return 'billing';
-      if (t.includes('/dashboard/admin/managewards')) return 'manageWards';
-      if (t.includes('/dashboard/admin/nurseassignment')) return 'nurseAssignment';
+      if (t.includes('/dashboard/admin/managewards') || t.includes('/wards')) return 'manageWards';
+      if (t.includes('/dashboard/admin/nurseassignment') || t.includes('nurseassignment')) return 'nurseAssignment';
       if (t.includes('/pharmacy') || t.includes('/dashboard/pharmacy')) return 'inventory';
       if (t.includes('/dashboard/admin/drugs') || t.includes('/drugs')) return 'drugs';
       if (t.includes('/dashboard/messages') || t.includes('/messages')) return 'messages';
-      if (t.startsWith('/dashboard/lab') || t.includes('/dashboard/lab')) return 'lab';
+      // lab sub-sections
+      if (t.includes('/dashboard/lab/queue')) return 'labQueue';
+      if (t.includes('/dashboard/lab/requests')) return 'labRequests';
+      if (t.includes('/dashboard/lab')) return 'lab';
       // fallback: try to match by label words
       const label = (item.label || '').toLowerCase();
       if (label.includes('appointment')) return 'appointments';
       if (label.includes('patient')) return 'patients';
+      if (label.includes('consult')) return 'consultations';
+      if (label.includes('slot')) return 'availableSlots';
+      if (label.includes('ward')) return 'manageWards';
+      if (label.includes('nurse')) return 'nurseAssignment';
+      if (label.includes('inventory') || label.includes('pharmacy')) return 'inventory';
+      if (label.includes('drug')) return 'drugs';
+      if (label.includes('message')) return 'messages';
+      if (label.includes('lab queue')) return 'labQueue';
+      if (label.includes('lab request') || label.includes('lab requests')) return 'labRequests';
       if (label.includes('lab')) return 'lab';
       if (label.includes('billing') || label.includes('invoice')) return 'billing';
       if (label.includes('user')) return 'manageUsers';
