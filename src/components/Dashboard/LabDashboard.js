@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import ThemeToggle from '../ui/ThemeToggle';
 
 // Lab dashboard: allow quick actions on lab orders (start, complete, attach results, edit, history)
 
 export default function LabDashboard(){
+  const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
   const { socket } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
@@ -156,10 +158,20 @@ export default function LabDashboard(){
         </div>
 
         <div className="bg-white rounded p-4 shadow">
-          <h3 className="font-semibold mb-2">Quick Actions</h3>
+          <h3 className="font-semibold mb-4">Quick Actions</h3>
           <div className="space-y-2">
             <button className="btn-modern w-full">Record Result</button>
             <button className="btn-modern w-full">Assign Sample</button>
+          </div>
+          <hr className="my-4" />
+          <h3 className="font-semibold mb-3">Lab Pages</h3>
+          <div className="space-y-2 text-sm">
+            <button onClick={() => navigate('/dashboard/lab/queue')} className="btn-outline w-full text-left">Lab Queue</button>
+            <button onClick={() => navigate('/dashboard/lab/requests')} className="btn-outline w-full text-left">Lab Requests</button>
+            <button onClick={() => navigate('/dashboard/lab/tests')} className="btn-outline w-full text-left">Lab Tests Catalog</button>
+            <button onClick={() => navigate('/dashboard/lab/prices')} className="btn-outline w-full text-left">Lab Tests Prices</button>
+            <button onClick={() => navigate('/dashboard/lab/patient-report')} className="btn-outline w-full text-left">Lab Visits Report</button>
+            <button onClick={() => navigate('/dashboard/lab/templates')} className="btn-outline w-full text-left">Lab Templates</button>
           </div>
         </div>
       </div>
