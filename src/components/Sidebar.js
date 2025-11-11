@@ -57,89 +57,81 @@ export default function Sidebar() {
       {open && <div className="flex flex-col">{children}</div>}
     </div>
   );
+  // Define groups and items with explicit perm keys (align with AdminUser sidebar options)
+  const groups = [
+    {
+      id: 'patients',
+      title: 'Patient Management',
+      defaultCheck: user?.role === 'admin',
+      items: [
+        { to: '/patients', label: 'All Patients', perm: 'patients' },
+        { to: '/patients/register', label: 'Register Patient', perm: 'patients' },
+        { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', perm: 'patients' },
+        { to: '/patients/admitted', label: 'Admitted Patients', perm: 'patients' },
+        { to: '/patients/visits', label: 'Patient Visits', perm: 'patients' },
+        { to: '/patients/visits/report', label: 'Visits Report', perm: 'patients' },
+      ],
+    },
+    {
+      id: 'admin',
+      title: 'Administration',
+      defaultCheck: user?.role === 'admin',
+      items: [
+        { to: '/dashboard/admin', label: 'Dashboard', perm: 'manageUsers' },
+        { to: '/dashboard/admin/users', label: 'Users', perm: 'manageUsers' },
+        { to: '/dashboard/admin/doctors', label: 'Doctors', perm: 'doctors' },
+        { to: '/dashboard/admin/settings', label: 'Settings', perm: 'settings' },
+      ],
+    },
+    {
+      id: 'appointments',
+      title: 'Appointments',
+      defaultCheck: true,
+      items: [
+        { to: '/appointments', label: 'View Appointments', perm: 'appointments' },
+        { to: '/appointments', label: 'Schedule Appointment', perm: 'appointments' },
+      ],
+    },
+    {
+      id: 'lab',
+      title: 'Laboratory',
+      defaultCheck: ['admin','doctor','lab_technician','nurse','finance'].includes(user?.role),
+      items: [
+        { to: '/dashboard/lab/queue', label: 'Lab Queue', perm: 'labQueue' },
+        { to: '/dashboard/lab/requests', label: 'Lab Requests', perm: 'labRequests' },
+        { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', perm: 'lab' },
+        { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', perm: 'lab' },
+        { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', perm: 'lab' },
+        { to: '/dashboard/lab/templates', label: 'Register Lab Templates', perm: 'lab' },
+        { to: '/patients', label: 'Inpatient Requests', perm: 'patients' },
+      ],
+    },
+    {
+      id: 'billing',
+      title: 'Billing',
+      defaultCheck: ['admin', 'finance'].includes(user?.role),
+      items: [
+        { to: '/billing', label: 'Billing Overview', perm: 'billing' },
+        { to: '/billing/transactions', label: 'Transactions', perm: 'billing' },
+        { to: '/billing/reports', label: 'Reports', perm: 'billing' },
+      ],
+    },
+  ];
 
   return (
     <div className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        {/* Patients Section - hidden by default for non-admins until admin grants permission */}
-              {hasAccess('patients', user?.role === 'admin') && (
-        <MenuGroup
-          title="Patient Management"
-          open={openMenus.patients}
-          onToggle={() => toggleMenu('patients')}
-        >
-          <MenuItem to="/patients">All Patients</MenuItem>
-          <MenuItem to="/patients/register">Register Patient</MenuItem>
-          {/* Make Admit Patient always visible for allowed roles, right after Register */}
-                {(
-                  user?.role === 'admin' ||
-                  (user?.role === 'doctor' && !!user?.permissions?.sidebar?.patients)
-                ) && (
-                  <MenuItem to="/dashboard/doctor/admitpatient"><span className="font-semibold text-brand-700">Admit Patient</span></MenuItem>
-                )}
-          <MenuItem to="/patients/admitted">Admitted Patients</MenuItem>
-          <MenuItem to="/patients/visits">Patient Visits</MenuItem>
-          <MenuItem to="/patients/visits/report">Visits Report</MenuItem>
-  </MenuGroup>
-  )}
-
-        {/* Admin Section */}
-        {hasAccess('admin', user?.role === 'admin') && (
-          <MenuGroup
-            title="Administration"
-            open={openMenus.admin}
-            onToggle={() => toggleMenu('admin')}
-          >
-            <MenuItem to="/dashboard/admin">Dashboard</MenuItem>
-            <MenuItem to="/dashboard/admin/users">Users</MenuItem>
-            <MenuItem to="/dashboard/admin/doctors">Doctors</MenuItem>
-            <MenuItem to="/dashboard/admin/settings">Settings</MenuItem>
-          </MenuGroup>
-        )}
-
-        {/* Appointments Section */}
-        {hasAccess('appointments', true) && (
-        <MenuGroup
-          title="Appointments"
-          open={openMenus.appointments}
-          onToggle={() => toggleMenu('appointments')}
-        >
-          <MenuItem to="/appointments">View Appointments</MenuItem>
-          <MenuItem to="/appointments">Schedule Appointment</MenuItem>
-  </MenuGroup>
-  )}
-
-        {/* Laboratory Section */}
-        {hasAccess('lab', ['admin','doctor','lab_technician','nurse','finance'].includes(user?.role)) && (
-          <MenuGroup
-            title="Laboratory"
-            open={openMenus.lab}
-            onToggle={() => toggleMenu('lab')}
-          >
-            <MenuItem to="/dashboard/lab/queue">Lab Queue</MenuItem>
-            <MenuItem to="/dashboard/lab/requests">View Lab Requests</MenuItem>
-            <MenuItem to="/dashboard/lab/tests">Lab Tests Catalog</MenuItem>
-            <MenuItem to="/dashboard/lab/prices">Lab Tests Prices</MenuItem>
-            <MenuItem to="/dashboard/lab/patient-report">Lab Visits Report</MenuItem>
-            <MenuItem to="/dashboard/lab/templates">Register Lab Templates</MenuItem>
-            <MenuItem to="/patients">Inpatient Requests</MenuItem>
-          </MenuGroup>
-        )}
-
-        {/* Billing Section */}
-        {hasAccess('billing', ['admin', 'finance'].includes(user?.role)) && (
-          <MenuGroup
-            title="Billing"
-            open={openMenus.billing}
-            onToggle={() => toggleMenu('billing')}
-          >
-            <MenuItem to="/billing">Billing Overview</MenuItem>
-            <MenuItem to="/billing/transactions">Transactions</MenuItem>
-            <MenuItem to="/billing/reports">Reports</MenuItem>
-          </MenuGroup>
-        )}
+        {groups.map(g => (
+          hasAccess(g.id, g.defaultCheck) && (
+            <MenuGroup key={g.id} title={g.title} open={openMenus[g.id]} onToggle={() => toggleMenu(g.id)}>
+              {g.items.map(it => (
+                <MenuItem key={it.to} to={it.to}>{it.label}</MenuItem>
+              ))}
+            </MenuGroup>
+          )
+        ))}
       </div>
-      
+
       {/* User Profile Section */}
       <div className="p-4 border-t border-gray-200">
         <Link
