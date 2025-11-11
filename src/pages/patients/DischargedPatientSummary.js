@@ -26,6 +26,8 @@ export default function DischargedPatientSummary() {
   const [diagLoadingSuggestions, setDiagLoadingSuggestions] = useState(false);
   const [diagSugForIndex, setDiagSugForIndex] = useState(null); // null = none, -1 = final diagnosis, >=0 = secondary index
   const diagSugTimer = React.useRef(null);
+  const [dischargeLoading, setDischargeLoading] = useState(false);
+  const [dischargeMessage, setDischargeMessage] = useState(null);
 
   useEffect(() => {
     loadPatientData();
@@ -169,6 +171,53 @@ export default function DischargedPatientSummary() {
     window.print();
   };
 
+  const handleDischargePatient = async () => {
+    if (!window.confirm('Are you sure you want to discharge this patient? This will free the bed and finalize the admission.')) return;
+    setDischargeLoading(true);
+    setDischargeMessage(null);
+    try {
+      // Discharge the patient: mark admission as not admitted, set dischargedAt
+      const dischargePayload = {
+        dischargedAt: new Date().toISOString(),
+        isAdmitted: false,
+        finalDiagnosis: draftFinalDiagnosis,
+        secondaryDiagnoses: draftSecondaryDiagnoses.filter(Boolean)
+      };
+
+      // try put to /patients/:id/admission first
+      try {
+        await axiosInstance.put(`/patients/${patientId}/admission`, dischargePayload);
+      } catch (e) {
+        if (e?.response?.status === 404 || e?.response?.status === 400) {
+          // fallback: try /admissions/:id if patient admission endpoint fails
+          if (admission?._id) {
+            await axiosInstance.put(`/admissions/${admission._id}`, dischargePayload);
+          } else throw e;
+        } else throw e;
+      }
+
+      // also try to free the bed if bed info is available
+      if (admission?.bed && admission?.ward) {
+        try {
+          await axiosInstance.post(`/wards/${admission.ward}/beds/${admission.bed}/release`);
+        } catch (be) {
+          console.warn('Failed to release bed:', be?.response?.data || be.message);
+          // don't block on bed release failure
+        }
+      }
+
+      setDischargeMessage({ type: 'success', text: 'Patient discharged successfully' });
+      // reload patient data to reflect discharge
+      setTimeout(() => loadPatientData(), 1500);
+    } catch (err) {
+      console.error('Discharge failed', err);
+      setDischargeMessage({ type: 'error', text: err?.response?.data?.message || 'Failed to discharge patient' });
+    } finally {
+      setDischargeLoading(false);
+      setTimeout(() => setDischargeMessage(null), 4000);
+    }
+  };
+
   const handleGeneratePdf = async () => {
     const element = document.getElementById('discharge-summary');
     if (!element) return alert('Nothing to generate');
@@ -256,8 +305,23 @@ export default function DischargedPatientSummary() {
           >
             <FaPrint /> Print
           </button>
+          {patient && admission && admission.isAdmitted && (
+            <button
+              onClick={handleDischargePatient}
+              disabled={dischargeLoading}
+              className="btn-brand flex items-center gap-2"
+            >
+              {dischargeLoading ? 'Discharging…' : 'Discharge Patient'}
+            </button>
+          )}
         </div>
       </div>
+
+      {dischargeMessage && (
+        <div className={`mb-4 p-3 rounded ${dischargeMessage.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+          {dischargeMessage.text}
+        </div>
+      )}
 
       {/* Printable container (wrapped so html2canvas captures only this) */}
       <div id="discharge-summary">

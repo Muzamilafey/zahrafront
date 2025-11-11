@@ -82,9 +82,15 @@ import NewMealBill from './pages/admission/billing/NewMealBill';
 import NewTheatreBill from './pages/admission/billing/NewTheatreBill';
 import NewLabBill from './pages/admission/billing/NewLabBill';
 import NewPharmacyBill from './pages/admission/billing/NewPharmacyBill';
+import MealBills from './pages/admission/billing/MealBills';
+import TheatreBills from './pages/admission/billing/TheatreBills';
+import LabBills from './pages/admission/billing/LabBills';
+import PharmacyBills from './pages/admission/billing/PharmacyBills';
+import MiscellaneousBills from './pages/admission/billing/MiscellaneousBills';
 import Placeholder from './components/Placeholder';
 import DischargeSummary from './pages/patients/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
+import InvoiceDetails from './pages/billing/InvoiceDetails';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
 
@@ -173,9 +179,11 @@ function App() {
           <Route path="/patients/:id/anaesthetic-records" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Anaesthetic Records" /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* View Bills (lists) */}
-          <Route path="/patients/:id/meal-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Meal Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/theatre-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Theatre Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/misc-bills" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Miscellaneous Bills" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/meal-bills" element={<PrivateRoute><Layout><ErrorBoundary><MealBills /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/theatre-bills" element={<PrivateRoute><Layout><ErrorBoundary><TheatreBills /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/lab-bills" element={<PrivateRoute><Layout><ErrorBoundary><LabBills /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/pharmacy-bills" element={<PrivateRoute><Layout><ErrorBoundary><PharmacyBills /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/misc-bills" element={<PrivateRoute><Layout><ErrorBoundary><MiscellaneousBills /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Billing Settings */}
           <Route path="/patients/:id/set-bill-limit" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Set Inpatient Bill Limit" /></ErrorBoundary></Layout></PrivateRoute>} />
@@ -234,6 +242,7 @@ function App() {
           <Route path="/pharmacy" element={<PrivateRoute><Layout><Pharmacy /></Layout></PrivateRoute>} />
           <Route path="/pharmacy/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
           <Route path="/billing" element={<PrivateRoute><Layout><Billing /></Layout></PrivateRoute>} />
+          <Route path="/billing/:invoiceId" element={<PrivateRoute><Layout><InvoiceDetails /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/appointments" element={<PrivateRoute><Layout><AppointmentsBilling /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/transactions" element={<PrivateRoute><Layout><Transactions /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/reports" element={<PrivateRoute><Layout><Reports /></Layout></PrivateRoute>} />

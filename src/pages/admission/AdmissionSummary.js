@@ -113,6 +113,8 @@ export default function AdmissionSummary() {
       buttons: [
         { label: "View Patient Meal Bills", action: () => navigate(`/patients/${patientId}/meal-bills`) },
         { label: "View Patient Theatre Bills", action: () => navigate(`/patients/${patientId}/theatre-bills`) },
+        { label: "View Patient Lab Bills", action: () => navigate(`/patients/${patientId}/lab-bills`) },
+        { label: "View Patient Pharmacy Bills", action: () => navigate(`/patients/${patientId}/pharmacy-bills`) },
         { label: "View InPatient Miscellaneous Fees Bills", action: () => navigate(`/patients/${patientId}/misc-bills`) }
       ]
     },

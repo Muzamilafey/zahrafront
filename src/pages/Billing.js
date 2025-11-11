@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function Billing() {
   const { axiosInstance } = useContext(AuthContext);
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -251,6 +253,7 @@ export default function Billing() {
                 <div className="mt-4 flex items-center justify-between">
                   <div className="text-xs text-gray-500">{new Date(inv.createdAt).toLocaleString()}</div>
                   <div className="flex items-center gap-2">
+                    <button className="btn-outline text-sm" onClick={()=>navigate(`/billing/${inv._id}`)}>View Details</button>
                     <button className="btn-outline text-sm" onClick={()=>printInvoice(inv)}>Print</button>
                     {(user?.role === 'finance' || user?.role === 'admin') && (
                       <button className="btn-primary text-sm" onClick={()=>openExportModal(inv._id)}>Export to Email</button>
