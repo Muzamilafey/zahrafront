@@ -121,15 +121,27 @@ export default function Sidebar() {
   return (
     <div className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        {groups.map(g => (
-          hasAccess(g.id, g.defaultCheck) && (
+        {groups.map(g => {
+          // Determine visibility for the group:
+          // - admin always sees groups
+          // - if user has explicit sidebar permissions, show the group when any of the group's item.perm keys are true
+          // - otherwise fall back to the group's defaultCheck
+          let visible = false;
+          if (user?.role === 'admin') visible = true;
+          else if (user && user.permissions && user.permissions.sidebar && Object.keys(user.permissions.sidebar).length > 0) {
+            // check if any item perm for this group is granted
+            visible = g.items.some(it => !!user.permissions.sidebar[it.perm]);
+          } else {
+            visible = !!g.defaultCheck;
+          }
+          return visible ? (
             <MenuGroup key={g.id} title={g.title} open={openMenus[g.id]} onToggle={() => toggleMenu(g.id)}>
               {g.items.map(it => (
                 <MenuItem key={it.to} to={it.to}>{it.label}</MenuItem>
               ))}
             </MenuGroup>
-          )
-        ))}
+          ) : null;
+        })}
       </div>
 
       {/* User Profile Section */}
