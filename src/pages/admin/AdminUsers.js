@@ -60,7 +60,8 @@ export default function AdminUsers() {
       const current = !!(u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients);
       const updated = { ...(u.permissions || {}), sidebar: { ...(u.permissions?.sidebar || {}), patients: !current } };
       // send sanitized update to backend
-      await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
+      const res = await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
+      console.debug('togglePatientsPermission response', res?.data);
       // optimistic update in UI
       const res = await axiosInstance.get('/users');
       setUsers(res.data.users || []);

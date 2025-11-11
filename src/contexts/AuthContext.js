@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     const onPermissions = (e) => {
       try {
         const payload = JSON.parse(e.data || '{}');
+        console.debug('SSE permissionsUpdated received', payload);
         if (payload && payload.permissions) {
           setUser((u) => {
             const next = { ...(u || {}), permissions: payload.permissions };
@@ -66,6 +67,7 @@ export const AuthProvider = ({ children }) => {
     const onRoleChanged = (e) => {
       try {
         const payload = JSON.parse(e.data || '{}');
+        console.debug('SSE roleChanged received', payload);
         if (payload && payload.role) {
           setUser((u) => {
             const next = { ...(u || {}), role: payload.role };

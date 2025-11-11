@@ -40,7 +40,8 @@ export default function AdminUser(){
 
   const performSave = async () => {
     try{
-      await axiosInstance.put(`/users/${id}`, { ...form, permissions });
+      const res = await axiosInstance.put(`/users/${id}`, { ...form, permissions });
+      console.debug('AdminUser performSave response', res?.data);
       showToast('User updated', 'success');
       navigate('/dashboard/admin/users');
     }catch(e){ console.error(e); alert(e?.response?.data?.message || 'Update failed'); }

@@ -120,7 +120,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 h-full bg-white border-r border-gray-200 flex flex-col" style={{overflowY: 'auto', maxHeight: '100vh'}}>
+    <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col overflow-auto">
       <div className="flex-1">
         {groups.map(g => {
           // Determine visibility for the group:
