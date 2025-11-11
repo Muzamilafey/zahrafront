@@ -135,15 +135,61 @@ export default function Sidebar({ role }) {
     return false;
   };
 
-  const items = [...common, ...(patientVisible ? patientItems : []), ...(itemsByRole[role] || [])];
+  // helper to filter items based on whether user has any explicit permission assignments
+  const filterByPermissions = (itemList) => {
+    // if user has no explicit permissions at all, show all role-based items
+    if (!user || !user.permissions || !user.permissions.sidebar || Object.keys(user.permissions.sidebar).length === 0) {
+      return itemList;
+    }
+    // if user has explicit permissions, only show items they have permission for
+    return itemList.filter(item => {
+      // map item label to permission key (e.g., "Patient Management" -> "patients", "Manage Users" -> "manageUsers")
+      const permKey = {
+        'All Patients': 'patients',
+        'Register Patient': 'patients',
+        'Admit Patient': 'patients',
+        'Admitted Patients': 'patients',
+        'Patient Visits': 'patients',
+        'Visits Report': 'patients',
+        'Appointments': 'appointments',
+        'Manage Users': 'manageUsers',
+        'Settings': 'settings',
+        'Doctors': 'doctors',
+        'Departments': 'departments',
+        "Doctors' Schedule": 'doctorsSchedule',
+        'Consultations': 'consultations',
+        'Available Slots': 'availableSlots',
+        'Payments / Invoices': 'billing',
+        'Manage Wards': 'manageWards',
+        'Nurse Assignment': 'nurseAssignment',
+        'Inventory': 'inventory',
+        'Drugs': 'drugs',
+        'Messages': 'messages',
+        'Lab Dashboard': 'lab',
+        'Lab Queue': 'labQueue',
+        'View Lab Requests': 'labRequests',
+        'Review Lab Tests': 'lab',
+        'Lab Tests Catalog': 'lab',
+        'Lab Tests Prices': 'lab',
+        'Lab Visits Report': 'lab',
+        'Lab Templates': 'lab',
+      }[item.label];
+      // if item has a permission key, check it; otherwise, always show common items (Overview, Profile)
+      if (permKey) {
+        return hasPermissionFor(permKey);
+      }
+      return true; // common items always shown
+    });
+  };
+
+  const items = filterByPermissions([...common, ...(patientVisible ? patientItems : []), ...(itemsByRole[role] || [])]);
   const [admittedCount, setAdmittedCount] = useState(0);
 
   const [patientsOpen, setPatientsOpen] = useState(false);
   const [labOpen, setLabOpen] = useState(false);
 
-  // collect lab-related links (those under /dashboard/lab)
+  // collect lab-related links (those under /dashboard/lab) and filter by permissions
   const labItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/dashboard/lab'));
-  // labItems is used to render the full Laboratory group; collapsed view will show icons as in original behaviour
 
   useEffect(()=>{
     if(role === 'doctor'){
