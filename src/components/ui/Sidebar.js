@@ -224,32 +224,28 @@ export default function Sidebar({ role }) {
   const [hovered, setHovered] = useState(false);
 
   if (collapsed) {
-    return (<>
-
-            {/* (removed collapsed/hover-only Laboratory group - keep full group only) */}
+    return (
       <div className="relative">
         <aside
-          className="w-16 bg-white border-r min-h-screen p-2 hidden md:block"
+          className="w-16 bg-white border-r h-screen p-2 hidden md:fixed md:flex md:flex-col md:left-0 md:top-14 md:overflow-y-auto"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
           <div className="mb-4 text-center">
             <div className="text-lg font-bold text-brand-700">CC</div>
           </div>
-            <nav className="flex flex-col gap-2 items-center">
+          <nav className="flex flex-col gap-2 items-center">
             {items.map(i => (
               <Link key={i.to} to={i.to} className="flex flex-col items-center gap-1 p-2 rounded hover:bg-gray-100 w-full">
                 <div className="text-lg text-brand-600">{i.icon}</div>
                 <div className="text-xs text-gray-700">{i.label.split(' ')[0]}</div>
               </Link>
             ))}
-
             <button onClick={toggleCollapsed} className="mt-4 p-2 text-sm text-gray-600 rounded hover:bg-gray-100" title="Expand sidebar">
               <FaBars />
             </button>
           </nav>
         </aside>
-
         {/* expanded overlay shown on hover */}
         {hovered && (
           <div
@@ -269,24 +265,23 @@ export default function Sidebar({ role }) {
             <nav className="flex flex-col gap-2 p-2">
               {/* Patient management group in hover-expanded overlay - only show if user has permission */}
               {patientVisible && (
-              <div>
-                <button onClick={() => setPatientsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
-                  <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaUsers /></div><div>Patients</div></div>
-                  <div>{patientsOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
-                </button>
-                {patientsOpen && (
-                  <div className="pl-8 flex flex-col">
-                    {patientItems.map(i => (
-                      <Link key={i.to} to={i.to} onClick={() => setPatientsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
-                        <div className="text-sm text-brand-600">{i.icon}</div>
-                        <div className="text-sm">{i.label}</div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+                <div>
+                  <button onClick={() => setPatientsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaUsers /></div><div>Patients</div></div>
+                    <div>{patientsOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                  </button>
+                  {patientsOpen && (
+                    <div className="pl-8 flex flex-col">
+                      {patientItems.map(i => (
+                        <Link key={i.to} to={i.to} onClick={() => setPatientsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                          <div className="text-sm text-brand-600">{i.icon}</div>
+                          <div className="text-sm">{i.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
-
               {/* remaining items */}
               {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
@@ -298,7 +293,8 @@ export default function Sidebar({ role }) {
           </div>
         )}
       </div>
-    </>);
+    );
+  }
   }
 
   return (
@@ -367,4 +363,4 @@ export default function Sidebar({ role }) {
       </nav>
     </aside>
   );
-}
+
