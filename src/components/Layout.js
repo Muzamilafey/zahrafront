@@ -30,7 +30,7 @@ export default function Layout({ children }){
           <Sidebar role={role} />
           {/* navigation is handled by Sidebar; removed duplicate link */}
         {/* make the right pane a separate scroll container so the sidebar doesn't scroll with content */}
-        <div className="flex-1 min-h-screen overflow-auto md:ml-64">
+        <div className="flex-1 min-h-screen overflow-auto ml-0 md:ml-64">
           <Topbar user={user} onLogout={logout} />
           <main className="p-6">
             {children}

@@ -48,7 +48,7 @@ export default function Topbar({ user, onLogout }) {
   };
 
   return (
-    <div className="w-full bg-white/80 backdrop-blur py-3 px-4 flex items-center justify-between border-b sticky top-0 z-40 md:ml-64">
+    <div className="w-full bg-white/80 backdrop-blur py-3 px-4 flex items-center justify-between border-b sticky top-0 z-40 ml-0 md:ml-64">
       <div className="flex items-center gap-4">
         <h2 className="text-lg font-semibold text-brand-700">CoreCare</h2>
       </div>
