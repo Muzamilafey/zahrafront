@@ -41,33 +41,6 @@ export default function AdminUsers() {
     }catch(e){}
   }, [search]);
 
-  const changeRole = async (id)=>{
-    // prompt is used for a quick inline role change; disable the lint rule for this line deliberately
-    // eslint-disable-next-line no-restricted-globals
-    const role = prompt('New role (admin|doctor|pharmacist|finance|receptionist|patient|nurse)');
-    if(!role) return;
-    try{
-      await axiosInstance.put(`/users/${id}/role`, { role });
-      alert('Role updated');
-      // reload list
-      const res = await axiosInstance.get('/users');
-      setUsers(res.data.users || []);
-    }catch(e){ alert('Update failed'); }
-  };
-
-  const togglePermission = async (u, key) => {
-    try {
-      const current = !!(u.permissions && u.permissions.sidebar && u.permissions.sidebar[key]);
-      const updated = { ...(u.permissions || {}), sidebar: { ...(u.permissions?.sidebar || {}), [key]: !current } };
-      // send sanitized update to backend
-      const putRes = await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
-      console.debug('togglePermission response', putRes?.data);
-      // refresh list
-      const getRes = await axiosInstance.get('/users');
-      setUsers(getRes.data.users || []);
-    } catch (e) { console.error(e); alert('Failed to update permission'); }
-  };
-
   const deleteUser = async (id) => {
     // eslint-disable-next-line no-restricted-globals
     if (!confirm('Delete this user and all related data? This cannot be undone.')) return;
@@ -96,7 +69,6 @@ export default function AdminUsers() {
     { header: 'Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
     { header: 'Role', accessor: 'role' },
-    { header: 'Patients', accessor: 'patients' },
     { header: 'Actions', accessor: 'actions' },
   ];
 
@@ -104,20 +76,8 @@ export default function AdminUsers() {
     name: u.name || '-',
     email: u.email || '-',
     role: u.role || '-',
-    patients: (
-      <div className="flex flex-col gap-2">
-        {/* show a handful of common sidebar permission toggles inline for quick admin access */}
-        {['patients','messages','appointments','availableSlots','manageUsers','billing','lab','drugs','inventory'].map(k => (
-          <label key={k} className="flex items-center gap-2">
-            <input type="checkbox" checked={!!(u.permissions && u.permissions.sidebar && u.permissions.sidebar[k])} onChange={()=>togglePermission(u, k)} />
-            <span className="text-sm">{k}</span>
-          </label>
-        ))}
-      </div>
-    ),
     actions: (<div>
-      <button className="btn-brand mr-2" onClick={()=>changeRole(u._id)}>Change Role</button>
-      <button className="btn-outline mr-2" onClick={()=>window.location.href = `/dashboard/admin/users/${u._id}`}>Edit</button>
+      <button className="btn-outline mr-2" onClick={()=>window.location.href = `/dashboard/admin/users/${u._id}`}>Manage</button>
       <button className="btn-outline text-red-600" onClick={()=>deleteUser(u._id)}>Delete</button>
     </div>)
   }));
@@ -126,7 +86,6 @@ export default function AdminUsers() {
     { header: 'Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
     { header: 'Role', accessor: 'role' },
-    { header: 'Patients', accessor: 'patients' },
     { header: 'Actions', accessor: 'actions' },
   ];
 
@@ -134,21 +93,6 @@ export default function AdminUsers() {
     name: u.name || '-',
     email: u.email || '-',
     role: u.role || '-',
-    patients: (
-      <div>
-        {u.permissions && u.permissions.sidebar && Object.keys(u.permissions.sidebar).length > 0 ? (
-          <div className="flex gap-1 flex-wrap">
-            {['patients','messages','appointments','availableSlots','manageUsers','billing','lab','drugs','inventory'].map(k => (
-              u.permissions.sidebar[k] ? (
-                <span key={k} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{k}</span>
-              ) : null
-            ))}
-          </div>
-        ) : (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No</span>
-        )}
-      </div>
-    ),
     actions: (<div>
       <button className="btn-brand mr-2" onClick={()=>activateUser(u._id)}>Activate</button>
       <button className="btn-outline text-red-600" onClick={()=>deleteUser(u._id)}>Delete</button>
