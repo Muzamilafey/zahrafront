@@ -60,11 +60,11 @@ export default function AdminUsers() {
       const current = !!(u.permissions && u.permissions.sidebar && u.permissions.sidebar.patients);
       const updated = { ...(u.permissions || {}), sidebar: { ...(u.permissions?.sidebar || {}), patients: !current } };
       // send sanitized update to backend
-      const res = await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
-      console.debug('togglePatientsPermission response', res?.data);
-      // optimistic update in UI
-      const res = await axiosInstance.get('/users');
-      setUsers(res.data.users || []);
+  const putRes = await axiosInstance.put(`/users/${u._id}/permissions`, { permissions: updated });
+  console.debug('togglePatientsPermission response', putRes?.data);
+  // optimistic update in UI
+  const getRes = await axiosInstance.get('/users');
+  setUsers(getRes.data.users || []);
     } catch (e) { console.error(e); alert('Failed to update permission'); }
   };
 
