@@ -299,6 +299,73 @@ export default function DischargedPatientSummary() {
     }
   };
 
+  // Attempt to generate a discharge summary and/or finalize invoice when missing
+  const handleGenerateMissingSummary = async () => {
+    if (!window.confirm('Attempt to generate a discharge summary (and finalize invoice if available)?')) return;
+    setDischargeLoading(true);
+    setDischargeMessage(null);
+    try {
+      // Primary: ask server to discharge the patient which may create summary and invoice
+      try {
+        const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
+        if (res.data && res.data.invoice && res.data.invoice._id) {
+          setDischargeMessage({ type: 'success', text: 'Invoice finalized — opening invoice' });
+          setTimeout(() => setDischargeMessage(null), 3000);
+          navigate(`/billing/${res.data.invoice._id}`);
+          return;
+        }
+        if (res.data && (res.data.discharge || res.data.summary || res.data.dischargeSummary)) {
+          setDischargeMessage({ type: 'success', text: 'Discharge summary created' });
+          setTimeout(() => setDischargeMessage(null), 2000);
+          loadPatientData();
+          return;
+        }
+      } catch (e) {
+        console.warn('Primary discharge creation failed:', e?.response?.status || e?.message);
+      }
+
+      // Fallback: try generic /discharge create endpoint
+      try {
+        const pRes = await axiosInstance.get(`/patients/${patientId}`);
+        const patientData = pRes.data.patient || pRes.data;
+        const adm = patientData?.admission || (Array.isArray(patientData?.admissionHistory) && patientData.admissionHistory.length ? patientData.admissionHistory[patientData.admissionHistory.length - 1] : null);
+        const payload = {
+          patientId,
+          patientInfo: {
+            name: patientData.user?.name || patientData.name,
+            mrn: patientData.mrn || patientData.hospitalId,
+            age: patientData.age,
+            gender: patientData.gender
+          },
+          admissionInfo: adm ? {
+            admittedAt: adm.admittedAt,
+            dischargedAt: adm.dischargedAt,
+            ward: adm.ward,
+            bed: adm.bed
+          } : undefined,
+        };
+        const createRes = await axiosInstance.post(`/discharge`, payload);
+        if (createRes.data && (createRes.data.discharge || createRes.data.summary || createRes.data.dischargeSummary)) {
+          setDischargeMessage({ type: 'success', text: 'Discharge summary created' });
+          setTimeout(() => setDischargeMessage(null), 2000);
+          loadPatientData();
+          return;
+        }
+      } catch (fe) {
+        console.warn('Fallback creation failed:', fe?.response?.status || fe?.message);
+      }
+
+      setDischargeMessage({ type: 'error', text: 'Could not generate discharge summary — backend may not support creation endpoints' });
+      setTimeout(() => setDischargeMessage(null), 4000);
+    } catch (err) {
+      console.error('Error generating missing discharge summary:', err);
+      setDischargeMessage({ type: 'error', text: err?.response?.data?.message || 'Failed to generate discharge summary' });
+      setTimeout(() => setDischargeMessage(null), 4000);
+    } finally {
+      setDischargeLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 text-center">
@@ -318,6 +385,32 @@ export default function DischargedPatientSummary() {
         </button>
         <div className="bg-red-50 border border-red-200 rounded p-4 text-red-700">
           {error || 'Patient not found'}
+        </div>
+      </div>
+    );
+  }
+
+  // If no admission/discharge summary available, show generate UI
+  if (!admission) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 text-yellow-700">
+          <p className="font-semibold">No Discharge Summary</p>
+          <p>This patient doesn't have a discharge summary yet. It will be auto-created when the patient is discharged.</p>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={handleGenerateMissingSummary}
+              className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700"
+            >
+              Generate Discharge Summary / Invoice
+            </button>
+            <button
+              onClick={() => loadPatientData()}
+              className="px-3 py-2 bg-gray-100 text-gray-800 rounded text-sm font-semibold hover:bg-gray-200"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
     );
