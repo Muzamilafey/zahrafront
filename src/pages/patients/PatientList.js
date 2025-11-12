@@ -6,16 +6,19 @@ import Toast from '../../components/ui/Toast';
 export default function PatientList() {
   const { axiosInstance, user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [patients, setPatients] = useState([]);
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   
   const status = searchParams.get('status') || 'all';
 
   useEffect(() => {
+    // keep local query in sync with URL param
+    setQuery(searchParams.get('q') || '');
     loadPatients();
-  }, [status]);
+  }, [searchParams]);
 
   const loadPatients = async () => {
     try {
@@ -37,12 +40,35 @@ export default function PatientList() {
       } else {
         res = await axiosInstance.get('/patients');
       }
-      setPatients(res.data.patients || []);
+      let list = res.data.patients || [];
+      const q = (searchParams.get('q') || '').toLowerCase().trim();
+      if (q) {
+        list = list.filter(p => {
+          const name = (p.user?.name || p.name || '').toLowerCase();
+          const hosp = String(p.hospitalId || '').toLowerCase();
+          const mrn = String(p.mrn || '').toLowerCase();
+          const email = (p.user?.email || '').toLowerCase();
+          return name.includes(q) || hosp.includes(q) || mrn.includes(q) || email.includes(q);
+        });
+      }
+      setPatients(list);
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to load patients', type: 'error' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyStatus = (s) => {
+    const params = Object.fromEntries([...searchParams]);
+    if (s && s !== 'all') params.status = s; else delete params.status;
+    setSearchParams(params);
+  };
+
+  const applySearch = (q) => {
+    const params = Object.fromEntries([...searchParams]);
+    if (q && q.trim().length > 0) params.q = q.trim(); else delete params.q;
+    setSearchParams(params);
   };
 
   const formatDate = (date) => {
@@ -68,7 +94,27 @@ export default function PatientList() {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">{pageTitle}</h2>
-      
+      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <input
+            className="input w-96"
+            placeholder="Search by name, hospital ID, or MRN..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') applySearch(query); }}
+          />
+          <button className="btn-brand" onClick={() => applySearch(query)}>Search</button>
+          <button className="btn-outline" onClick={() => { setQuery(''); applySearch(''); }}>Clear</button>
+        </div>
+        <div className="flex items-center gap-2">
+          <select className="input" value={status} onChange={(e) => applyStatus(e.target.value)}>
+            <option value="all">All Patients</option>
+            <option value="admitted">Admitted</option>
+            <option value="discharged">Discharged</option>
+          </select>
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-center">Loading patients...</div>
       ) : patients.length === 0 ? (
