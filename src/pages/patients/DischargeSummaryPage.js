@@ -78,7 +78,8 @@ export default function DischargeSummaryPage() {
       setSaveMessage({ type: 'success', text: 'Discharge processed' });
       setTimeout(() => setSaveMessage(null), 2500);
       if (res.data && res.data.invoice && res.data.invoice._id) {
-        navigate(`/billing/${res.data.invoice._id}`);
+        // Show all charges for this patient after discharge (open billing list filtered by patient)
+        navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);
         return;
       }
       // reload summary area
@@ -186,7 +187,8 @@ export default function DischargeSummaryPage() {
         if (res.data && res.data.invoice && res.data.invoice._id) {
           setSaveMessage({ type: 'success', text: 'Invoice finalized — opening invoice' });
           setTimeout(() => setSaveMessage(null), 2500);
-          navigate(`/billing/${res.data.invoice._id}`);
+          // open billing list filtered by patient so user sees all charges
+          navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);
           return;
         }
         // If server returned a discharge summary object, reload it
@@ -407,7 +409,8 @@ export default function DischargeSummaryPage() {
                         setSaveMessage({ type: 'success', text: 'Invoice finalized' });
                         setTimeout(() => setSaveMessage(null), 3000);
                         if (res.data && res.data.invoice && res.data.invoice._id) {
-                          navigate(`/billing/${res.data.invoice._id}`);
+                          // show all charges for the patient
+                          navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);
                           return;
                         }
                         // fallback: refresh discharge summary

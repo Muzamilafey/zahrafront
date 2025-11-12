@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Billing() {
   const { axiosInstance } = useContext(AuthContext);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -145,17 +146,23 @@ export default function Billing() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await axiosInstance.get('/billing');
+        // If a patientId query param is present, request server to filter invoices for that patient
+        const params = new URLSearchParams(location.search);
+        const patientId = params.get('patientId');
+        const url = patientId ? `/billing?patientId=${encodeURIComponent(patientId)}` : '/billing';
+        const res = await axiosInstance.get(url);
         setInvoices(res.data.invoices || []);
         // load hospital settings (used in printed invoice header/footer)
         try{
           const hRes = await axiosInstance.get('/setting/hospital-details');
           setHospital(hRes.data || null);
         }catch(e){ /* ignore */ }
-        // if finance, fetch patients for create form
+        // if finance, fetch patients for create form (only when not filtering by patient)
         try{
-          const pRes = await axiosInstance.get('/patients');
-          setPatients(pRes.data.patients || []);
+          if (!patientId) {
+            const pRes = await axiosInstance.get('/patients');
+            setPatients(pRes.data.patients || []);
+          }
         }catch(e){ /* ignore */ }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load invoices');
@@ -164,7 +171,7 @@ export default function Billing() {
       }
     };
     load();
-  }, [axiosInstance]);
+  }, [axiosInstance, location.search]);
 
   const createInvoice = async (e) => {
     e.preventDefault();
