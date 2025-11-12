@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { AuthContext } from '../../../contexts/AuthContext';
-import Toast from '../../../components/ui/Toast';
+import { AuthContext } from 'contexts/AuthContext';
+import Toast from 'components/ui/Toast';
 
 export default function OutpatientHistory() {
   const { id: patientId } = useParams();

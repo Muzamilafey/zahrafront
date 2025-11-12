@@ -5,6 +5,7 @@ import DataTable from '../ui/DataTable';
 import { AuthContext } from '../../contexts/AuthContext';
 import ThemeToggle from '../ui/ThemeToggle';
 import PharmacySalesSummary from './PharmacySalesSummary';
+import FinanceModule from './FinanceModule';
 
 // 
 import { Link } from "react-router-dom";
@@ -147,6 +148,7 @@ export default function AdminDashboard(){
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(()=>{
     try{ const saved = localStorage.getItem('notificationRecipient'); if (saved) setExportRecipient(saved); }catch(e){}
@@ -497,6 +499,33 @@ export default function AdminDashboard(){
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex gap-4 border-b">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 font-semibold border-b-2 transition ${
+              activeTab === 'overview'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('finance')}
+            className={`px-4 py-2 font-semibold border-b-2 transition ${
+              activeTab === 'finance'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Finance
+          </button>
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
         <TopStats items={[
           { title: 'Doctors', value: (stats.doctors || 0).toLocaleString(), growth: 0 },
           { title: 'Nurses', value: (stats.nurses || 0).toLocaleString(), growth: 0 },
@@ -595,6 +624,13 @@ export default function AdminDashboard(){
             </div>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Finance Tab */}
+        {activeTab === 'finance' && (
+          <FinanceModule axiosInstance={axiosInstance} user={user} />
+        )}
 
         {/* Assign Modal (kept) */}
         {assignModalOpen && assigningRequest && (

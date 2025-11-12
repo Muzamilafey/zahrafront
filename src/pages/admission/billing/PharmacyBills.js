@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../../../contexts/AuthContext';
+import { AuthContext } from 'contexts/AuthContext';
 import { FaArrowLeft, FaEye, FaPrint } from 'react-icons/fa';
 
 export default function PharmacyBills() {

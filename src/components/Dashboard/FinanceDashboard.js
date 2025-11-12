@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 // Sidebar and Topbar are handled by the global Layout
 import StatsCard from '../ui/StatsCard';
-import SimpleChart from '../ui/SimpleChart';
 import DataTable from '../ui/DataTable';
 import { AuthContext } from '../../contexts/AuthContext';
 import ThemeToggle from '../ui/ThemeToggle';
@@ -14,7 +13,6 @@ export default function FinanceDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [invoiceMap, setInvoiceMap] = useState({});
   const [totals, setTotals] = useState({ totalBilled: 0, totalIncome: 0, outstanding: 0 });
-  const [chartData, setChartData] = useState({ incomeVsExpenses: [], contributionsPerMonth: [] });
   const [apptForm, setApptForm] = useState({ appointmentId: '', amount: '', type: 'treatment' });
   const [form, setForm] = useState({ patientId: '', amount: '', type: 'treatment' });
   const [loading, setLoading] = useState(false);
@@ -52,7 +50,7 @@ export default function FinanceDashboard() {
           const aRes = await axiosInstance.get('/appointments');
           setAppointments(aRes.data.appointments || []);
         }catch(e){ /* ignore */ }
-        // build invoice map and compute totals/charts
+        // build invoice map and compute totals
         try{
           const invRes = await axiosInstance.get('/billing');
           const invs = invRes.data.invoices || [];
@@ -66,41 +64,6 @@ export default function FinanceDashboard() {
           const totalIncome = invs.reduce((s,i)=>s + (i.status === 'paid' ? (Number(i.amount)||0) : 0), 0);
           const outstanding = totalBilled - totalIncome;
           setTotals({ totalBilled, totalIncome, outstanding });
-
-          // charts: prepare last 7 months series (including current month)
-          const months = [];
-          const now = new Date();
-          for(let m = 6; m >= 0; m--) {
-            const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
-            months.push(d);
-          }
-
-          const incomeSeries = months.map(mth => {
-            const year = mth.getFullYear();
-            const month = mth.getMonth();
-            return invs.reduce((s, inv) => {
-              const dt = new Date(inv.createdAt || inv.createdAt);
-              if (dt.getFullYear() === year && dt.getMonth() === month && inv.status === 'paid') {
-                return s + (Number(inv.amount)||0);
-              }
-              return s;
-            }, 0);
-          });
-
-          // contributions per month - use billed amounts per month
-          const billedSeries = months.map(mth => {
-            const year = mth.getFullYear();
-            const month = mth.getMonth();
-            return invs.reduce((s, inv) => {
-              const dt = new Date(inv.createdAt || inv.createdAt);
-              if (dt.getFullYear() === year && dt.getMonth() === month) {
-                return s + (Number(inv.amount)||0);
-              }
-              return s;
-            }, 0);
-          });
-
-          setChartData({ incomeVsExpenses: incomeSeries, contributionsPerMonth: billedSeries });
         }catch(e){ /* ignore */ }
       } catch (err) { console.error(err); setError('Failed to load invoices'); }
       finally { setLoading(false); }
@@ -235,18 +198,6 @@ export default function FinanceDashboard() {
             <StatsCard title="Total Billed" value={`$${(totals.totalBilled||0).toLocaleString()}`} />
             <StatsCard title="Total Income" value={`$${(totals.totalIncome||0).toLocaleString()}`} />
             <StatsCard title="Outstanding" value={`$${(totals.outstanding||0).toLocaleString()}`} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded p-4 shadow">
-              <h3 className="font-semibold mb-2">Income vs Expenses</h3>
-              <SimpleChart data={chartData.incomeVsExpenses.length ? chartData.incomeVsExpenses : [0,0,0,0,0,0,0]} height={140} />
-            </div>
-
-            <div className="bg-white rounded p-4 shadow">
-              <h3 className="font-semibold mb-2">Contributions Per Month</h3>
-              <SimpleChart data={chartData.contributionsPerMonth.length ? chartData.contributionsPerMonth : [0,0,0,0,0,0,0,0]} height={140} />
-            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

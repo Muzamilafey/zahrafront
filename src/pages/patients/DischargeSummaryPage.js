@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { AuthContext } from '../../../contexts/AuthContext';
+import { AuthContext } from 'contexts/AuthContext';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
