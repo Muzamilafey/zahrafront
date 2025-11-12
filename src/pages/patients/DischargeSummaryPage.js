@@ -1,8 +1,16 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AuthContext } from 'contexts/AuthContext';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+// Facility Information - Update as needed
+const FACILITY_INFO = {
+  name: 'ZAHRA MATERNITY & CHILD CARE HOSPITAL',
+  phone: 'TEL 0722568879',
+  email: 'info@zahrahospital.com',
+  address: 'Mogadishu, Somalia'
+};
 
 export default function DischargeSummaryPage() {
   const { id: patientId } = useParams();
@@ -174,29 +182,87 @@ export default function DischargeSummaryPage() {
 
   const isLocked = discharge.finalizationInfo?.locked;
   const canEdit = !isLocked && discharge.status !== 'finalized';
+  const printRef = useRef();
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Discharge Summary</h1>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-              {discharge.dischargeNumber}
-            </span>
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              isLocked
-                ? 'bg-green-100 text-green-800'
-                : discharge.status === 'reviewed'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {discharge.status === 'finalized' ? 'Finalized & Locked' : `Status: ${discharge.status}`}
-            </span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Sticky Toolbar - Hidden on Print */}
+      <div className="sticky top-0 z-50 bg-white shadow-md border-b p-4 print:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Discharge Summary</h1>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                {discharge.dischargeNumber}
+              </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                isLocked
+                  ? 'bg-green-100 text-green-800'
+                  : discharge.status === 'reviewed'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {discharge.status === 'finalized' ? 'Finalized & Locked' : `Status: ${discharge.status}`}
+              </span>
+            </div>
           </div>
+
+          <div className="flex gap-2 flex-wrap justify-end">
+            {canEdit && (
+              <>
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className={`px-3 py-2 rounded text-sm font-semibold transition ${
+                    isEditing
+                      ? 'bg-gray-500 text-white'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {isEditing ? 'Cancel' : 'Edit'}
+                </button>
+                {isEditing && (
+                  <button
+                    onClick={handleSaveDraft}
+                    className="px-3 py-2 bg-green-500 text-white text-sm rounded font-semibold hover:bg-green-600"
+                  >
+                    Save
+                  </button>
+                )}
+                <button
+                  onClick={handleRefresh}
+                  className="px-3 py-2 bg-purple-500 text-white text-sm rounded font-semibold hover:bg-purple-600"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={handleFinalize}
+                  className="px-3 py-2 bg-orange-500 text-white text-sm rounded font-semibold hover:bg-orange-600"
+                >
+                  Finalize
+                </button>
+              </>
+            )}
+            <button
+              onClick={handlePrint}
+              className="px-3 py-2 bg-indigo-500 text-white text-sm rounded font-semibold hover:bg-indigo-600"
+            >
+              🖨️ Print
+            </button>
+            <button
+              onClick={handleGeneratePDF}
+              disabled={generatePDFLoading}
+              className="px-3 py-2 bg-red-500 text-white text-sm rounded font-semibold hover:bg-red-600 disabled:opacity-50"
+            >
+              {generatePDFLoading ? 'Generating...' : '📄 PDF'}
+            </button>
+          </div>
+
           {saveMessage && (
-            <div className={`px-4 py-2 rounded text-sm font-semibold ${
+            <div className={`w-full px-4 py-2 rounded text-sm font-semibold text-center ${
               saveMessage.type === 'success'
                 ? 'bg-green-100 text-green-800'
                 : saveMessage.type === 'error'
@@ -209,294 +275,295 @@ export default function DischargeSummaryPage() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="mb-6 flex gap-3 flex-wrap">
-        {canEdit && (
-          <>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`px-4 py-2 rounded font-semibold transition ${
-                isEditing
-                  ? 'bg-gray-500 text-white'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-            >
-              {isEditing ? 'Cancel Edit' : 'Edit Summary'}
-            </button>
-            {isEditing && (
-              <>
-                <button
-                  onClick={handleSaveDraft}
-                  className="px-4 py-2 bg-green-500 text-white rounded font-semibold hover:bg-green-600 transition"
-                >
-                  Save Draft
-                </button>
-              </>
+      {/* Printable Document */}
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div ref={printRef} id="discharge-summary-content" className="bg-white rounded-lg shadow-lg print:shadow-none">
+
+          {/* === HOSPITAL HEADER === */}
+          <div className="border-b-4 border-gray-800 p-6 md:p-8 text-center bg-gradient-to-b from-gray-50 to-white">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 tracking-wide">
+              {FACILITY_INFO.name}
+            </h1>
+            <div className="text-sm md:text-base font-semibold text-gray-700 mb-4">
+              <p>{FACILITY_INFO.phone}</p>
+              <p>{FACILITY_INFO.email}</p>
+            </div>
+            <p className="text-xs md:text-sm text-gray-600 mb-6">
+              {FACILITY_INFO.address}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-widest">
+              DISCHARGE SUMMARY
+            </h2>
+          </div>
+
+          {/* === PATIENT & ADMISSION DETAILS === */}
+          <div className="p-6 md:p-8 border-b-2 border-gray-300">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">INPATIENT'S FILE NO.</p>
+                <p className="text-sm md:text-base font-bold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.patientInfo.mrn || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">PATIENT'S NAME</p>
+                <p className="text-sm md:text-base font-bold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.patientInfo.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">PATIENT'S AGE</p>
+                <p className="text-sm md:text-base font-bold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.patientInfo.age} YEARS
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">DATE OF ADMISSION</p>
+                <p className="text-sm md:text-base font-bold text-gray-900 border-b border-gray-400 pb-1">
+                  {new Date(discharge.admissionInfo.admittedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">DATE OF DISCHARGE</p>
+                <p className="text-sm md:text-base font-bold text-gray-900 border-b border-gray-400 pb-1">
+                  {new Date(discharge.admissionInfo.dischargedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">WARD</p>
+                <p className="text-sm md:text-base font-bold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.admissionInfo.ward || 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">ATTENDING DOCTOR(S)</p>
+                <p className="text-sm md:text-base font-semibold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.dischargingDoctorName || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">GENDER</p>
+                <p className="text-sm md:text-base font-semibold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.patientInfo.gender || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">BED/ROOM(S)</p>
+                <p className="text-sm md:text-base font-semibold text-gray-900 border-b border-gray-400 pb-1">
+                  {discharge.admissionInfo.bed || 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* === DIAGNOSIS === */}
+          <div className="p-6 md:p-8 border-b-2 border-gray-300">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">DIAGNOSIS</h3>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 uppercase mb-2">PRIMARY</p>
+              <p className="text-base text-gray-900 font-semibold border-b-2 border-gray-400 pb-3 mb-4">
+                {discharge.diagnosis.primary || 'N/A'}
+              </p>
+            </div>
+            {discharge.diagnosis.secondary && discharge.diagnosis.secondary.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 uppercase mb-2">SECONDARY DIAGNOSIS/DIAGNOSES</p>
+                <div className="text-base text-gray-900 border-b-2 border-gray-400 pb-3">
+                  {discharge.diagnosis.secondary.map((diag, idx) => (
+                    <p key={idx} className="mb-1">{idx + 1}. {diag}</p>
+                  ))}
+                </div>
+              </div>
             )}
-            <button
-              onClick={handleRefresh}
-              className="px-4 py-2 bg-purple-500 text-white rounded font-semibold hover:bg-purple-600 transition"
-            >
-              Refresh from Modules
-            </button>
-            <button
-              onClick={handleFinalize}
-              className="px-4 py-2 bg-orange-500 text-white rounded font-semibold hover:bg-orange-600 transition"
-            >
-              Finalize Summary
-            </button>
-          </>
-        )}
-        <button
-          onClick={handleGeneratePDF}
-          disabled={generatePDFLoading}
-          className="px-4 py-2 bg-red-500 text-white rounded font-semibold hover:bg-red-600 transition disabled:opacity-50"
-        >
-          {generatePDFLoading ? 'Generating PDF...' : 'Generate PDF'}
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div id="discharge-summary-content" className="bg-white rounded-lg shadow-lg p-8">
-
-        {/* Patient Information */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Patient Information</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Name</p>
-              <p className="font-semibold text-gray-800">{discharge.patientInfo.name}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">MRN</p>
-              <p className="font-semibold text-gray-800">{discharge.patientInfo.mrn}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Age</p>
-              <p className="font-semibold text-gray-800">{discharge.patientInfo.age}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Gender</p>
-              <p className="font-semibold text-gray-800">{discharge.patientInfo.gender}</p>
-            </div>
           </div>
-        </div>
 
-        {/* Admission Information */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Admission Information</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Ward</p>
-              <p className="font-semibold text-gray-800">{discharge.admissionInfo.ward}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Bed</p>
-              <p className="font-semibold text-gray-800">{discharge.admissionInfo.bed}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Admitted</p>
-              <p className="font-semibold text-gray-800">
-                {new Date(discharge.admissionInfo.admittedAt).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Discharged</p>
-              <p className="font-semibold text-gray-800">
-                {new Date(discharge.admissionInfo.dischargedAt).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Length of Stay</p>
-              <p className="font-semibold text-gray-800">{discharge.admissionInfo.lengthOfStay} days</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Diagnosis */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Diagnosis</h2>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Primary Diagnosis</p>
-            <p className="font-semibold text-gray-800 mb-4">{discharge.diagnosis.primary || 'N/A'}</p>
-          </div>
-          {discharge.diagnosis.secondary && discharge.diagnosis.secondary.length > 0 && (
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Secondary Diagnoses</p>
-              <ul className="list-disc list-inside text-gray-800">
-                {discharge.diagnosis.secondary.map((diag, idx) => (
-                  <li key={idx}>{diag}</li>
-                ))}
-              </ul>
+          {/* === INVESTIGATIONS === */}
+          {discharge.investigations && discharge.investigations.length > 0 && (
+            <div className="p-6 md:p-8 border-b-2 border-gray-300">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">INVESTIGATIONS</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs md:text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-400 bg-gray-100">
+                      <th className="text-left p-2 font-bold text-gray-900">TEST</th>
+                      <th className="text-left p-2 font-bold text-gray-900">POSITIVE</th>
+                      <th className="text-left p-2 font-bold text-gray-900">INPUT</th>
+                      <th className="text-left p-2 font-bold text-gray-900">NORMAL VALUES</th>
+                      <th className="text-left p-2 font-bold text-gray-900">FLAG</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {discharge.investigations.map((inv, idx) => (
+                      <tr key={idx} className="border-b border-gray-300">
+                        <td className="p-2 text-gray-900">{inv.name}</td>
+                        <td className="p-2 text-gray-900">{inv.findings ? 'YES' : '-'}</td>
+                        <td className="p-2 text-gray-900">{inv.results || '-'}</td>
+                        <td className="p-2 text-gray-900">{inv.findings || '-'}</td>
+                        <td className="p-2 text-gray-900">{inv.status || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Hospital Stay Summary */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Hospital Stay Summary</h2>
-          <div className="bg-gray-50 p-4 rounded">
+          {/* === OPERATIONS === */}
+          {discharge.procedures && discharge.procedures.length > 0 && (
+            <div className="p-6 md:p-8 border-b-2 border-gray-300">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">OPERATIONS</h3>
+              <div className="space-y-2">
+                {discharge.procedures.map((proc, idx) => (
+                  <p key={idx} className="text-base text-gray-900">
+                    {idx + 1}) {proc.name}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* === MEDICATION === */}
+          {discharge.medicationsOnDischarge && discharge.medicationsOnDischarge.length > 0 && (
+            <div className="p-6 md:p-8 border-b-2 border-gray-300">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">MEDICATION</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs md:text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-400 bg-gray-100">
+                      <th className="text-left p-2 font-bold text-gray-900">NO</th>
+                      <th className="text-left p-2 font-bold text-gray-900">MEDICINE NAME</th>
+                      <th className="text-left p-2 font-bold text-gray-900">DOSAGE</th>
+                      <th className="text-left p-2 font-bold text-gray-900">FREQUENCY</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {discharge.medicationsOnDischarge.map((med, idx) => (
+                      <tr key={idx} className="border-b border-gray-300">
+                        <td className="p-2 text-gray-900">{idx + 1}</td>
+                        <td className="p-2 text-gray-900">{med.name}</td>
+                        <td className="p-2 text-gray-900">{med.dosage || '-'}</td>
+                        <td className="p-2 text-gray-900">{med.frequency || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* === DISCHARGE DRUGS === */}
+          <div className="p-6 md:p-8 border-b-2 border-gray-300">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">DISCHARGE DRUG(S)</h3>
+            {isEditing ? (
+              <textarea
+                value={editData.dischargeNotes || discharge.dischargeNotes || ''}
+                onChange={(e) => handleEditChange('dischargeNotes', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                rows="4"
+              />
+            ) : (
+              <div className="text-sm text-gray-900 border-b-2 border-gray-400 pb-3 min-h-[60px]">
+                {discharge.dischargeNotes ? (
+                  discharge.dischargeNotes.split('\n').map((line, idx) => (
+                    <p key={idx}>{line}</p>
+                  ))
+                ) : (
+                  <p className="text-gray-500">See medications table above</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* === CLINICAL SUMMARY === */}
+          <div className="p-6 md:p-8 border-b-2 border-gray-300">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">CLINICAL SUMMARY</h3>
             {isEditing ? (
               <textarea
                 value={editData.hospitalStaySummary || discharge.hospitalStaySummary || ''}
                 onChange={(e) => handleEditChange('hospitalStaySummary', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                rows="5"
+                rows="6"
               />
             ) : (
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {discharge.hospitalStaySummary || 'No summary available'}
-              </p>
+              <div className="text-base text-gray-900 whitespace-pre-wrap border-b-2 border-gray-400 pb-4 min-h-[100px]">
+                {discharge.hospitalStaySummary || 'PATIENT WAS PRESENTED TO THE FACILITY WITH...'}
+              </div>
             )}
           </div>
-        </div>
 
-        {/* Investigations */}
-        {discharge.investigations && discharge.investigations.length > 0 && (
-          <div className="mb-8 border-b pb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Investigations Done</h2>
-            <div className="space-y-3">
-              {discharge.investigations.map((inv, idx) => (
-                <div key={idx} className="bg-gray-50 p-4 rounded">
-                  <p className="font-semibold text-gray-800">{inv.name}</p>
-                  <p className="text-sm text-gray-600">
-                    Date: {new Date(inv.date).toLocaleDateString()}
-                  </p>
-                  {inv.results && <p className="text-gray-700">Results: {inv.results}</p>}
-                  {inv.findings && <p className="text-gray-700">Findings: {inv.findings}</p>}
-                </div>
-              ))}
+          {/* === FOLLOW-UP PLAN === */}
+          <div className="p-6 md:p-8">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 uppercase tracking-wide mb-4">FOLLOW-UP PLAN</h3>
+            {isEditing ? (
+              <textarea
+                value={editData.followUpPlan || discharge.followUpPlan || ''}
+                onChange={(e) => handleEditChange('followUpPlan', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                rows="3"
+              />
+            ) : (
+              <div className="text-base text-gray-900">
+                {discharge.followUpPlan || 'Follow-up as advised'}
+              </div>
+            )}
+          </div>
+
+          {/* === SIGNATURE SECTION === */}
+          <div className="p-6 md:p-8 border-t-4 border-gray-800 mt-8">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <p className="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wide mb-16">DOCTOR'S NAME</p>
+                <div className="border-b-2 border-gray-800"></div>
+                <p className="text-xs text-gray-600 mt-2">SIGNATURE</p>
+              </div>
+              <div>
+                <p className="text-xs md:text-sm font-bold text-gray-700 uppercase tracking-wide mb-16">AUTHORIZED PERSON</p>
+                <div className="border-b-2 border-gray-800"></div>
+                <p className="text-xs text-gray-600 mt-2">SIGNATURE</p>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Procedures */}
-        {discharge.procedures && discharge.procedures.length > 0 && (
-          <div className="mb-8 border-b pb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Procedures Performed</h2>
-            <div className="space-y-3">
-              {discharge.procedures.map((proc, idx) => (
-                <div key={idx} className="bg-gray-50 p-4 rounded">
-                  <p className="font-semibold text-gray-800">{proc.name}</p>
-                  {proc.findings && <p className="text-gray-700">Findings: {proc.findings}</p>}
-                  {proc.result && <p className="text-gray-700">Result: {proc.result}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Medications on Discharge */}
-        {discharge.medicationsOnDischarge && discharge.medicationsOnDischarge.length > 0 && (
-          <div className="mb-8 border-b pb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Medications on Discharge</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-100 border-b">
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-800">Medicine</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-800">Dosage</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-800">Frequency</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-800">Duration</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-800">Instructions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {discharge.medicationsOnDischarge.map((med, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-2">{med.name}</td>
-                      <td className="px-4 py-2">{med.dosage || '-'}</td>
-                      <td className="px-4 py-2">{med.frequency || '-'}</td>
-                      <td className="px-4 py-2">{med.duration || '-'}</td>
-                      <td className="px-4 py-2">{med.instructions || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Discharge Condition */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Discharge Condition</h2>
-          {isEditing ? (
-            <select
-              value={editData.dischargeCondition}
-              onChange={(e) => handleEditChange('dischargeCondition', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            >
-              <option value="improved">Improved</option>
-              <option value="much_improved">Much Improved</option>
-              <option value="unchanged">Unchanged</option>
-              <option value="worsened">Worsened</option>
-              <option value="other">Other</option>
-            </select>
-          ) : (
-            <p className="text-gray-800 font-semibold capitalize">{discharge.dischargeCondition}</p>
-          )}
         </div>
-
-        {/* Follow-up Plan */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Follow-up Plan</h2>
-          {isEditing ? (
-            <textarea
-              value={editData.followUpPlan || discharge.followUpPlan || ''}
-              onChange={(e) => handleEditChange('followUpPlan', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              rows="4"
-              placeholder="Enter follow-up plan..."
-            />
-          ) : (
-            <p className="text-gray-700">{discharge.followUpPlan || 'No follow-up plan specified'}</p>
-          )}
-        </div>
-
-        {/* Instructions to Patient */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Instructions to Patient</h2>
-          {isEditing ? (
-            <textarea
-              value={editData.instructionsToPatient || discharge.instructionsToPatient || ''}
-              onChange={(e) => handleEditChange('instructionsToPatient', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              rows="4"
-              placeholder="Enter care instructions..."
-            />
-          ) : (
-            <p className="text-gray-700">{discharge.instructionsToPatient || 'No instructions provided'}</p>
-          )}
-        </div>
-
-        {/* Dietary Recommendations */}
-        <div className="mb-8 border-b pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Dietary Recommendations</h2>
-          {isEditing ? (
-            <textarea
-              value={editData.dietaryRecommendations || discharge.dietaryRecommendations || ''}
-              onChange={(e) => handleEditChange('dietaryRecommendations', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              rows="3"
-              placeholder="Enter dietary recommendations..."
-            />
-          ) : (
-            <p className="text-gray-700">{discharge.dietaryRecommendations || 'No dietary recommendations'}</p>
-          )}
-        </div>
-
-        {/* Discharging Doctor */}
-        <div className="mb-8 pb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Discharging Physician</h2>
-          <p className="text-gray-800 font-semibold">{discharge.dischargingDoctorName || 'N/A'}</p>
-          {discharge.finalizationInfo?.finalizedAt && (
-            <div className="mt-4 text-sm text-gray-600">
-              <p>Finalized on: {new Date(discharge.finalizationInfo.finalizedAt).toLocaleString()}</p>
-            </div>
-          )}
-        </div>
-
       </div>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body {
+            background: white;
+            margin: 0;
+            padding: 0;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+          .print\\:shadow-none {
+            box-shadow: none !important;
+          }
+          #discharge-summary-content {
+            box-shadow: none;
+            border-radius: 0;
+            max-width: 100%;
+            page-break-inside: avoid;
+          }
+          @page {
+            margin: 0.5in;
+            size: A4;
+          }
+        }
+      `}</style>
     </div>
   );
 }

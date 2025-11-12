@@ -107,6 +107,25 @@ export const AuthProvider = ({ children }) => {
       },
       (error) => Promise.reject(error)
     );
+
+    // Add response interceptor to handle 401 errors
+    instance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          console.warn(`[AuthContext] 401 Unauthorized on ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+          // Don't auto-logout on 401 for some endpoints (they may be optional)
+          // Only critical endpoints should trigger logout
+          const criticalEndpoints = ['/users/me'];
+          const isCritical = criticalEndpoints.some(ep => error.config?.url?.includes(ep));
+          if (isCritical) {
+            console.error('[AuthContext] Critical endpoint failed with 401, token may be expired');
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
     return instance;
   }, [accessToken]);
 
@@ -121,8 +140,13 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(token);
 
       try {
-        // fetch full user profile (includes permissions) using axiosInstance which will attach the token
-        const profile = await axiosInstance.get('/users/me');
+        // Create a temporary axios instance with the token for this request
+        // This is necessary because the memoized axiosInstance won't have the token yet
+        const tempAxios = axios.create({ baseURL: API_BASE, timeout: 15000 });
+        tempAxios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        console.log('[Login] Fetching user profile with token');
+        const profile = await tempAxios.get('/users/me');
         if (profile && profile.data && profile.data.user) {
           setUser(profile.data.user);
         } else {
@@ -131,6 +155,7 @@ export const AuthProvider = ({ children }) => {
           setUser({ _id: payload.id || payload._id || payload.sub, role: payload.role });
         }
       } catch (e) {
+        console.error('[Login] Failed to fetch profile, using token payload fallback:', e.message);
         // If fetching profile fails, fall back to token payload
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));

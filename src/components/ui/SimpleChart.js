@@ -2,7 +2,12 @@ import React, { useRef, useState } from 'react';
 
 export default function SimpleChart({ data = [3,5,2,8,6,9,7], labels = [], height = 60 }) {
   const max = Math.max(...data, 1);
-  const points = data.map((v, i) => `${(i/(data.length-1))*100},${100 - (v/max*100)}`).join(' ');
+  
+  // Prevent NaN when data has only 1 point by handling division by zero
+  const getX = (i) => data.length > 1 ? (i/(data.length-1))*100 : 50;
+  const getY = (v) => 100 - (v/max*100);
+  
+  const points = data.map((v, i) => `${getX(i)},${getY(v)}`).join(' ');
   const containerRef = useRef(null);
   const [tooltip, setTooltip] = useState(null);
 
@@ -22,8 +27,8 @@ export default function SimpleChart({ data = [3,5,2,8,6,9,7], labels = [], heigh
         <polyline fill="none" stroke="#0ea5e9" strokeWidth="1.5" points={points} />
         {data.map((v,i)=> (
           <circle key={i}
-            cx={(i/(data.length-1))*100}
-            cy={100 - (v/max*100)}
+            cx={getX(i)}
+            cy={getY(v)}
             r="1.6"
             fill="#0369a1"
             onMouseEnter={(ev)=>showTooltip(ev, v, i)}
@@ -38,7 +43,7 @@ export default function SimpleChart({ data = [3,5,2,8,6,9,7], labels = [], heigh
       {/* x-axis labels */}
       {labels && labels.length === data.length && (
         <div className="w-full flex text-xs text-gray-500 mt-2 justify-between px-1">
-          {labels.map((l,i)=>(<div key={i} className="truncate text-center" style={{width: `${100/(labels.length)}%`, transform: 'translateX(-50%)', marginLeft: `${(i/(labels.length-1))*100}%`}}>{l}</div>))}
+          {labels.map((l,i)=>(<div key={i} className="truncate text-center" style={{width: `${100/(labels.length)}%`, transform: 'translateX(-50%)', marginLeft: `${labels.length > 1 ? (i/(labels.length-1))*100 : 50}%`}}>{l}</div>))}
         </div>
       )}
 
