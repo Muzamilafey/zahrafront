@@ -91,6 +91,7 @@ import Placeholder from './components/Placeholder';
 import DischargeSummary from './pages/patients/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
+import DischargedPatientsList from './pages/patients/DischargedPatientsList';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
@@ -192,8 +193,12 @@ function App() {
 
           {/* Clinical Documentation */}
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargedPatientSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          {/* Unified discharge summary page (single canonical page) */}
+          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
+
+          {/* Dedicated page for discharged patients */}
+          <Route path="/patients/discharged" element={<PrivateRoute><Layout><DischargedPatientsList /></Layout></PrivateRoute>} />
           <Route path="/patients/:id/diagnosis" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Diagnosis" /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/referral-letter" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Referral Letter" /></ErrorBoundary></Layout></PrivateRoute>} />
           

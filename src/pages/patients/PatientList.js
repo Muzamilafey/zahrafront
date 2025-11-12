@@ -55,16 +55,7 @@ export default function PatientList() {
         });
       }
 
-      // ✅ Additional fallback for discharged patients (if backend doesn’t have endpoint)
-      if (status === 'discharged' && (!res.data || res.data.length === 0)) {
-        list = list.filter((p) => {
-          const hasHistory =
-            Array.isArray(p.admissionHistory) && p.admissionHistory.length > 0;
-          const currentlyAdmitted = p.admission && p.admission.isAdmitted;
-          const dischargedAt = p.admission && p.admission.dischargedAt;
-          return hasHistory || (!currentlyAdmitted && dischargedAt);
-        });
-      }
+      // Note: discharged patients are now listed on a dedicated page. PatientList shows 'all' or 'admitted'.
 
       setPatients(list || []);
     } catch (e) {
@@ -114,7 +105,12 @@ export default function PatientList() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">{pageTitle}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-semibold">{pageTitle}</h2>
+        <div>
+          <button onClick={() => navigate('/patients/discharged')} className="btn-outline">View Discharged Patients</button>
+        </div>
+      </div>
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center gap-2">
           <input
@@ -147,7 +143,6 @@ export default function PatientList() {
           >
             <option value="all">All Patients</option>
             <option value="admitted">Admitted</option>
-            <option value="discharged">Discharged</option>
           </select>
         </div>
       </div>
