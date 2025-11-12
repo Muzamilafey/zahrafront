@@ -35,39 +35,112 @@ export default function DischargeSummaryPage() {
   const loadDischargeSummary = async () => {
     setLoading(true);
     setError(null);
-    try {
-      // Get all discharge summaries for the patient
-      const res = await axiosInstance.get(`/discharge/patient/${patientId}`);
-      if (res.data.summaries && res.data.summaries.length > 0) {
-        // Use the most recent one
-        const latest = res.data.summaries[0];
-        setDischarge(latest);
-        setEditData({
-          dischargeCondition: latest.dischargeCondition,
-          dischargeNotes: latest.dischargeNotes,
-          followUpPlan: latest.followUpPlan,
-          instructionsToPatient: latest.instructionsToPatient,
-          dietaryRecommendations: latest.dietaryRecommendations,
-          activityRestrictions: latest.activityRestrictions,
-          warningSignsToWatch: latest.warningSignsToWatch || []
-        });
+
+    const tryGet = async (url) => {
+      try {
+        const r = await axiosInstance.get(url);
+        return r.data;
+      } catch (err) {
+        // If 404 or endpoint not present, return null and continue to fallback
+        return null;
       }
-      else {
-        // no discharge summary found - try to fetch basic patient info to show preview
-        try {
-          const pRes = await axiosInstance.get(`/patients/${patientId}`);
-          const p = pRes.data.patient || pRes.data;
-          setPatientPreview(p);
-        } catch (pe) {
-          // ignore - patient preview optional
-          console.warn('Could not load patient preview:', pe?.message || pe);
+    };
+
+    const endpoints = [
+      `/discharge/patient/${patientId}`,
+      `/discharge/${patientId}`,
+      `/patients/${patientId}/discharge`,
+      `/patients/${patientId}/discharge-summary`
+    ];
+
+    let found = null;
+
+    // Try each endpoint once
+    for (const ep of endpoints) {
+      const data = await tryGet(ep);
+      if (!data) continue;
+
+      // Normalize shapes
+      if (data.summaries && Array.isArray(data.summaries) && data.summaries.length > 0) {
+        found = data.summaries[0];
+        break;
+      }
+      if (Array.isArray(data) && data.length > 0) {
+        found = data[0];
+        break;
+      }
+      if (data.discharge || data.summary || data.dischargeSummary) {
+        found = data.discharge || data.summary || data.dischargeSummary;
+        break;
+      }
+      // Some APIs may return the summary directly in the body
+      if (typeof data === 'object' && Object.keys(data).length > 0) {
+        // Heuristic: if object has admissionInfo or patientInfo, treat as discharge
+        if (data.admissionInfo || data.patientInfo || data.diagnosis) {
+          found = data;
+          break;
         }
       }
-    } catch (e) {
-      setError(e?.response?.data?.message || 'Failed to load discharge summary');
-    } finally {
-      setLoading(false);
     }
+
+    // If not found, try a short retry loop (some backends create the summary asynchronously)
+    let attempts = 0;
+    while (!found && attempts < 3) {
+      attempts += 1;
+      await new Promise((r) => setTimeout(r, 1200));
+      for (const ep of endpoints) {
+        const data = await tryGet(ep);
+        if (!data) continue;
+        if (data.summaries && Array.isArray(data.summaries) && data.summaries.length > 0) {
+          found = data.summaries[0];
+          break;
+        }
+        if (Array.isArray(data) && data.length > 0) {
+          found = data[0];
+          break;
+        }
+        if (data.discharge || data.summary || data.dischargeSummary) {
+          found = data.discharge || data.summary || data.dischargeSummary;
+          break;
+        }
+        if (typeof data === 'object' && Object.keys(data).length > 0) {
+          if (data.admissionInfo || data.patientInfo || data.diagnosis) {
+            found = data;
+            break;
+          }
+        }
+      }
+    }
+
+    if (found) {
+      const latest = found;
+      setDischarge(latest);
+      setEditData({
+        dischargeCondition: latest.dischargeCondition,
+        dischargeNotes: latest.dischargeNotes,
+        followUpPlan: latest.followUpPlan,
+        instructionsToPatient: latest.instructionsToPatient,
+        dietaryRecommendations: latest.dietaryRecommendations,
+        activityRestrictions: latest.activityRestrictions,
+        warningSignsToWatch: latest.warningSignsToWatch || []
+      });
+      // Set a reasonable patient preview if available
+      const preview = latest.patientInfo || latest.patient || latest.patientPreview;
+      if (preview) setPatientPreview(preview);
+      setLoading(false);
+      return;
+    }
+
+    // No summary found - try to at least load patient preview
+    try {
+      const pRes = await axiosInstance.get(`/patients/${patientId}`);
+      const p = pRes.data.patient || pRes.data;
+      setPatientPreview(p);
+    } catch (pe) {
+      console.warn('Could not load patient preview:', pe?.message || pe);
+    }
+
+    setLoading(false);
   };
 
   const handleDischargeNow = async () => {
