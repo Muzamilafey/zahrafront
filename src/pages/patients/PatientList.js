@@ -11,53 +11,67 @@ export default function PatientList() {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  
+
   const status = searchParams.get('status') || 'all';
 
+  // ✅ Always re-load when filters or query change
   useEffect(() => {
-    // keep local query in sync with URL param
     setQuery(searchParams.get('q') || '');
     loadPatients();
-  }, [searchParams]);
+  }, [status, searchParams]);
 
   const loadPatients = async () => {
     try {
+      setLoading(true);
       let res;
+
+      // ✅ Backend-side filtering by status
       if (status === 'admitted') {
         res = await axiosInstance.get('/patients/admitted');
+      } else if (status === 'discharged') {
+        res = await axiosInstance.get('/patients/discharged');
       } else {
-        // For both 'discharged' and 'all' we use the generic patients endpoint
         res = await axiosInstance.get('/patients');
       }
 
-      // Normalize response to an array of patients. Backend may return { patients: [...] } or [...]
-      let list = Array.isArray(res.data) ? res.data : (res.data.patients || []);
+      let list = Array.isArray(res.data)
+        ? res.data
+        : (res.data.patients || []);
 
-      // If filtering for discharged, apply a client-side filter to normalize backend differences
-      if (status === 'discharged') {
-        list = list.filter(p => {
-          const hasHistory = Array.isArray(p.admissionHistory) && p.admissionHistory.length > 0;
-          const currentlyAdmitted = p.admission && p.admission.isAdmitted;
-          const dischargedAt = p.admission && p.admission.dischargedAt;
-          return hasHistory || (!currentlyAdmitted && !!dischargedAt) || (!currentlyAdmitted && hasHistory);
+      // ✅ Client-side text filtering (query)
+      const q = (searchParams.get('q') || '').toLowerCase().trim();
+      if (q) {
+        list = list.filter((p) => {
+          const name = (p.user?.name || p.name || '').toLowerCase();
+          const hospitalId = String(p.hospitalId || p.mrn || '').toLowerCase();
+          const mrn = String(p.mrn || '').toLowerCase();
+          const email = (p.user?.email || '').toLowerCase();
+          return (
+            name.includes(q) ||
+            hospitalId.includes(q) ||
+            mrn.includes(q) ||
+            email.includes(q)
+          );
         });
       }
 
-      // Apply text query filtering
-      const q = (searchParams.get('q') || '').toLowerCase().trim();
-      if (q) {
-        list = list.filter(p => {
-          const name = (p.user?.name || p.name || '').toLowerCase();
-          const hosp = String(p.hospitalId || p.hospitalId || p.mrn || '').toLowerCase();
-          const mrn = String(p.mrn || '').toLowerCase();
-          const email = (p.user?.email || '').toLowerCase();
-          return name.includes(q) || hosp.includes(q) || mrn.includes(q) || email.includes(q);
+      // ✅ Additional fallback for discharged patients (if backend doesn’t have endpoint)
+      if (status === 'discharged' && (!res.data || res.data.length === 0)) {
+        list = list.filter((p) => {
+          const hasHistory =
+            Array.isArray(p.admissionHistory) && p.admissionHistory.length > 0;
+          const currentlyAdmitted = p.admission && p.admission.isAdmitted;
+          const dischargedAt = p.admission && p.admission.dischargedAt;
+          return hasHistory || (!currentlyAdmitted && dischargedAt);
         });
       }
 
       setPatients(list || []);
     } catch (e) {
-      setToast({ message: e?.response?.data?.message || 'Failed to load patients', type: 'error' });
+      setToast({
+        message: e?.response?.data?.message || 'Failed to load patients',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -65,24 +79,25 @@ export default function PatientList() {
 
   const applyStatus = (s) => {
     const params = Object.fromEntries([...searchParams]);
-    if (s && s !== 'all') params.status = s; else delete params.status;
+    if (s && s !== 'all') params.status = s;
+    else delete params.status;
     setSearchParams(params);
   };
 
   const applySearch = (q) => {
     const params = Object.fromEntries([...searchParams]);
-    if (q && q.trim().length > 0) params.q = q.trim(); else delete params.q;
+    if (q && q.trim().length > 0) params.q = q.trim();
+    else delete params.q;
     setSearchParams(params);
   };
 
   const formatDate = (date) => {
+    if (!date) return '-';
     return new Date(date).toLocaleDateString();
   };
 
   const getPatientStatus = (patient) => {
-    if (patient.admission?.isAdmitted) {
-      return 'Admitted';
-    }
+    if (patient.admission?.isAdmitted) return 'Admitted';
     return 'Discharged';
   };
 
@@ -90,10 +105,12 @@ export default function PatientList() {
     navigate(`/patients/${patientId}/discharge-summary`);
   };
 
-  const pageTitle = 
-    status === 'admitted' ? 'Currently Admitted Patients' :
-    status === 'discharged' ? 'Discharged Patients' :
-    'All Patients';
+  const pageTitle =
+    status === 'admitted'
+      ? 'Currently Admitted Patients'
+      : status === 'discharged'
+      ? 'Discharged Patients'
+      : 'All Patients';
 
   return (
     <div className="p-6">
@@ -105,13 +122,29 @@ export default function PatientList() {
             placeholder="Search by name, hospital ID, or MRN..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') applySearch(query); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applySearch(query);
+            }}
           />
-          <button className="btn-brand" onClick={() => applySearch(query)}>Search</button>
-          <button className="btn-outline" onClick={() => { setQuery(''); applySearch(''); }}>Clear</button>
+          <button className="btn-brand" onClick={() => applySearch(query)}>
+            Search
+          </button>
+          <button
+            className="btn-outline"
+            onClick={() => {
+              setQuery('');
+              applySearch('');
+            }}
+          >
+            Clear
+          </button>
         </div>
         <div className="flex items-center gap-2">
-          <select className="input" value={status} onChange={(e) => applyStatus(e.target.value)}>
+          <select
+            className="input"
+            value={status}
+            onChange={(e) => applyStatus(e.target.value)}
+          >
             <option value="all">All Patients</option>
             <option value="admitted">Admitted</option>
             <option value="discharged">Discharged</option>
@@ -128,66 +161,106 @@ export default function PatientList() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Patient ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Gender
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Age
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contact
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {patients.map((patient) => (
                 <tr key={patient._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{patient.hospitalId}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {patient.hospitalId}
+                    </div>
                     <div className="text-sm text-gray-500">{patient.mrn}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{patient.user?.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{patient.gender}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {patient.dob ? Math.floor((new Date() - new Date(patient.dob)) / 31557600000) : '-'}
+                      {patient.user?.name || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{patient.user?.phone}</div>
-                    <div className="text-sm text-gray-500">{patient.user?.email}</div>
+                    <div className="text-sm text-gray-900">
+                      {patient.gender || '-'}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${patient.admission?.isAdmitted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    <div className="text-sm text-gray-900">
+                      {patient.dob
+                        ? Math.floor(
+                            (new Date() - new Date(patient.dob)) / 31557600000
+                          )
+                        : '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {patient.user?.phone || '-'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {patient.user?.email || ''}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${
+                        patient.admission?.isAdmitted
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {getPatientStatus(patient)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
+                    <button
                       onClick={() => navigate(`/patients/${patient._id}`)}
                       className="text-brand-600 hover:text-brand-900 mr-4"
                     >
                       View Details
                     </button>
-                    {!patient.admission?.isAdmitted && (patient.admissionHistory?.length > 0 || patient.admission?.dischargedAt) && (
-                      <button 
-                        onClick={() => handleViewDischargeSummary(patient._id)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Discharge Summary
-                      </button>
-                    )}
-                    {patient.admission?.isAdmitted && user && user.role === 'admin' && (
-                      <button
-                        onClick={() => navigate(`/discharge/${patient._id}`)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Discharge
-                      </button>
-                    )}
+                    {!patient.admission?.isAdmitted &&
+                      (patient.admissionHistory?.length > 0 ||
+                        patient.admission?.dischargedAt) && (
+                        <button
+                          onClick={() =>
+                            handleViewDischargeSummary(patient._id)
+                          }
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Discharge Summary
+                        </button>
+                      )}
+                    {patient.admission?.isAdmitted &&
+                      user &&
+                      user.role === 'admin' && (
+                        <button
+                          onClick={() => navigate(`/discharge/${patient._id}`)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Discharge
+                        </button>
+                      )}
                   </td>
                 </tr>
               ))}
@@ -195,7 +268,7 @@ export default function PatientList() {
           </table>
         </div>
       )}
-      
+
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );

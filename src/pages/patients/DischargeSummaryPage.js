@@ -144,18 +144,36 @@ export default function DischargeSummaryPage() {
   };
 
   const handleDischargeNow = async () => {
-    if (!window.confirm('Discharge this patient now? This will finalize the admission and may create an invoice.')) return;
-    setSaveMessage({ type: 'loading', text: 'Discharging patient...' });
+    if (!window.confirm('Discharge this patient now? This will finalize the admission and generate an invoice.')) return;
+    setSaveMessage({ type: 'loading', text: 'Discharging patient and generating invoice...' });
     try {
+      // Call discharge endpoint
       const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
-      setSaveMessage({ type: 'success', text: 'Discharge processed' });
-      setTimeout(() => setSaveMessage(null), 2500);
+      
+      // If invoice was returned, navigate to it
       if (res.data && res.data.invoice && res.data.invoice._id) {
-        // Show all charges for this patient after discharge (open billing list filtered by patient)
-        navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);
+        setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
+        setTimeout(() => navigate(`/billing/${res.data.invoice._id}`), 1500);
         return;
       }
-      // reload summary area
+      
+      // Otherwise, try to generate invoice via discharge endpoint
+      try {
+        const invRes = await axiosInstance.post(`/discharge/${patientId}/generate-invoice`);
+        if (invRes.data && invRes.data.invoice && invRes.data.invoice._id) {
+          setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
+          setTimeout(() => navigate(`/billing/${invRes.data.invoice._id}`), 1500);
+          return;
+        }
+      } catch (invErr) {
+        console.warn('Invoice generation failed:', invErr?.message || invErr);
+        // fallback: show billing list for this patient
+        setSaveMessage({ type: 'success', text: 'Patient discharged' });
+        setTimeout(() => navigate(`/billing?patientId=${patientId}`), 1500);
+        return;
+      }
+
+      // reload summary
       loadDischargeSummary();
     } catch (err) {
       console.error('Discharge now failed', err);
@@ -475,18 +493,29 @@ export default function DischargeSummaryPage() {
                 {user && user.role === 'admin' && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm('This will finalize admission invoice for the patient. Continue?')) return;
+                      if (!window.confirm('This will discharge the patient and generate an invoice. Continue?')) return;
                       try {
-                        setSaveMessage({ type: 'loading', text: 'Finalizing invoice...' });
+                        setSaveMessage({ type: 'loading', text: 'Discharging and generating invoice...' });
                         const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
-                        setSaveMessage({ type: 'success', text: 'Invoice finalized' });
-                        setTimeout(() => setSaveMessage(null), 3000);
+                        
                         if (res.data && res.data.invoice && res.data.invoice._id) {
-                          // show all charges for the patient
-                          navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);
+                          setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
+                          setTimeout(() => navigate(`/billing/${res.data.invoice._id}`), 1500);
                           return;
                         }
-                        // fallback: refresh discharge summary
+                        
+                        // Try alternative invoice generation
+                        try {
+                          const invRes = await axiosInstance.post(`/discharge/${patientId}/generate-invoice`);
+                          if (invRes.data && invRes.data.invoice && invRes.data.invoice._id) {
+                            setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
+                            setTimeout(() => navigate(`/billing/${invRes.data.invoice._id}`), 1500);
+                            return;
+                          }
+                        } catch (invErr) {
+                          console.warn('Invoice generation failed:', invErr?.message);
+                        }
+                        
                         loadDischargeSummary();
                       } catch (e) {
                         setSaveMessage({ type: 'error', text: e?.response?.data?.message || 'Failed to finalize invoice' });

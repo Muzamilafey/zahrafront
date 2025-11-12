@@ -91,7 +91,7 @@ import Placeholder from './components/Placeholder';
 import DischargeSummary from './pages/patients/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
-import InvoiceDetails from './pages/billing/InvoiceDetails';
+import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
 
@@ -244,7 +244,7 @@ function App() {
           <Route path="/pharmacy" element={<PrivateRoute><Layout><Pharmacy /></Layout></PrivateRoute>} />
           <Route path="/pharmacy/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
           <Route path="/billing" element={<PrivateRoute><Layout><Billing /></Layout></PrivateRoute>} />
-          <Route path="/billing/:invoiceId" element={<PrivateRoute><Layout><InvoiceDetails /></Layout></PrivateRoute>} />
+          <Route path="/billing/:invoiceId" element={<PrivateRoute><Layout><InvoiceDetail /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/appointments" element={<PrivateRoute><Layout><AppointmentsBilling /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/transactions" element={<PrivateRoute><Layout><Transactions /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/reports" element={<PrivateRoute><Layout><Reports /></Layout></PrivateRoute>} />
