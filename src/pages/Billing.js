@@ -169,7 +169,8 @@ export default function Billing() {
   const createInvoice = async (e) => {
     e.preventDefault();
     try{
-      await axiosInstance.post('/billing', { patientId: form.patientId, amount: parseFloat(form.amount), type: form.type });
+      const { createOrMergeInvoice } = await import('../utils/billing');
+      await createOrMergeInvoice(axiosInstance, { patientId: form.patientId, amount: parseFloat(form.amount), type: form.type });
       const res = await axiosInstance.get('/billing');
       setInvoices(res.data.invoices || []);
       setForm({ patientId:'', amount:'', type: 'treatment' });

@@ -81,20 +81,38 @@ export default function ClinicalSummary() {
     try {
       setSaving(true);
       console.log(`[ClinicalSummary] Submitting PATCH to /admission/${admissionId} with token`);
-      // Try patching common endpoints in order
+      // Try patching common endpoints in order, then fall back to PUT variations used elsewhere
+      let saved = false;
       try {
         await axiosInstance.patch(`/admission/${admissionId}`, { clinicalSummary });
+        saved = true;
       } catch (err) {
+        // if not found, try plural
         if (err?.response?.status === 404) {
           try {
             await axiosInstance.patch(`/admissions/${admissionId}`, { clinicalSummary });
+            saved = true;
           } catch (err2) {
-            // if we loaded a patient earlier (admissionId was actually a patient id), try updating patient's admission
+            // many parts of the app use PUT to /patients/:id/admission or /admissions/:id — try those
             if (patient && patient._id) {
               try {
-                await axiosInstance.patch(`/patients/${patient._id}/admission`, { clinicalSummary });
+                await axiosInstance.put(`/patients/${patient._id}/admission`, { clinicalSummary });
+                saved = true;
               } catch (err3) {
-                throw err3;
+                // try PUT to admissions resource if we have admissionId
+                try {
+                  await axiosInstance.put(`/admissions/${admissionId}`, { clinicalSummary });
+                  saved = true;
+                } catch (err4) {
+                  // last resort: try updating the patient top-level with an admission object
+                  try {
+                    await axiosInstance.put(`/patients/${patient._id}`, { admission: { clinicalSummary } });
+                    saved = true;
+                  } catch (err5) {
+                    // bubble original error if all fallbacks fail
+                    throw err5 || err4 || err3 || err2 || err;
+                  }
+                }
               }
             } else {
               throw err2;

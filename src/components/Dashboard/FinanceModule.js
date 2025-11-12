@@ -71,8 +71,11 @@ export default function FinanceModule({ axiosInstance, user }) {
     if (!form.patientId || !form.amount) return alert('Patient and Amount required');
     try {
       setLoading(true);
-      const res = await axiosInstance.post('/billing', form);
-      setInvoices(sortInvoicesDesc([res.data.invoice, ...invoices]));
+      const { createOrMergeInvoice } = await import('../../utils/billing');
+      const res = await createOrMergeInvoice(axiosInstance, form);
+      // server may return invoice in different places
+      const invoice = res.data?.invoice || res.data;
+      setInvoices(sortInvoicesDesc([invoice, ...invoices]));
       setForm({ patientId: '', amount: '', type: 'treatment' });
       showToast('Invoice created', 'success');
     } catch (err) { console.error(err); showToast(err?.response?.data?.message || 'Failed', 'error'); }

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import StatsCard from '../ui/StatsCard';
 import DataTable from '../ui/DataTable';
 import { AuthContext } from '../../contexts/AuthContext';
+import { createOrMergeInvoice } from '../../utils/billing';
 import ThemeToggle from '../ui/ThemeToggle';
 import PharmacySalesSummary from './PharmacySalesSummary';
 
@@ -85,7 +86,7 @@ export default function FinanceDashboard() {
   const createInvoice = async (e) => {
     e && e.preventDefault && e.preventDefault();
     try {
-      await axiosInstance.post('/billing', { patientId: form.patientId, amount: parseFloat(form.amount), type: form.type });
+      await createOrMergeInvoice(axiosInstance, { patientId: form.patientId, amount: parseFloat(form.amount), type: form.type });
   const res = await axiosInstance.get('/billing');
   setInvoices(sortInvoicesDesc(res.data.invoices || []));
       setForm({ patientId: '', amount: '', type: 'treatment' });
@@ -231,7 +232,7 @@ export default function FinanceDashboard() {
             {user?.role === 'finance' && (
               <div className="bg-gray-50 p-3 rounded mb-4">
                 <h4 className="font-semibold mb-2">Create Invoice from Appointment</h4>
-                <form onSubmit={async (e)=>{ e.preventDefault(); try{ await axiosInstance.post('/billing', { appointmentId: apptForm.appointmentId, amount: parseFloat(apptForm.amount), type: apptForm.type }); const res = await axiosInstance.get('/billing'); setInvoices(sortInvoicesDesc(res.data.invoices || [])); setApptForm({ appointmentId:'', amount:'', type:'treatment' }); alert('Invoice created'); }catch(err){ console.error(err); alert(err?.response?.data?.message || 'Create failed'); } }} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <form onSubmit={async (e)=>{ e.preventDefault(); try{ await createOrMergeInvoice(axiosInstance, { appointmentId: apptForm.appointmentId, amount: parseFloat(apptForm.amount), type: apptForm.type }); const res = await axiosInstance.get('/billing'); setInvoices(sortInvoicesDesc(res.data.invoices || [])); setApptForm({ appointmentId:'', amount:'', type:'treatment' }); alert('Invoice created'); }catch(err){ console.error(err); alert(err?.response?.data?.message || 'Create failed'); } }} className="grid grid-cols-1 md:grid-cols-4 gap-2">
                   <select className="input" value={apptForm.appointmentId} onChange={e=>setApptForm({...apptForm,appointmentId:e.target.value})}>
                       <option value="">-- Select appointment --</option>
                       {appointments.map(a=>{

@@ -27,7 +27,8 @@ export default function AppointmentsBilling(){
     try{
       // simple prompt for amount
       const amount = parseFloat(prompt('Enter invoice amount')); if (!amount) return;
-      await axiosInstance.post('/billing', { appointmentId: id, amount, type: 'treatment' });
+      const { createOrMergeInvoice } = await import('../../utils/billing');
+      await createOrMergeInvoice(axiosInstance, { appointmentId: id, amount, type: 'treatment' });
       alert('Invoice created');
       // refresh list
       const invRes = await axiosInstance.get('/billing');
