@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from 'contexts/AuthContext';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -14,7 +14,8 @@ const FACILITY_INFO = {
 
 export default function DischargeSummaryPage() {
   const { id: patientId } = useParams();
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const printRef = useRef();
 
   const [discharge, setDischarge] = useState(null);
@@ -244,6 +245,31 @@ export default function DischargeSummaryPage() {
                 >
                   Finalize
                 </button>
+                {user && user.role === 'admin' && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('This will finalize admission invoice for the patient. Continue?')) return;
+                      try {
+                        setSaveMessage({ type: 'loading', text: 'Finalizing invoice...' });
+                        const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
+                        setSaveMessage({ type: 'success', text: 'Invoice finalized' });
+                        setTimeout(() => setSaveMessage(null), 3000);
+                        if (res.data && res.data.invoice && res.data.invoice._id) {
+                          navigate(`/billing/${res.data.invoice._id}`);
+                          return;
+                        }
+                        // fallback: refresh discharge summary
+                        loadDischargeSummary();
+                      } catch (e) {
+                        setSaveMessage({ type: 'error', text: e?.response?.data?.message || 'Failed to finalize invoice' });
+                        setTimeout(() => setSaveMessage(null), 4000);
+                      }
+                    }}
+                    className="px-3 py-2 bg-red-600 text-white text-sm rounded font-semibold hover:bg-red-700"
+                  >
+                    Finalize Invoice
+                  </button>
+                )}
               </>
             )}
             <button

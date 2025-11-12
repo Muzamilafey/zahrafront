@@ -4,7 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
 
 export default function PatientList() {
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [patients, setPatients] = useState([]);
@@ -130,8 +130,13 @@ export default function PatientList() {
                         Discharge Summary
                       </button>
                     )}
-                    {patient.admission?.isAdmitted && (
-                      <button className="text-red-600 hover:text-red-900">Discharge</button>
+                    {patient.admission?.isAdmitted && user && user.role === 'admin' && (
+                      <button
+                        onClick={() => navigate(`/discharge/${patient._id}`)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Discharge
+                      </button>
                     )}
                   </td>
                 </tr>

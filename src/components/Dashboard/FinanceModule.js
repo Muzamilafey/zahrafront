@@ -125,15 +125,36 @@ export default function FinanceModule({ axiosInstance, user }) {
   };
 
   const printInvoice = async (inv) => {
-    try {
-      const res = await axiosInstance.get(`/billing/${inv._id}/pdf`, { responseType: 'blob' });
-      const url = URL.createObjectURL(res.data);
-      const w = window.open(url, '_blank');
-      if (!w) { const a = document.createElement('a'); a.href = url; a.download = `invoice-${inv.invoiceNumber || inv._id}.pdf`; document.body.appendChild(a); a.click(); a.remove(); } else { w.focus(); }
-      setTimeout(()=> URL.revokeObjectURL(url), 60*1000);
-      return;
-    }catch(dErr){ console.warn('Download endpoint failed:', dErr?.response?.status); }
-    alert('Could not fetch PDF for printing — check backend logs or ensure the PDF was generated.');
+    // Try server-generated PDF via the print endpoint, fallback to download endpoint, then fallback to HTML print
+    try{
+      // try the print endpoint first (server generates PDF response)
+      const resp = await axiosInstance.get(`/billing/${inv._id}/print`, { responseType: 'blob' });
+      if (resp.status === 200) {
+        const blob = new Blob([resp.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const w = window.open(url, '_blank');
+        if (!w) { const a = document.createElement('a'); a.href = url; a.download = `invoice-${inv.invoiceNumber || inv._id}.pdf`; document.body.appendChild(a); a.click(); a.remove(); } else { w.focus(); }
+        setTimeout(()=> URL.revokeObjectURL(url), 60 * 1000);
+        return;
+      }
+    }catch(err){
+      console.warn('Print endpoint failed:', err?.response?.status, err?.response?.data || err.message || err);
+      // try download endpoint as fallback (served when PDF previously generated/saved)
+      try{
+        const dResp = await axiosInstance.get(`/billing/${inv._id}/download`, { responseType: 'blob' });
+        if (dResp.status === 200) {
+          const blob = new Blob([dResp.data], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const w = window.open(url, '_blank');
+          if (!w) { const a = document.createElement('a'); a.href = url; a.download = `invoice-${inv.invoiceNumber || inv._id}.pdf`; document.body.appendChild(a); a.click(); a.remove(); } else { w.focus(); }
+          setTimeout(()=> URL.revokeObjectURL(url), 60 * 1000);
+          return;
+        }
+      }catch(dErr){ console.warn('Download endpoint failed:', dErr?.response?.status, dErr?.response?.data || dErr.message || dErr); }
+    }
+
+    // Fallback: show user friendly alert and allow HTML print fallback
+    alert('Could not fetch a server-generated PDF for printing — falling back to browser print or check backend logs.');
   };
 
   const exportInvoice = async (inv) => {
