@@ -44,10 +44,14 @@ export default function ClinicalSummary() {
     e.preventDefault();
     try {
       setSaving(true);
-  await axiosInstance.patch(`/admission/${admissionId}`, { clinicalSummary });
+      console.log(`[ClinicalSummary] Submitting PATCH to /admission/${admissionId} with token`);
+      await axiosInstance.patch(`/admission/${admissionId}`, { clinicalSummary });
       navigate(`/discharge/${admissionId}`);
     } catch (err) {
       console.error('Error saving clinical summary:', err);
+      if (err.response?.status === 401) {
+        console.error('401 Unauthorized - token may be expired or not sent. Token:', localStorage.getItem('accessToken')?.substring(0, 20) + '...');
+      }
       setError(err.message);
     } finally {
       setSaving(false);

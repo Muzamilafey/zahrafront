@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
 export const AuthContext = createContext();
@@ -92,15 +92,23 @@ export const AuthProvider = ({ children }) => {
     };
   }, [accessToken]);
 
-  // 🔐 Axios instance with token and sensible timeout to avoid hanging requests
-  const axiosInstance = axios.create({ baseURL: API_BASE, timeout: 15000 });
-  axiosInstance.interceptors.request.use(
-    (config) => {
-      if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // 🔐 Axios instance with token - memoized to prevent recreation on every render
+  const axiosInstance = useMemo(() => {
+    const instance = axios.create({ baseURL: API_BASE, timeout: 15000 });
+    instance.interceptors.request.use(
+      (config) => {
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+          console.log(`[AuthContext] Attached token to ${config.method?.toUpperCase()} ${config.url}`);
+        } else {
+          console.warn(`[AuthContext] No token available for ${config.method?.toUpperCase()} ${config.url}`);
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    return instance;
+  }, [accessToken]);
 
   // 🧠 Login
   const login = async (email, password) => {
