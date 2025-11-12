@@ -19,6 +19,7 @@ export default function DischargeSummaryPage() {
   const printRef = useRef();
 
   const [discharge, setDischarge] = useState(null);
+  const [patientPreview, setPatientPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -51,10 +52,41 @@ export default function DischargeSummaryPage() {
           warningSignsToWatch: latest.warningSignsToWatch || []
         });
       }
+      else {
+        // no discharge summary found - try to fetch basic patient info to show preview
+        try {
+          const pRes = await axiosInstance.get(`/patients/${patientId}`);
+          const p = pRes.data.patient || pRes.data;
+          setPatientPreview(p);
+        } catch (pe) {
+          // ignore - patient preview optional
+          console.warn('Could not load patient preview:', pe?.message || pe);
+        }
+      }
     } catch (e) {
       setError(e?.response?.data?.message || 'Failed to load discharge summary');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDischargeNow = async () => {
+    if (!window.confirm('Discharge this patient now? This will finalize the admission and may create an invoice.')) return;
+    setSaveMessage({ type: 'loading', text: 'Discharging patient...' });
+    try {
+      const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
+      setSaveMessage({ type: 'success', text: 'Discharge processed' });
+      setTimeout(() => setSaveMessage(null), 2500);
+      if (res.data && res.data.invoice && res.data.invoice._id) {
+        navigate(`/billing/${res.data.invoice._id}`);
+        return;
+      }
+      // reload summary area
+      loadDischargeSummary();
+    } catch (err) {
+      console.error('Discharge now failed', err);
+      setSaveMessage({ type: 'error', text: err?.response?.data?.message || 'Failed to discharge' });
+      setTimeout(() => setSaveMessage(null), 4000);
     }
   };
 
@@ -244,26 +276,59 @@ export default function DischargeSummaryPage() {
   if (!discharge) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 text-yellow-700">
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 text-yellow-700 mb-4">
           <p className="font-semibold">No Discharge Summary</p>
           <p>This patient doesn't have a discharge summary yet. It will be auto-created when the patient is discharged.</p>
-          <div className="mt-4 flex gap-2">
+        </div>
+
+        {/* Patient preview when discharge summary missing */}
+        <div className="bg-white rounded p-6 shadow mb-4">
+          <h3 className="text-lg font-semibold mb-2">Patient Preview</h3>
+          {patientPreview ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Name</p>
+                <p className="font-medium">{patientPreview.user?.name || patientPreview.name || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Hospital ID</p>
+                <p className="font-medium">{patientPreview.mrn || patientPreview.hospitalId || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Age</p>
+                <p className="font-medium">{patientPreview.age || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Gender</p>
+                <p className="font-medium">{patientPreview.gender || '-'}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">Patient details not available — try Refresh.</div>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {user && (user.role === 'admin' || user.role === 'doctor') && (
             <button
-              onClick={() => {
-                if (!window.confirm('Attempt to generate a discharge summary (and finalize invoice if available)?')) return;
-                handleGenerateMissingSummary();
-              }}
-              className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700"
+              onClick={handleDischargeNow}
+              className="px-3 py-2 bg-red-600 text-white rounded text-sm font-semibold hover:bg-red-700"
             >
-              Generate Discharge Summary / Invoice
+              Discharge Now
             </button>
-            <button
-              onClick={() => loadDischargeSummary()}
-              className="px-3 py-2 bg-gray-100 text-gray-800 rounded text-sm font-semibold hover:bg-gray-200"
-            >
-              Refresh
-            </button>
-          </div>
+          )}
+          <button
+            onClick={() => handleGenerateMissingSummary()}
+            className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700"
+          >
+            Generate Discharge Summary / Invoice
+          </button>
+          <button
+            onClick={() => loadDischargeSummary()}
+            className="px-3 py-2 bg-gray-100 text-gray-800 rounded text-sm font-semibold hover:bg-gray-200"
+          >
+            Refresh
+          </button>
         </div>
       </div>
     );
