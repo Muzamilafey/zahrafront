@@ -151,7 +151,16 @@ export default function Billing() {
         const patientId = params.get('patientId');
         const url = patientId ? `/billing?patientId=${encodeURIComponent(patientId)}` : '/billing';
         const res = await axiosInstance.get(url);
-        setInvoices(res.data.invoices || []);
+        // Normalize invoices: backend might return { invoices: [...] } or an array
+        let fetched = res.data.invoices || (Array.isArray(res.data) ? res.data : []);
+        // If a patientId was requested but backend didn't filter, apply client-side filter as fallback
+        if (patientId) {
+          fetched = (fetched || []).filter(inv => {
+            const pid = inv.patient?._id || inv.patient || inv.patientId || (inv.patient && inv.patient._id);
+            return String(pid) === String(patientId);
+          });
+        }
+        setInvoices(fetched || []);
         // load hospital settings (used in printed invoice header/footer)
         try{
           const hRes = await axiosInstance.get('/setting/hospital-details');

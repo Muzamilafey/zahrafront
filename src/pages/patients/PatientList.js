@@ -25,33 +25,37 @@ export default function PatientList() {
       let res;
       if (status === 'admitted') {
         res = await axiosInstance.get('/patients/admitted');
-      } else if (status === 'discharged') {
-        // Load all patients and filter those with admission history or past discharges
-        res = await axiosInstance.get('/patients');
-        // Filter to show only discharged patients
-        res.data.patients = (res.data.patients || []).filter(p => {
-          // A patient is discharged if:
-          // 1. They have admissionHistory (past admissions), OR
-          // 2. Their current admission has dischargedAt, OR
-          // 3. They have isAdmitted = false and admissionHistory is not empty
-          return (p.admissionHistory && p.admissionHistory.length > 0) || 
-                 (p.admission && p.admission.dischargedAt && !p.admission.isAdmitted);
-        });
       } else {
+        // For both 'discharged' and 'all' we use the generic patients endpoint
         res = await axiosInstance.get('/patients');
       }
-      let list = res.data.patients || [];
+
+      // Normalize response to an array of patients. Backend may return { patients: [...] } or [...]
+      let list = Array.isArray(res.data) ? res.data : (res.data.patients || []);
+
+      // If filtering for discharged, apply a client-side filter to normalize backend differences
+      if (status === 'discharged') {
+        list = list.filter(p => {
+          const hasHistory = Array.isArray(p.admissionHistory) && p.admissionHistory.length > 0;
+          const currentlyAdmitted = p.admission && p.admission.isAdmitted;
+          const dischargedAt = p.admission && p.admission.dischargedAt;
+          return hasHistory || (!currentlyAdmitted && !!dischargedAt) || (!currentlyAdmitted && hasHistory);
+        });
+      }
+
+      // Apply text query filtering
       const q = (searchParams.get('q') || '').toLowerCase().trim();
       if (q) {
         list = list.filter(p => {
           const name = (p.user?.name || p.name || '').toLowerCase();
-          const hosp = String(p.hospitalId || '').toLowerCase();
+          const hosp = String(p.hospitalId || p.hospitalId || p.mrn || '').toLowerCase();
           const mrn = String(p.mrn || '').toLowerCase();
           const email = (p.user?.email || '').toLowerCase();
           return name.includes(q) || hosp.includes(q) || mrn.includes(q) || email.includes(q);
         });
       }
-      setPatients(list);
+
+      setPatients(list || []);
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to load patients', type: 'error' });
     } finally {
