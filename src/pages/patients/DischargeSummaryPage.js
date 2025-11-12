@@ -15,6 +15,7 @@ const FACILITY_INFO = {
 export default function DischargeSummaryPage() {
   const { id: patientId } = useParams();
   const { axiosInstance } = useContext(AuthContext);
+  const printRef = useRef();
 
   const [discharge, setDischarge] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -182,7 +183,6 @@ export default function DischargeSummaryPage() {
 
   const isLocked = discharge.finalizationInfo?.locked;
   const canEdit = !isLocked && discharge.status !== 'finalized';
-  const printRef = useRef();
 
   const handlePrint = () => {
     window.print();
