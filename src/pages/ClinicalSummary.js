@@ -18,14 +18,50 @@ export default function ClinicalSummary() {
     const fetchData = async () => {
       try {
         setLoading(true);
-  const response = await axiosInstance.get(`/admission/${admissionId}`);
-        const data = response.data;
-        setPatient(data.patient);
-        setClinicalSummary(data.clinicalSummary || '');
+        let response = null;
+        let data = null;
+
+        // Try common endpoints in order to tolerate backend route variations
+        try {
+          response = await axiosInstance.get(`/admission/${admissionId}`);
+          data = response.data;
+        } catch (err) {
+          // try plural form
+          if (err?.response?.status === 404) {
+            try {
+              response = await axiosInstance.get(`/admissions/${admissionId}`);
+              data = response.data;
+            } catch (err2) {
+              // try treating admissionId as a patient id and load patient instead
+              if (err2?.response?.status === 404) {
+                try {
+                  const pRes = await axiosInstance.get(`/patients/${admissionId}`);
+                  const patientData = pRes.data.patient || pRes.data;
+                  // pick current admission if present, otherwise last admissionHistory
+                  const adm = patientData?.admission || (Array.isArray(patientData?.admissionHistory) && patientData.admissionHistory.length ? patientData.admissionHistory[patientData.admissionHistory.length - 1] : null);
+                  if (!adm) throw err2;
+                  data = { patient: patientData, clinicalSummary: adm.clinicalSummary || adm.clinical_summary || '' };
+                } catch (err3) {
+                  throw err3 || err2 || err;
+                }
+              } else {
+                throw err2;
+              }
+            }
+          } else {
+            throw err;
+          }
+        }
+
+        // normalize data
+        setPatient(data.patient || data.patientInfo || data.patientData || {});
+        setClinicalSummary(data.clinicalSummary || data.clinical_summary || data.clinicalSummaryText || '');
         setLoading(false);
       } catch (err) {
         console.error('Error fetching admission data:', err);
-        setError(err.message);
+        // prefer server message if present
+        const msg = err?.response?.data?.message || err?.message || 'Failed to load admission data';
+        setError(msg);
         setLoading(false);
       }
     };
@@ -45,7 +81,29 @@ export default function ClinicalSummary() {
     try {
       setSaving(true);
       console.log(`[ClinicalSummary] Submitting PATCH to /admission/${admissionId} with token`);
-      await axiosInstance.patch(`/admission/${admissionId}`, { clinicalSummary });
+      // Try patching common endpoints in order
+      try {
+        await axiosInstance.patch(`/admission/${admissionId}`, { clinicalSummary });
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          try {
+            await axiosInstance.patch(`/admissions/${admissionId}`, { clinicalSummary });
+          } catch (err2) {
+            // if we loaded a patient earlier (admissionId was actually a patient id), try updating patient's admission
+            if (patient && patient._id) {
+              try {
+                await axiosInstance.patch(`/patients/${patient._id}/admission`, { clinicalSummary });
+              } catch (err3) {
+                throw err3;
+              }
+            } else {
+              throw err2;
+            }
+          }
+        } else {
+          throw err;
+        }
+      }
       navigate(`/discharge/${admissionId}`);
     } catch (err) {
       console.error('Error saving clinical summary:', err);
