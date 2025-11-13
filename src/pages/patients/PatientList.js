@@ -108,7 +108,7 @@ export default function PatientList() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">{pageTitle}</h2>
         <div>
-          <button onClick={() => navigate('/patients/discharged')} className="btn-outline">View Discharged Patients</button>
+          <button onClick={() => navigate('/patients?status=discharged')} className="btn-outline">View Discharged Patients</button>
         </div>
       </div>
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -250,7 +250,7 @@ export default function PatientList() {
                       user &&
                       user.role === 'admin' && (
                         <button
-                          onClick={() => navigate(`/discharge/${patient._id}`)}
+                          onClick={() => navigate(`/patients/${patient._id}/discharge`)}
                           className="text-red-600 hover:text-red-900"
                         >
                           Discharge

@@ -92,6 +92,7 @@ import DischargeSummary from './pages/patients/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
 import DischargedPatientsList from './pages/patients/DischargedPatientsList';
+import PatientDischargePage from './pages/patients/PatientDischargePage';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
@@ -195,6 +196,7 @@ function App() {
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Unified discharge summary page (single canonical page) */}
           <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><PatientDischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Dedicated page for discharged patients */}
