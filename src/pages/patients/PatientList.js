@@ -96,6 +96,17 @@ export default function PatientList() {
     navigate(`/patients/${patientId}/discharge-summary`);
   };
 
+  const handleDeletePatient = async (patientId) => {
+    if (!window.confirm('Delete this patient? This action is permanent.')) return;
+    try {
+      await axiosInstance.delete(`/patients/${patientId}`);
+      // remove from UI
+      setPatients(prev => prev.filter(p => String(p._id) !== String(patientId)));
+    } catch (e) {
+      setToast({ message: e?.response?.data?.message || 'Failed to delete patient', type: 'error' });
+    }
+  };
+
   const pageTitle =
     status === 'admitted'
       ? 'Currently Admitted Patients'
@@ -254,6 +265,14 @@ export default function PatientList() {
                           className="text-red-600 hover:text-red-900"
                         >
                           Discharge
+                        </button>
+                      )}
+                      {user && user.role === 'admin' && (
+                        <button
+                          onClick={() => handleDeletePatient(patient._id)}
+                          className="text-sm text-red-700 hover:text-red-900 ml-4"
+                        >
+                          Delete
                         </button>
                       )}
                   </td>
