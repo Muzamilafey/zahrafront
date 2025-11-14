@@ -73,6 +73,52 @@ export default function DoctorDashboard() {
 
   const printAppointment = (a) => { const w = window.open('', '_blank'); if(!w) return; const html = `<html><head><title>Appointment</title><style>body{font-family:Arial;padding:20px}</style></head><body><h2>Appointment</h2><div><strong>Patient:</strong> ${a.patient?.user?.name || a.patient || '-'}</div><div><strong>Scheduled:</strong> ${new Date(a.raw?.scheduledAt || a.scheduledAt).toLocaleString()}</div></body></html>`; w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{ w.print(); w.close(); },300); };
 
+  const [doctorVisits, setDoctorVisits] = useState([]);
+  const printVisit = (v) => { const w = window.open('', '_blank'); if(!w) return; const p = v.patient || {}; const patientName = `${p.firstName||''} ${p.middleName||''} ${p.lastName||''}`.trim() || p.user?.name || '-'; const doctorName = v.doctor?.user?.name || v.doctorName || '-'; const html = `<html><head><title>Visit Report</title><style>body{font-family:Arial;padding:20px;color:#111} .table{width:100%;border-collapse:collapse} .table td{padding:8px;border-bottom:1px solid #eee}</style></head><body><h2>Visit Report</h2><div><strong>Patient:</strong> ${patientName}</div><div><strong>Doctor:</strong> ${doctorName}</div><div><strong>Date:</strong> ${new Date(v.createdAt||v.date).toLocaleString()}</div><hr/><h3>Diagnosis</h3><div>${v.diagnosis||'-'}</div><h3>Notes</h3><div>${v.notes||v.clinicalNotes||'-'}</div><h3>Prescription</h3><div>${(v.prescription && (typeof v.prescription === 'string' ? v.prescription : JSON.stringify(v.prescription))) || '-'}</div></body></html>`; w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{ w.print(); w.close(); },300); };
+
+  const loadDoctorVisits = async () => {
+    try{
+      const params = {};
+      // prefer explicit doctorId on user if available
+      if(user?.doctorId) params.doctorId = user.doctorId;
+      else if(user?._id) params.doctorId = user._id;
+      const res = await axiosInstance.get('/visits', { params });
+      setDoctorVisits(res.data.visits || res.data || []);
+    }catch(e){ console.error('Failed to load doctor visits', e); }
+  };
+
+  const addVisitNote = async (visitId) => {
+    const note = window.prompt('Enter consultation note / clinical notes');
+    if(!note) return;
+    try{
+      // try direct visit notes endpoint then fallback to consultations
+      try{ await axiosInstance.post(`/visits/${visitId}/notes`, { note }); }
+      catch(e){ await axiosInstance.post('/consultations', { visitId, notes: note }); }
+      await loadDoctorVisits();
+      alert('Note added');
+    }catch(e){ console.error('Failed to add note', e); alert('Failed to save note'); }
+  };
+
+  const prescribeForVisit = async (visitId) => {
+    const details = window.prompt('Enter prescription details (drugs/dosage)');
+    if(!details) return;
+    try{
+      await axiosInstance.post('/prescriptions', { visitId, details });
+      await loadDoctorVisits();
+      alert('Prescription created');
+    }catch(e){ console.error('Failed to create prescription', e); alert('Failed to create prescription'); }
+  };
+
+  const markVisitComplete = async (visitId) => {
+    if(!window.confirm('Mark this visit as completed?')) return;
+    try{
+      await axiosInstance.put(`/visits/${visitId}`, { status: 'completed' });
+      await loadDoctorVisits();
+      await loadAppointments();
+      alert('Visit marked complete');
+    }catch(e){ console.error('Failed to update visit status', e); alert('Failed to update'); }
+  };
+
   const loadAppointments = async () => {
     try {
       // fetch both all appointments (for analytics/history) and upcoming (for actions)
@@ -176,6 +222,9 @@ export default function DoctorDashboard() {
         await Promise.all([loadProfile(), loadInvoices()]);
   // load doctor's own lab requests
   await loadMyLabRequests();
+
+    // load visits assigned to this doctor
+    await loadDoctorVisits();
 
         // no doctor selection needed — prescriptions are created by the logged-in doctor
       } catch (err) {
@@ -462,7 +511,7 @@ export default function DoctorDashboard() {
 
   <div className="mb-4">
         <div className="flex items-center gap-2 flex-wrap">
-          {['appointments','profile','schedule','patients','consultations','prescriptions','billing','analytics','messages'].map(t=> (
+          {['appointments','profile','schedule','patients','visits','consultations','prescriptions','billing','analytics','messages'].map(t=> (
             <button key={t} className={`text-sm px-3 py-1 rounded ${activeTab===t? 'bg-brand-600 text-white':'bg-gray-100'}`} onClick={()=>setActiveTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>
           ))}
         </div>
@@ -661,6 +710,47 @@ export default function DoctorDashboard() {
       )}
 
       {/* Consultations tab */}
+      {activeTab === 'visits' && (
+        <div className="bg-white rounded p-4 shadow mb-4">
+          <h3 className="font-semibold mb-2">My Visits</h3>
+          {doctorVisits.length === 0 ? (
+            <div className="text-gray-500">No visits assigned</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="text-left text-xs text-gray-600">
+                  <tr>
+                    <th className="px-2 py-1">Patient</th>
+                    <th className="px-2 py-1">Diagnosis</th>
+                    <th className="px-2 py-1">Date</th>
+                    <th className="px-2 py-1">Status</th>
+                    <th className="px-2 py-1">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {doctorVisits.map(v => (
+                    <tr key={v._id || v.id} className="border-t">
+                      <td className="px-2 py-2">{`${v.patient?.firstName||''} ${v.patient?.middleName||''} ${v.patient?.lastName||''}`.trim() || v.patient?.user?.name || '-'}</td>
+                      <td className="px-2 py-2">{v.diagnosis || '-'}</td>
+                      <td className="px-2 py-2">{new Date(v.createdAt || v.date).toLocaleString()}</td>
+                      <td className="px-2 py-2">{v.status || 'open'}</td>
+                      <td className="px-2 py-2">
+                        <div className="flex gap-2">
+                          <button className="btn-outline text-xs" onClick={()=>printVisit(v)}>Print</button>
+                          <button className="btn-modern text-xs" onClick={()=>addVisitNote(v._id || v.id)}>Add Note</button>
+                          <button className="btn-modern text-xs" onClick={()=>prescribeForVisit(v._id || v.id)}>Prescribe</button>
+                          {v.status !== 'completed' && <button className="btn-modern text-xs" onClick={()=>markVisitComplete(v._id || v.id)}>Mark Complete</button>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'consultations' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white rounded p-4 shadow">

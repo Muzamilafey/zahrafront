@@ -115,6 +115,29 @@ export default function PatientDetail(){
     }finally{ setLoading(false); }
   };
 
+  const printVisit = (v) => {
+    const w = window.open('', '_blank'); if(!w) return;
+    const patientName = `${patient.firstName || ''} ${patient.middleName || ''} ${patient.lastName || ''}`.trim() || patient.user?.name || '-';
+    const doctorName = v.doctor?.user?.name || v.doctorName || '-';
+    const html = `
+      <html><head><title>Visit Report</title>
+      <style>body{font-family:Arial;padding:20px;color:#111}\n.table{width:100%;border-collapse:collapse} .table td{padding:8px;border-bottom:1px solid #eee}</style>
+      </head><body>
+      <h2>Visit Report</h2>
+      <div><strong>Patient:</strong> ${patientName}</div>
+      <div><strong>Doctor:</strong> ${doctorName}</div>
+      <div><strong>Date:</strong> ${new Date(v.createdAt || v.date).toLocaleString()}</div>
+      <hr/>
+      <h3>Diagnosis</h3>
+      <div>${v.diagnosis || '-'}</div>
+      <h3>Notes</h3>
+      <div>${v.notes || v.clinicalNotes || '-'}</div>
+      <h3>Prescription</h3>
+      <div>${(v.prescription && (typeof v.prescription === 'string' ? v.prescription : JSON.stringify(v.prescription))) || '-'}</div>
+      </body></html>`;
+    w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{ w.print(); w.close(); },300);
+  };
+
   const handleDeletePayment = async (paymentId) => {
     if(!window.confirm('Permanently delete this payment?')) return;
     try{
@@ -440,8 +463,16 @@ export default function PatientDetail(){
                 <ul className="divide-y">
                   {records.visits.slice(0,10).map(v => (
                     <li key={v._id || v.id} className="py-2">
-                      <div className="text-sm font-medium">{v.diagnosis || 'No diagnosis'}</div>
-                      <div className="text-xs text-gray-500">{v.doctor?.user?.name || v.doctorName || 'Unknown'} • {new Date(v.createdAt || v.date).toLocaleString()}</div>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium">{v.diagnosis || 'No diagnosis'}</div>
+                          <div className="text-xs text-gray-500">{v.doctor?.user?.name || v.doctorName || 'Unknown'} • {new Date(v.createdAt || v.date).toLocaleString()}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="btn-outline text-xs" onClick={()=>printVisit(v)}>Print</button>
+                          <button className="btn-muted text-xs" onClick={()=>navigate(`/visits/${v._id || v.id}`)}>View</button>
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -8,6 +8,30 @@ export default function PatientVisits(){
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
+  const printVisit = (v) => {
+    const w = window.open('', '_blank'); if(!w) return;
+    const p = v.patient || {};
+    const patientName = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim() || p.user?.name || '-';
+    const doctorName = v.doctor?.user?.name || v.doctorName || '-';
+    const html = `
+      <html><head><title>Visit Report</title>
+      <style>body{font-family:Arial;padding:20px;color:#111} .table{width:100%;border-collapse:collapse} .table td{padding:8px;border-bottom:1px solid #eee}</style>
+      </head><body>
+      <h2>Visit Report</h2>
+      <div><strong>Patient:</strong> ${patientName}</div>
+      <div><strong>Doctor:</strong> ${doctorName}</div>
+      <div><strong>Date:</strong> ${new Date(v.createdAt || v.date).toLocaleString()}</div>
+      <hr/>
+      <h3>Diagnosis</h3>
+      <div>${v.diagnosis || '-'}</div>
+      <h3>Notes</h3>
+      <div>${v.notes || v.clinicalNotes || '-'}</div>
+      <h3>Prescription</h3>
+      <div>${(v.prescription && (typeof v.prescription === 'string' ? v.prescription : JSON.stringify(v.prescription))) || '-'}</div>
+      </body></html>`;
+    w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{ w.print(); w.close(); },300);
+  };
+
   useEffect(()=>{ load(); }, []);
   const load = async () => {
     try{
@@ -18,11 +42,13 @@ export default function PatientVisits(){
     finally{ setLoading(false); }
   };
 
-  const filtered = visits.filter(v =>
-    v.patient?.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    v.diagnosis?.toLowerCase().includes(search.toLowerCase()) ||
-    v.doctor?.user?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = visits.filter(v => {
+    const p = v.patient || {};
+    const fullName = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim() || p.user?.name || '';
+    return fullName.toLowerCase().includes(search.toLowerCase()) ||
+      (v.diagnosis || '').toLowerCase().includes(search.toLowerCase()) ||
+      (v.doctor?.user?.name || v.doctorName || '').toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="p-6">
@@ -47,16 +73,23 @@ export default function PatientVisits(){
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diagnosis</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filtered.map(v => (
                 <tr key={v._id || v.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{v.patient?.user?.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{`${v.patient?.firstName || ''} ${v.patient?.middleName || ''} ${v.patient?.lastName || ''}`.trim() || v.patient?.user?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{v.doctor?.user?.name || v.doctorName}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{v.diagnosis || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{new Date(v.createdAt || v.date).toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{v.isWalkIn ? 'Walk-in' : 'Appointment'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2">
+                      <button className="btn-outline text-xs" onClick={()=>printVisit(v)}>Print</button>
+                      <Link className="btn-muted text-xs" to={`/visits/${v._id || v.id}`}>View</Link>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
