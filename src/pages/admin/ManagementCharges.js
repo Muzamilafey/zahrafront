@@ -144,13 +144,16 @@ export default function ManagementCharges() {
     try {
       setLoading(true);
       const res = await axiosInstance.get('/api/charges');
+      console.log('Loaded charges from API:', res.data);
+      
       const chargesMap = {};
       if (res.data && Array.isArray(res.data)) {
         res.data.forEach(charge => {
-          // Use chargeId as key for easy lookup
+          // Use _id as key for easy lookup
           chargesMap[charge._id] = charge;
         });
       }
+      console.log('Charges map:', chargesMap);
       setCharges(chargesMap);
     } catch (error) {
       console.error('Error loading charges:', error);
@@ -164,9 +167,21 @@ export default function ManagementCharges() {
 
   const handleSaveCharge = async (chargeId) => {
     try {
+      // Get the current edited charge from state
       const charge = charges[chargeId];
-      if (!charge.amount || isNaN(charge.amount) || charge.amount < 0) {
-        setToast({ type: 'error', message: 'Please enter a valid amount' });
+      
+      if (!charge) {
+        setToast({ type: 'error', message: 'Charge data not found' });
+        return;
+      }
+
+      if (!charge.name || !charge.category) {
+        setToast({ type: 'error', message: 'Charge name and category are required' });
+        return;
+      }
+
+      if (!charge.amount || isNaN(charge.amount) || parseFloat(charge.amount) < 0) {
+        setToast({ type: 'error', message: 'Please enter a valid amount (0 or greater)' });
         return;
       }
 
@@ -177,24 +192,39 @@ export default function ManagementCharges() {
         description: charge.description || ''
       };
 
+      console.log('Saving charge:', { chargeId, payload, hasId: !!charge._id });
+
       if (charge._id) {
-        // Update existing
-        await axiosInstance.put(`/api/charges/${charge._id}`, payload);
+        // Update existing charge
+        const response = await axiosInstance.put(`/api/charges/${charge._id}`, payload);
+        console.log('Update response:', response.data);
         setToast({ type: 'success', message: 'Charge updated successfully' });
       } else {
-        // Create new
-        const res = await axiosInstance.post('/api/charges', payload);
+        // Create new charge
+        const response = await axiosInstance.post('/api/charges', payload);
+        console.log('Create response:', response.data);
+        // Update state with new charge that has _id from server
         setCharges(prev => ({
           ...prev,
-          [chargeId]: res.data
+          [response.data._id]: response.data
         }));
         setToast({ type: 'success', message: 'Charge created successfully' });
       }
       setEditingId(null);
+      // Reload charges from server to ensure sync
       loadCharges();
     } catch (error) {
-      console.error('Error saving charge:', error);
-      setToast({ type: 'error', message: error.response?.data?.message || 'Error saving charge' });
+      console.error('Error saving charge:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        errors: error.response?.data?.errors,
+        fullError: error
+      });
+      const errorMsg = error.response?.data?.message || 
+                       error.response?.data?.errors?.[0]?.msg ||
+                       error.message ||
+                       'Error saving charge';
+      setToast({ type: 'error', message: errorMsg });
     }
   };
 
@@ -340,9 +370,23 @@ export default function ManagementCharges() {
                   </thead>
                   <tbody>
                     {category.items.map((itemName, idx) => {
-                      const charge = getChargeForItem(categoryKey, itemName);
-                      const chargeId = charge._id || `temp-${categoryKey}-${idx}`;
+                      // Try to find existing charge matching this item name and category
+                      const existingCharge = Object.values(charges).find(c => 
+                        c.name === itemName && c.category === categoryKey
+                      );
+                      
+                      // Use existing charge ID if found, otherwise create temp ID
+                      const chargeId = existingCharge?._id || `temp-${categoryKey}-${idx}`;
                       const isEditing = editingId === chargeId;
+                      
+                      // Get the charge object from state, or create new one
+                      const chargeData = charges[chargeId] || existingCharge || {
+                        _id: existingCharge?._id || null,
+                        name: itemName,
+                        category: categoryKey,
+                        amount: 0,
+                        description: ''
+                      };
 
                       return (
                         <tr key={chargeId} className="border-b border-gray-200 hover:bg-gray-50">
@@ -351,15 +395,24 @@ export default function ManagementCharges() {
                             {isEditing ? (
                               <input
                                 type="number"
-                                value={charges[chargeId]?.amount || charge.amount || 0}
-                                onChange={(e) => handleAmountChange(chargeId, e.target.value)}
+                                value={chargeData.amount || 0}
+                                onChange={(e) => {
+                                  // Initialize charge in state if not there yet
+                                  if (!charges[chargeId]) {
+                                    setCharges(prev => ({
+                                      ...prev,
+                                      [chargeId]: chargeData
+                                    }));
+                                  }
+                                  handleAmountChange(chargeId, e.target.value);
+                                }}
                                 min="0"
                                 step="0.01"
                                 className="w-full px-3 py-2 border border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             ) : (
                               <span className="text-sm font-medium text-gray-900">
-                                {typeof charge.amount === 'number' ? charge.amount.toFixed(2) : '0.00'}
+                                {typeof chargeData.amount === 'number' ? chargeData.amount.toFixed(2) : '0.00'}
                               </span>
                             )}
                           </td>
@@ -368,7 +421,16 @@ export default function ManagementCharges() {
                               {isEditing ? (
                                 <>
                                   <button
-                                    onClick={() => handleSaveCharge(chargeId)}
+                                    onClick={() => {
+                                      // Ensure charge is in state before saving
+                                      if (!charges[chargeId]) {
+                                        setCharges(prev => ({
+                                          ...prev,
+                                          [chargeId]: chargeData
+                                        }));
+                                      }
+                                      handleSaveCharge(chargeId);
+                                    }}
                                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 transition"
                                   >
                                     <FaSave size={14} /> Save
@@ -383,12 +445,21 @@ export default function ManagementCharges() {
                               ) : (
                                 <>
                                   <button
-                                    onClick={() => setEditingId(chargeId)}
+                                    onClick={() => {
+                                      // Initialize charge in state when editing
+                                      if (!charges[chargeId]) {
+                                        setCharges(prev => ({
+                                          ...prev,
+                                          [chargeId]: chargeData
+                                        }));
+                                      }
+                                      setEditingId(chargeId);
+                                    }}
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 transition"
                                   >
                                     <FaEdit size={14} /> Edit
                                   </button>
-                                  {charge._id && (
+                                  {chargeData._id && (
                                     <button
                                       onClick={() => handleDeleteCharge(chargeId)}
                                       className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 transition"
