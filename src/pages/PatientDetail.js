@@ -125,7 +125,7 @@ export default function PatientDetail(){
     <div className="p-6">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-semibold">{user.name || 'Patient Details'}</h2>
+            <h2 className="text-2xl font-semibold">{patient.firstName} {patient.middleName} {patient.lastName}</h2>
           <div className="text-sm text-gray-500">Hospital ID: {patient.hospitalId} • MRN: {patient.mrn}</div>
         </div>
         <div className="flex items-center gap-2">
