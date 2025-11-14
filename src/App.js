@@ -26,6 +26,7 @@ import AdminPatients from './pages/admin/AdminPatients';
 import AdminNurseAssignment from './pages/admin/AdminNurseAssignment';
 import AdminDepartments from './pages/admin/AdminDepartments';
 import AdminConsultations from './pages/admin/AdminConsultations';
+import ManagementCharges from './pages/admin/ManagementCharges';
 import AdmittedPatients from './pages/AdmittedPatients';
 import PatientVisits from './pages/PatientVisits';
 import VisitsReport from './pages/VisitsReport';
@@ -233,6 +234,7 @@ function App() {
           <Route path="/dashboard/admin/nurseassignment" element={<PrivateRoute><Layout><AdminNurseAssignment /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/departments" element={<PrivateRoute><Layout><AdminDepartments /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/consultations" element={<PrivateRoute><Layout><AdminConsultations /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/admin/management-charges" element={<PrivateRoute><Layout><ManagementCharges /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/slots" element={<PrivateRoute><Layout><AdminSlots /></Layout></PrivateRoute>} />
             <Route path="/dashboard/admin/managewards" element={<PrivateRoute><Layout><ManageWards /></Layout></PrivateRoute>} />
             <Route path="/dashboard/admin/drugs" element={<PrivateRoute><Layout><DrugsAdmin /></Layout></PrivateRoute>} />

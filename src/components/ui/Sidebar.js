@@ -33,6 +33,7 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/departments', label: 'Departments', icon: <FaFolder />, perm: 'departments' },
       { to: '/dashboard/admin/doctors', label: "Doctors' Schedule", icon: <FaClock />, perm: 'doctorsSchedule' },
       { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/dashboard/admin/management-charges', label: 'Management Charges', icon: <FaFileInvoiceDollar />, perm: 'manageCharges' },
       { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock />, perm: 'availableSlots' },
       { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
       { to: '/dashboard/admin/managewards', label: 'Manage Wards', icon: <FaFolder />, perm: 'manageWards' },
