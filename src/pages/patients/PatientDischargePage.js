@@ -74,7 +74,7 @@ export default function PatientDischargePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button onClick={goToDischargeSummary} className="col-span-1 md:col-span-1 px-4 py-3 bg-blue-600 text-white rounded">Discharge Summary</button>
         <button onClick={goToBillingForPatient} className="col-span-1 md:col-span-1 px-4 py-3 bg-indigo-600 text-white rounded">Invoice / Billing</button>
-        {user && user.role === 'admin' && (
+        {user && user.role === 'admin' && patient?.admission?.isAdmitted !== false && (
           <button onClick={handleDischargeNow} className="col-span-1 md:col-span-1 px-4 py-3 bg-red-600 text-white rounded">Discharge Now</button>
         )}
       </div>

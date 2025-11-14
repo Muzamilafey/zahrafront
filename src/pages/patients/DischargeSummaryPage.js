@@ -338,6 +338,51 @@ export default function DischargeSummaryPage() {
     }
   };
 
+  // Generate invoice only (does not create discharge summary)
+  const handleGenerateInvoice = async () => {
+    setSaveMessage({ type: 'loading', text: 'Generating invoice...' });
+    try {
+      // Prefer discharge-specific invoice generation endpoint
+      const res = await axiosInstance.post(`/discharge/${patientId}/generate-invoice`);
+      if (res.data && res.data.invoice && res.data.invoice._id) {
+        setSaveMessage({ type: 'success', text: 'Invoice generated — opening invoice' });
+        setTimeout(() => setSaveMessage(null), 2000);
+        // open billing page for the invoice in a new tab
+        const url = `/billing/${res.data.invoice._id}`;
+        window.open(url, '_blank');
+        return;
+      }
+
+      // Some backends may return invoiceId or url differently
+      if (res.data && res.data.invoiceId) {
+        const url = `/billing/${res.data.invoiceId}`;
+        window.open(url, '_blank');
+        setSaveMessage({ type: 'success', text: 'Invoice generated — opening invoice' });
+        setTimeout(() => setSaveMessage(null), 2000);
+        return;
+      }
+
+      // Fallback: try finalize via patient discharge endpoint (if supported)
+      try {
+        const alt = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
+        if (alt.data && alt.data.invoice && alt.data.invoice._id) {
+          window.open(`/billing/${alt.data.invoice._id}`, '_blank');
+          setSaveMessage({ type: 'success', text: 'Invoice generated — opening invoice' });
+          setTimeout(() => setSaveMessage(null), 2000);
+          return;
+        }
+      } catch (e) {
+        // ignore fallback failure
+      }
+
+      setSaveMessage({ type: 'error', text: 'Invoice generation did not return an invoice' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (e) {
+      setSaveMessage({ type: 'error', text: e?.response?.data?.message || 'Failed to generate invoice' });
+      setTimeout(() => setSaveMessage(null), 4000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -402,7 +447,7 @@ export default function DischargeSummaryPage() {
         </div>
 
         <div className="flex gap-2">
-          {user && (user.role === 'admin' || user.role === 'doctor') && (
+          {user && (user.role === 'admin' || user.role === 'doctor') && (patientPreview?.admission?.isAdmitted !== false) && (
             <button
               onClick={handleDischargeNow}
               className="px-3 py-2 bg-red-600 text-white rounded text-sm font-semibold hover:bg-red-700"
@@ -410,12 +455,23 @@ export default function DischargeSummaryPage() {
               Discharge Now
             </button>
           )}
+
+          {/* Generate discharge summary (creates summary if backend supports it) */}
           <button
-            onClick={() => handleGenerateMissingSummary()}
+            onClick={handleGenerateMissingSummary}
             className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700"
           >
-            Generate Discharge Summary / Invoice
+            Generate Discharge Summary
           </button>
+
+          {/* Generate invoice only and open it in a new tab */}
+          <button
+            onClick={handleGenerateInvoice}
+            className="px-3 py-2 bg-teal-600 text-white rounded text-sm font-semibold hover:bg-teal-700"
+          >
+            Generate Invoice
+          </button>
+
           <button
             onClick={() => loadDischargeSummary()}
             className="px-3 py-2 bg-gray-100 text-gray-800 rounded text-sm font-semibold hover:bg-gray-200"
