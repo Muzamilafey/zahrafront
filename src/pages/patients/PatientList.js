@@ -38,18 +38,23 @@ export default function PatientList() {
         ? res.data
         : (res.data.patients || []);
 
-      // ✅ Client-side text filtering (query)
+      // Client-side text filtering (query)
       const q = (searchParams.get('q') || '').toLowerCase().trim();
+      const getFullName = (p) => {
+        // prefer explicit patient name fields
+        const assembled = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim();
+        if (assembled) return assembled;
+        // try other possible name fields
+        if (p.surname) return String(p.surname);
+        if (p.name) return String(p.name);
+        if (p.fullName) return String(p.fullName);
+        // fallback to nested user name
+        return p.user?.name || '';
+      };
+
       if (q) {
         list = list.filter((p) => {
-          // Prefer the patient's registered name fields (first/middle/last). If not available,
-          // fall back to the user who created/owns the patient record.
-          const fullName = (
-            `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim() ||
-            p.user?.name ||
-            p.name ||
-            ''
-          ).toLowerCase();
+          const fullName = getFullName(p).toLowerCase();
           const hospitalId = String(p.hospitalId || p.mrn || '').toLowerCase();
           const mrn = String(p.mrn || '').toLowerCase();
           const email = (p.user?.email || '').toLowerCase();
@@ -208,7 +213,13 @@ export default function PatientList() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {`${patient.firstName || ''} ${patient.middleName || ''} ${patient.lastName || ''}`.trim() || patient.user?.name || '-'}
+                      {(() => {
+                        const assembled = `${patient.firstName || ''} ${patient.middleName || ''} ${patient.lastName || ''}`.trim();
+                        if (assembled) return assembled;
+                        if (patient.surname) return patient.surname;
+                        if (patient.name) return patient.name;
+                        return patient.user?.name || '-';
+                      })()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

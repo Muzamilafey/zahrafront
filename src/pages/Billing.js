@@ -32,6 +32,71 @@ export default function Billing() {
   const openExportModal = (id)=>{ setExportInvoiceId(id); setExportModalOpen(true); };
   const closeExportModal = ()=>{ setExportInvoiceId(null); setExportModalOpen(false); };
 
+  const exportAllToPdf = () => {
+    const w = window.open('', '_blank'); if(!w) return;
+    const logo = 'https://github.com/Muzamilafey/myassets/blob/main/logo.png?raw=true';
+    
+    // build HTML with all invoices
+    let invoicesHtml = '';
+    invoices.forEach((inv, idx) => {
+      const lineItemsHtml = (Array.isArray(inv.lineItems) && inv.lineItems.length) 
+        ? inv.lineItems.map(it=>`<tr><td>${it.description || '-'}</td><td style="text-align:right">${it.qty||1}</td><td style="text-align:right">${(it.amount && it.qty) ? (Number(it.amount)/(it.qty||1)).toFixed(2) : '-'}</td><td style="text-align:right">${(Number(it.amount)||0).toFixed(2)}</td></tr>`).join('')
+        : `<tr><td>${inv.type?('Charge: '+inv.type):'Invoice charge'}</td><td style="text-align:right">1</td><td style="text-align:right">-</td><td style="text-align:right">${(inv.amount||0).toFixed(2)}</td></tr>`;
+      
+      invoicesHtml += `
+        <div style="page-break-after:always;padding:24px;border:1px solid #e5e7eb;margin-bottom:24px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px">
+            <div style="max-width:60%">
+              <h2 style="margin:0;font-size:20px">${hospital && hospital.name ? hospital.name : 'Genz Community Hospital'}</h2>
+              <p style="margin:4px 0;color:#4b5563">${hospital && hospital.location ? hospital.location.replace(/\n/g,'<br/>') : ''}</p>
+              ${hospital && hospital.contacts ? `<p style="color:#4b5563;margin:4px 0">${(Array.isArray(hospital.contacts) ? hospital.contacts.join(' | ') : hospital.contacts)}</p>` : ''}
+            </div>
+            <div style="text-align:right;width:260px">
+              <div style="display:inline-block;background:#fff;border-radius:6px;padding:10px 12px;border:1px solid #e5e7eb">
+                <div style="font-weight:700">Invoice ${inv.invoiceNumber || ''}</div>
+                <div style="font-size:12px;color:#374151">Date: ${new Date(inv.createdAt).toLocaleDateString()}</div>
+                <div style="font-size:12px;color:#374151">Status: ${inv.status || ''}</div>
+              </div>
+              <img style="width:100px;margin-top:8px" src="${logo}" alt="logo"/>
+            </div>
+          </div>
+          <div><strong>Bill To:</strong> ${inv.patient?.user?.name || '-'}</div>
+          <div style="margin-bottom:8px;color:#374151">${inv.patient?.user?.email || '-'}</div>
+          <table style="width:100%;border-collapse:collapse;margin-top:12px">
+            <thead>
+              <tr style="background:#0ea5a4;color:#fff">
+                <th style="padding:10px;text-align:left">Description</th>
+                <th style="padding:10px;width:10%;text-align:right">Qty</th>
+                <th style="padding:10px;width:15%;text-align:right">Unit</th>
+                <th style="padding:10px;width:15%;text-align:right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lineItemsHtml}
+            </tbody>
+          </table>
+          <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:16px">
+            <div style="text-align:right">
+              <div style="font-weight:700">Total</div>
+              <div style="font-size:20px;font-weight:700;margin-top:6px">Ksh ${(inv.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
+            </div>
+          </div>
+        </div>`;
+    });
+    
+    const html = `
+    <html><head><title>All Invoices Report</title>
+    <style>
+      body{font-family: Arial; padding:0; color:#111827; margin:0}
+      @page { margin: 0.5in; }
+    </style>
+    </head><body>
+      ${invoicesHtml}
+    </body></html>`;
+    
+    w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{ w.print(); w.close(); },300);
+  };
+
   const sendExportEmail = async ()=>{
     if (!exportRecipient) { setExportError('Enter recipient'); setTimeout(()=>setExportError(''),3000); return; }
     setExportLoading(true);
@@ -258,6 +323,12 @@ export default function Billing() {
   <h2 className="text-2xl font-bold mt-0 sm:mt-1 mb-0">Billing</h2>
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-600">{error}</p>}
+
+      <div className="mb-4 flex gap-2">
+        {invoices.length > 0 && (
+          <button className="btn-outline" onClick={exportAllToPdf}>Export All to PDF</button>
+        )}
+      </div>
 
       {user?.role === 'finance' && (
         <div className="bg-white p-4 rounded shadow mb-4">
