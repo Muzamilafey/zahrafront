@@ -147,22 +147,16 @@ export default function ManagementCharges() {
       const chargesMap = {};
       if (res.data && Array.isArray(res.data)) {
         res.data.forEach(charge => {
+          // Use chargeId as key for easy lookup
           chargesMap[charge._id] = charge;
         });
       }
       setCharges(chargesMap);
     } catch (error) {
       console.error('Error loading charges:', error);
-      // Initialize with empty amounts
-      Object.keys(feeCategories).forEach(catKey => {
-        feeCategories[catKey].items.forEach((item, idx) => {
-          const id = `${catKey}-${idx}`;
-          setCharges(prev => ({
-            ...prev,
-            [id]: { name: item, category: catKey, amount: 0 }
-          }));
-        });
-      });
+      setToast({ type: 'error', message: 'Error loading charges from server' });
+      // Initialize empty charges object
+      setCharges({});
     } finally {
       setLoading(false);
     }
@@ -179,7 +173,8 @@ export default function ManagementCharges() {
       const payload = {
         name: charge.name,
         category: charge.category,
-        amount: parseFloat(charge.amount)
+        amount: parseFloat(charge.amount),
+        description: charge.description || ''
       };
 
       if (charge._id) {
@@ -256,9 +251,22 @@ export default function ManagementCharges() {
 
   // Initialize charges from feeCategories if not loaded from API
   const getChargeForItem = (categoryKey, itemName) => {
-    const chargeId = `${categoryKey}-${itemName}`;
-    if (charges[chargeId]) return charges[chargeId];
-    return { name: itemName, category: categoryKey, amount: 0 };
+    // Look for a charge matching this item name
+    const matchingCharge = Object.values(charges).find(c => 
+      c.name === itemName && c.category === categoryKey
+    );
+    
+    if (matchingCharge) {
+      return matchingCharge;
+    }
+    
+    // Return default charge object if not found
+    return { 
+      name: itemName, 
+      category: categoryKey, 
+      amount: 0,
+      _id: null
+    };
   };
 
   if (!user || user.role !== 'admin') {
@@ -332,8 +340,8 @@ export default function ManagementCharges() {
                   </thead>
                   <tbody>
                     {category.items.map((itemName, idx) => {
-                      const chargeId = `${categoryKey}-${idx}`;
                       const charge = getChargeForItem(categoryKey, itemName);
+                      const chargeId = charge._id || `temp-${categoryKey}-${idx}`;
                       const isEditing = editingId === chargeId;
 
                       return (
@@ -343,7 +351,7 @@ export default function ManagementCharges() {
                             {isEditing ? (
                               <input
                                 type="number"
-                                value={charge.amount}
+                                value={charges[chargeId]?.amount || charge.amount || 0}
                                 onChange={(e) => handleAmountChange(chargeId, e.target.value)}
                                 min="0"
                                 step="0.01"
