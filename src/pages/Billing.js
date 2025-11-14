@@ -145,12 +145,36 @@ export default function Billing() {
   const deleteInvoice = async (id) => {
     if (!window.confirm('Permanently delete this invoice? This cannot be undone.')) return;
     try {
-      await axiosInstance.delete(`/billing/${id}`);
-      setInvoices(prev => (prev || []).filter(inv => inv._id !== id));
+      // try common delete endpoints in order, to be resilient to backend variations
+      const attempts = [
+        { method: 'delete', url: `/billing/${id}` },
+        { method: 'delete', url: `/invoices/${id}` },
+        { method: 'post', url: `/billing/${id}/delete` },
+        { method: 'post', url: `/invoices/${id}/delete` },
+        { method: 'delete', url: `/billing?id=${encodeURIComponent(id)}` },
+      ];
+      let success = false;
+      let lastErr = null;
+      for (const a of attempts) {
+        try {
+          if (a.method === 'delete') await axiosInstance.delete(a.url);
+          else await axiosInstance.post(a.url);
+          success = true; break;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      if (!success) throw lastErr || new Error('Delete failed');
+
+      // remove invoice from view (match by common id keys)
+      setInvoices(prev => (prev || []).filter(inv => String(inv._id || inv.id || inv.invoiceNumber || '') !== String(id)));
       alert('Invoice deleted');
     } catch (e) {
       console.error('Error deleting invoice', e);
-      alert(e?.response?.data?.message || 'Failed to delete invoice');
+      const status = e?.response?.status;
+      if (status === 404) alert('Invoice not found on server (404)');
+      else if (status === 403 || status === 401) alert('You are not authorized to delete invoices');
+      else alert(e?.response?.data?.message || 'Failed to delete invoice');
     }
   };
 
