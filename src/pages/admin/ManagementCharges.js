@@ -143,7 +143,7 @@ export default function ManagementCharges() {
   const loadCharges = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get('/api/charges');
+      const res = await axiosInstance.get('/charges');
       console.log('Loaded charges from API:', res.data);
       
       const chargesMap = {};
@@ -199,7 +199,7 @@ export default function ManagementCharges() {
 
       if (charge._id) {
         // Update existing charge
-        const response = await axiosInstance.put(`/api/charges/${charge._id}`, payload);
+        const response = await axiosInstance.put(`/charges/${charge._id}`, payload);
         console.log('Update response:', response.data);
         // Update the charges state with the response
         setCharges(prev => ({
@@ -209,7 +209,7 @@ export default function ManagementCharges() {
         setToast({ type: 'success', message: 'Charge updated successfully' });
       } else {
         // Create new charge
-        const response = await axiosInstance.post('/api/charges', payload);
+        const response = await axiosInstance.post('/charges', payload);
         console.log('Create response:', response.data);
         // Remove temporary ID and add the new charge with server ID
         setCharges(prev => {
@@ -242,7 +242,7 @@ export default function ManagementCharges() {
     try {
       const charge = charges[chargeId];
       if (charge._id) {
-        await axiosInstance.delete(`/api/charges/${charge._id}`);
+        await axiosInstance.delete(`/charges/${charge._id}`);
         setToast({ type: 'success', message: 'Charge deleted successfully' });
         loadCharges();
       }
@@ -275,7 +275,7 @@ export default function ManagementCharges() {
         amount: parseFloat(newChargeAmount)
       };
 
-      await axiosInstance.post('/api/charges', payload);
+      await axiosInstance.post('/charges', payload);
       setToast({ type: 'success', message: 'New charge added successfully' });
       setNewChargeCategory('');
       setNewChargeName('');
