@@ -168,19 +168,22 @@ export default function ManagementCharges() {
   const handleSaveCharge = async (chargeId) => {
     try {
       // Get the current edited charge from state
-      const charge = charges[chargeId];
+      let charge = charges[chargeId];
       
       if (!charge) {
         setToast({ type: 'error', message: 'Charge data not found' });
         return;
       }
 
+      // Ensure we have valid data
       if (!charge.name || !charge.category) {
         setToast({ type: 'error', message: 'Charge name and category are required' });
         return;
       }
 
-      if (!charge.amount || isNaN(charge.amount) || parseFloat(charge.amount) < 0) {
+      // Allow 0 as a valid amount
+      const amount = parseFloat(charge.amount);
+      if (isNaN(amount) || amount < 0) {
         setToast({ type: 'error', message: 'Please enter a valid amount (0 or greater)' });
         return;
       }
@@ -188,7 +191,7 @@ export default function ManagementCharges() {
       const payload = {
         name: charge.name,
         category: charge.category,
-        amount: parseFloat(charge.amount),
+        amount: amount,
         description: charge.description || ''
       };
 
@@ -198,21 +201,26 @@ export default function ManagementCharges() {
         // Update existing charge
         const response = await axiosInstance.put(`/api/charges/${charge._id}`, payload);
         console.log('Update response:', response.data);
+        // Update the charges state with the response
+        setCharges(prev => ({
+          ...prev,
+          [charge._id]: response.data
+        }));
         setToast({ type: 'success', message: 'Charge updated successfully' });
       } else {
         // Create new charge
         const response = await axiosInstance.post('/api/charges', payload);
         console.log('Create response:', response.data);
-        // Update state with new charge that has _id from server
-        setCharges(prev => ({
-          ...prev,
-          [response.data._id]: response.data
-        }));
+        // Remove temporary ID and add the new charge with server ID
+        setCharges(prev => {
+          const newCharges = { ...prev };
+          delete newCharges[chargeId]; // Remove temp ID
+          newCharges[response.data._id] = response.data; // Add with real ID
+          return newCharges;
+        });
         setToast({ type: 'success', message: 'Charge created successfully' });
       }
       setEditingId(null);
-      // Reload charges from server to ensure sync
-      loadCharges();
     } catch (error) {
       console.error('Error saving charge:', {
         status: error.response?.status,
@@ -422,13 +430,6 @@ export default function ManagementCharges() {
                                 <>
                                   <button
                                     onClick={() => {
-                                      // Ensure charge is in state before saving
-                                      if (!charges[chargeId]) {
-                                        setCharges(prev => ({
-                                          ...prev,
-                                          [chargeId]: chargeData
-                                        }));
-                                      }
                                       handleSaveCharge(chargeId);
                                     }}
                                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 transition"
