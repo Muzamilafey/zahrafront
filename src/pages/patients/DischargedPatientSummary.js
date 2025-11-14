@@ -311,7 +311,13 @@ export default function DischargedPatientSummary() {
         if (res.data && res.data.invoice && res.data.invoice._id) {
           setDischargeMessage({ type: 'success', text: 'Invoice finalized — opening invoice' });
           setTimeout(() => setDischargeMessage(null), 3000);
-          navigate(`/billing/${res.data.invoice._id}`);
+          const invoiceId = res?.data?.invoice?._id || res?.data?.invoiceId || res?.data?._id || res?.data?.id;
+          if (invoiceId) {
+            navigate(`/billing/${invoiceId}`);
+            return;
+          }
+          // fallback to billing list filtered by patient
+          navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);
           return;
         }
         if (res.data && (res.data.discharge || res.data.summary || res.data.dischargeSummary)) {

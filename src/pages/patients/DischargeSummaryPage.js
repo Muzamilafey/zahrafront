@@ -153,7 +153,7 @@ export default function DischargeSummaryPage() {
       // If invoice was returned, navigate to it
       if (res.data && res.data.invoice && res.data.invoice._id) {
         setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
-        setTimeout(() => navigate(`/billing/${res.data.invoice._id}`), 1500);
+        setTimeout(() => goToInvoiceFromResponse(res), 1500);
         return;
       }
       
@@ -162,7 +162,7 @@ export default function DischargeSummaryPage() {
         const invRes = await axiosInstance.post(`/discharge/${patientId}/generate-invoice`);
         if (invRes.data && invRes.data.invoice && invRes.data.invoice._id) {
           setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
-          setTimeout(() => navigate(`/billing/${invRes.data.invoice._id}`), 1500);
+          setTimeout(() => goToInvoiceFromResponse(invRes), 1500);
           return;
         }
       } catch (invErr) {
@@ -256,7 +256,8 @@ export default function DischargeSummaryPage() {
       link.setAttribute('download', `discharge-summary-${discharge.dischargeNumber}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.parentChild.removeChild(link);
+      // cleanup link
+      if (link.parentNode) link.parentNode.removeChild(link);
     } catch (e) {
       setSaveMessage({
         type: 'error',
@@ -265,6 +266,20 @@ export default function DischargeSummaryPage() {
     } finally {
       setGeneratePDFLoading(false);
     }
+  };
+
+  // Helper: open or navigate to an invoice using various response shapes
+  const goToInvoiceFromResponse = (res, openInNewTab = false) => {
+    const invoiceId = res?.data?.invoice?._id || res?.data?.invoiceId || res?.data?._id || res?.data?.id;
+    if (invoiceId) {
+      const url = `/billing/${invoiceId}`;
+      if (openInNewTab) return window.open(url, '_blank');
+      return navigate(url);
+    }
+    // fallback: go to billing list filtered by patient
+    const listUrl = `/billing?patientId=${encodeURIComponent(patientId)}`;
+    if (openInNewTab) return window.open(listUrl, '_blank');
+    return navigate(listUrl);
   };
 
   // When no discharge summary exists, try to generate/create one and (optionally) finalize invoice
@@ -347,29 +362,24 @@ export default function DischargeSummaryPage() {
       if (res.data && res.data.invoice && res.data.invoice._id) {
         setSaveMessage({ type: 'success', text: 'Invoice generated — opening invoice' });
         setTimeout(() => setSaveMessage(null), 2000);
-        // open billing page for the invoice in a new tab
-        const url = `/billing/${res.data.invoice._id}`;
-        window.open(url, '_blank');
-        return;
+        // open billing page for the invoice in a new tab (safe)
+        return goToInvoiceFromResponse(res, true);
       }
 
       // Some backends may return invoiceId or url differently
       if (res.data && res.data.invoiceId) {
-        const url = `/billing/${res.data.invoiceId}`;
-        window.open(url, '_blank');
         setSaveMessage({ type: 'success', text: 'Invoice generated — opening invoice' });
         setTimeout(() => setSaveMessage(null), 2000);
-        return;
+        return goToInvoiceFromResponse(res, true);
       }
 
       // Fallback: try finalize via patient discharge endpoint (if supported)
       try {
         const alt = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
         if (alt.data && alt.data.invoice && alt.data.invoice._id) {
-          window.open(`/billing/${alt.data.invoice._id}`, '_blank');
           setSaveMessage({ type: 'success', text: 'Invoice generated — opening invoice' });
           setTimeout(() => setSaveMessage(null), 2000);
-          return;
+          return goToInvoiceFromResponse(alt, true);
         }
       } catch (e) {
         // ignore fallback failure
@@ -556,7 +566,7 @@ export default function DischargeSummaryPage() {
                         
                         if (res.data && res.data.invoice && res.data.invoice._id) {
                           setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
-                          setTimeout(() => navigate(`/billing/${res.data.invoice._id}`), 1500);
+                          setTimeout(() => goToInvoiceFromResponse(res), 1500);
                           return;
                         }
                         
@@ -565,7 +575,7 @@ export default function DischargeSummaryPage() {
                           const invRes = await axiosInstance.post(`/discharge/${patientId}/generate-invoice`);
                           if (invRes.data && invRes.data.invoice && invRes.data.invoice._id) {
                             setSaveMessage({ type: 'success', text: 'Invoice generated — opening...' });
-                            setTimeout(() => navigate(`/billing/${invRes.data.invoice._id}`), 1500);
+                            setTimeout(() => goToInvoiceFromResponse(invRes), 1500);
                             return;
                           }
                         } catch (invErr) {

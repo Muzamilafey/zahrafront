@@ -37,8 +37,9 @@ export default function PatientDischargePage() {
     try {
       const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
       // If an invoice was returned, open it
-      if (res.data?.invoice?._id) {
-        navigate(`/billing/${res.data.invoice._id}`);
+      const invoiceId = res?.data?.invoice?._id || res?.data?.invoiceId || res?.data?._id || res?.data?.id;
+      if (invoiceId) {
+        navigate(`/billing/${invoiceId}`);
         return;
       }
       // otherwise go to billing list for the patient
