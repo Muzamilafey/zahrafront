@@ -25,12 +25,18 @@ export default function AdmitPatient(){
 
   useEffect(()=>{
     const t = setTimeout(()=>{
-      const q = patientQuery && patientQuery.trim();
+      const q = patientQuery && patientQuery.trim().toLowerCase();
       if (!q) { setPatientResults([]); return; }
-      axiosInstance.get(`/patients?search=${encodeURIComponent(q)}`).then(r=>setPatientResults(r.data.patients||[])).catch(()=>{});
+      axiosInstance.get(`/patients?search=${encodeURIComponent(q)}`).then(r=>{
+        // Filter results to only show patients whose names match the query
+        const filtered = (r.data.patients || []).filter(p => 
+          (p.user?.name || '').toLowerCase().includes(q)
+        );
+        setPatientResults(filtered);
+      }).catch(()=>{});
     }, 400);
     return ()=>clearTimeout(t);
-  }, [patientQuery]);
+  }, [patientQuery, axiosInstance]);
 
   useEffect(()=>{ loadWards(); }, []);
   const loadWards = async ()=>{ try{ const res = await axiosInstance.get('/wards'); setWards(res.data.wards||[]); }catch(e){console.error(e);} };
