@@ -114,7 +114,7 @@ export default function PatientDetail(){
   if(error) return <div className="p-6 text-red-600">{error}</div>;
   if(!patient) return <div className="p-6">Patient not found</div>;
 
-  const { user = {} } = patient;
+  
 
   return (
     <div className="p-6">
