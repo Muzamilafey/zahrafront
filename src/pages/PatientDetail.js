@@ -115,6 +115,18 @@ export default function PatientDetail(){
     }finally{ setLoading(false); }
   };
 
+  const handleDeletePayment = async (paymentId) => {
+    if(!window.confirm('Permanently delete this payment?')) return;
+    try{
+      await axiosInstance.delete(`/payments/${paymentId}`);
+      setPayments(p => (p || []).filter(x => (x._id || x.id) !== paymentId));
+      setToast({ type: 'success', message: 'Payment deleted' });
+    }catch(e){
+      console.error('Failed to delete payment', e);
+      setToast({ type: 'error', message: e?.response?.data?.message || 'Failed to delete payment' });
+    }
+  };
+
   if(loading) return <div className="p-6">Loading patient...</div>;
   if(error) return <div className="p-6 text-red-600">{error}</div>;
   if(!patient) return <div className="p-6">Patient not found</div>;
@@ -155,8 +167,8 @@ export default function PatientDetail(){
             <h3 className="font-medium mb-2">Edit Patient (admin)</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs text-gray-600">Full name</label>
-                <input className="input" value={editData.user?.name || ''} onChange={e=>setEditData(d=>({ ...d, user: { ...(d.user||{}), name: e.target.value } }))} />
+                <label className="text-xs text-gray-600">Registered name</label>
+                <div className="input bg-gray-100 text-gray-800">{patient.user?.name || `${patient.firstName} ${patient.middleName || ''} ${patient.lastName}`}</div>
                 <label className="text-xs text-gray-600 mt-2">Email</label>
                 <input className="input" value={editData.user?.email || ''} onChange={e=>setEditData(d=>({ ...d, user: { ...(d.user||{}), email: e.target.value } }))} />
                 <label className="text-xs text-gray-600 mt-2">Phone</label>
@@ -215,8 +227,13 @@ export default function PatientDetail(){
             <div className="mt-3 flex gap-2">
               <button className="btn-brand" onClick={async ()=>{
                 if(!user || user.role !== 'admin') { setToast({ type: 'error', message: 'Only admins can edit patient records' }); return; }
-                // prepare payload
+                // prepare payload - do not overwrite registered user.name
                 const payload = { ...editData };
+                // if user field exists, remove name to avoid changing registered username
+                if (payload.user) {
+                  const { name, ...userWithoutName } = payload.user;
+                  payload.user = userWithoutName;
+                }
                 // convert allergies to array
                 if(typeof payload.allergies === 'string') payload.allergies = payload.allergies.split(',').map(s=>s.trim()).filter(Boolean);
                 try{
@@ -476,6 +493,7 @@ export default function PatientDetail(){
                         <th className="px-2 py-1">Amount</th>
                         <th className="px-2 py-1">Method</th>
                         <th className="px-2 py-1">Reference</th>
+                        <th className="px-2 py-1">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -485,6 +503,11 @@ export default function PatientDetail(){
                           <td className="px-2 py-2">{p.amount || p.total || 0}</td>
                           <td className="px-2 py-2">{p.method || p.source || 'N/A'}</td>
                           <td className="px-2 py-2">{p.reference || p.transactionId || p._id}</td>
+                          <td className="px-2 py-2">
+                            {user && user.role === 'admin' && (
+                              <button className="btn-danger text-sm" onClick={()=>handleDeletePayment(p._id || p.id)}>Delete</button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

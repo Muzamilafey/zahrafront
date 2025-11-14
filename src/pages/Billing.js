@@ -142,6 +142,18 @@ export default function Billing() {
     });
   };
 
+  const deleteInvoice = async (id) => {
+    if (!window.confirm('Permanently delete this invoice? This cannot be undone.')) return;
+    try {
+      await axiosInstance.delete(`/billing/${id}`);
+      setInvoices(prev => (prev || []).filter(inv => inv._id !== id));
+      alert('Invoice deleted');
+    } catch (e) {
+      console.error('Error deleting invoice', e);
+      alert(e?.response?.data?.message || 'Failed to delete invoice');
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -275,6 +287,9 @@ export default function Billing() {
                     {(user?.role === 'finance' || user?.role === 'admin') && (
                       <button className="btn-primary text-sm" onClick={()=>openExportModal(inv._id)}>Export to Email</button>
                     )}
+                        {user?.role === 'admin' && (
+                          <button className="btn-danger text-sm" onClick={()=>deleteInvoice(inv._id)}>Delete</button>
+                        )}
                     {(user?.role === 'finance' || user?.role === 'admin') && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'refunded' && (
                       <button className="btn-brand" onClick={()=>markPaid(inv._id)}>Mark as Paid</button>
                     )}
