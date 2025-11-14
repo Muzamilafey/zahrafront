@@ -6,17 +6,61 @@ import Toast from '../components/ui/Toast';
 export default function PatientDetail(){
   const { id } = useParams();
   const navigate = useNavigate();
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, user } = useContext(AuthContext);
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState({ visits: [], prescriptions: [], labs: [] });
   const [payments, setPayments] = useState([]);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
   const [payForm, setPayForm] = useState({ amount: '', method: 'cash', reference: '' });
   const [payLoading, setPayLoading] = useState(false);
 
   useEffect(()=>{ load(); }, [id]);
+
+  useEffect(()=>{
+    if(patient) {
+      // initialize edit form
+      setEditData({
+        user: { name: patient.user?.name || '', email: patient.user?.email || '', phone: patient.user?.phone || '' },
+        firstName: patient.firstName || '',
+        middleName: patient.middleName || '',
+        lastName: patient.lastName || '',
+        nationalId: patient.nationalId || '',
+        dob: patient.dob ? new Date(patient.dob).toISOString().slice(0,10) : '',
+        gender: patient.gender || '',
+        age: patient.age || '',
+        phonePrimary: patient.phonePrimary || '',
+        phoneSecondary: patient.phoneSecondary || '',
+        email: patient.email || '',
+        address: patient.address || '',
+        county: patient.county || '',
+        subCounty: patient.subCounty || '',
+        ward: patient.ward || '',
+        postalAddress: patient.postalAddress || '',
+        nextOfKin: patient.nextOfKin || {},
+        occupation: patient.occupation || '',
+        religion: patient.religion || '',
+        educationLevel: patient.educationLevel || '',
+        disabilityStatus: patient.disabilityStatus || '',
+        guardianInfo: patient.guardianInfo || '',
+        bloodGroup: patient.bloodGroup || '',
+        allergies: Array.isArray(patient.allergies) ? patient.allergies.join(', ') : (patient.allergies || ''),
+        chronicConditions: patient.chronicConditions || '',
+        currentMedications: patient.currentMedications || '',
+        pastMedicalHistory: patient.pastMedicalHistory || '',
+        surgicalHistory: patient.surgicalHistory || '',
+        paymentMode: patient.paymentMode || '',
+        insuranceProvider: patient.insuranceProvider || '',
+        insuranceCardNumber: patient.insuranceCardNumber || '',
+        nhifNumber: patient.nhifNumber || '',
+        employer: patient.employer || '',
+        corporateNumber: patient.corporateNumber || ''
+      });
+    }
+  }, [patient]);
 
   const load = async () => {
     try{
@@ -80,13 +124,102 @@ export default function PatientDetail(){
           <div className="text-sm text-gray-500">Hospital ID: {patient.hospitalId} • MRN: {patient.mrn}</div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(`/patients/${id}/payments`)} className="btn-outline">View Payments</button>
-          <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="btn-brand">New Visit</button>
-          <Link to="/patients" className="btn-muted">Back to list</Link>
+            <button onClick={() => navigate(`/patients/${id}/payments`)} className="btn-outline">View Payments</button>
+            <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="btn-brand">New Visit</button>
+            {user && user.role === 'admin' && (
+              <>
+                <button onClick={() => setIsEditing(e => !e)} className="btn-outline">{isEditing ? 'Cancel Edit' : 'Edit'}</button>
+                <button onClick={async ()=>{
+                  if(!window.confirm('Permanently delete this patient? This cannot be undone.')) return;
+                  try{ await axiosInstance.delete(`/patients/${id}`); setToast({ type: 'success', message: 'Patient deleted' }); setTimeout(()=>navigate('/patients'),1000);}catch(e){ setToast({ type: 'error', message: e?.response?.data?.message || 'Delete failed' }); }
+                }} className="btn-danger">Delete</button>
+              </>
+            )}
+            <Link to="/patients" className="btn-muted">Back to list</Link>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {isEditing && (
+          <div className="col-span-1 md:col-span-3 bg-white p-4 rounded shadow mb-4">
+            <h3 className="font-medium mb-2">Edit Patient (admin)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs text-gray-600">Full name</label>
+                <input className="input" value={editData.user?.name || ''} onChange={e=>setEditData(d=>({ ...d, user: { ...(d.user||{}), name: e.target.value } }))} />
+                <label className="text-xs text-gray-600 mt-2">Email</label>
+                <input className="input" value={editData.user?.email || ''} onChange={e=>setEditData(d=>({ ...d, user: { ...(d.user||{}), email: e.target.value } }))} />
+                <label className="text-xs text-gray-600 mt-2">Phone</label>
+                <input className="input" value={editData.user?.phone || editData.phonePrimary || ''} onChange={e=>setEditData(d=>({ ...d, user: { ...(d.user||{}), phone: e.target.value }, phonePrimary: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">First Name</label>
+                <input className="input" value={editData.firstName || ''} onChange={e=>setEditData(d=>({ ...d, firstName: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Middle Name</label>
+                <input className="input" value={editData.middleName || ''} onChange={e=>setEditData(d=>({ ...d, middleName: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Last Name</label>
+                <input className="input" value={editData.lastName || ''} onChange={e=>setEditData(d=>({ ...d, lastName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">National ID</label>
+                <input className="input" value={editData.nationalId || ''} onChange={e=>setEditData(d=>({ ...d, nationalId: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">DOB</label>
+                <input type="date" className="input" value={editData.dob || ''} onChange={e=>setEditData(d=>({ ...d, dob: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Gender</label>
+                <select className="input" value={editData.gender || ''} onChange={e=>setEditData(d=>({ ...d, gender: e.target.value }))}>
+                  <option value="">Select</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs text-gray-600">Phone Primary</label>
+                <input className="input" value={editData.phonePrimary || ''} onChange={e=>setEditData(d=>({ ...d, phonePrimary: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Phone Secondary</label>
+                <input className="input" value={editData.phoneSecondary || ''} onChange={e=>setEditData(d=>({ ...d, phoneSecondary: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Address</label>
+                <input className="input" value={editData.address || ''} onChange={e=>setEditData(d=>({ ...d, address: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">County</label>
+                <input className="input" value={editData.county || ''} onChange={e=>setEditData(d=>({ ...d, county: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Sub-County</label>
+                <input className="input" value={editData.subCounty || ''} onChange={e=>setEditData(d=>({ ...d, subCounty: e.target.value }))} />
+                <label className="text-xs text-gray-600 mt-2">Ward</label>
+                <input className="input" value={editData.ward || ''} onChange={e=>setEditData(d=>({ ...d, ward: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Next of Kin Name</label>
+                <input className="input" value={editData.nextOfKin?.name || ''} onChange={e=>setEditData(d=>({ ...d, nextOfKin: { ...(d.nextOfKin||{}), name: e.target.value } }))} />
+                <label className="text-xs text-gray-600 mt-2">Next of Kin Phone</label>
+                <input className="input" value={editData.nextOfKin?.phone || ''} onChange={e=>setEditData(d=>({ ...d, nextOfKin: { ...(d.nextOfKin||{}), phone: e.target.value } }))} />
+                <label className="text-xs text-gray-600 mt-2">Next of Kin Relationship</label>
+                <input className="input" value={editData.nextOfKin?.relationship || ''} onChange={e=>setEditData(d=>({ ...d, nextOfKin: { ...(d.nextOfKin||{}), relationship: e.target.value } }))} />
+              </div>
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <button className="btn-brand" onClick={async ()=>{
+                // prepare payload
+                const payload = { ...editData };
+                // convert allergies to array
+                if(typeof payload.allergies === 'string') payload.allergies = payload.allergies.split(',').map(s=>s.trim()).filter(Boolean);
+                try{
+                  const res = await axiosInstance.put(`/patients/${id}`, payload);
+                  setToast({ type: 'success', message: 'Patient updated' });
+                  setIsEditing(false);
+                  // refresh data
+                  await load();
+                }catch(e){ setToast({ type: 'error', message: e?.response?.data?.message || 'Update failed' }); }
+              }}>Save Changes</button>
+              <button className="btn-muted" onClick={()=>{ setIsEditing(false); setEditData({}); }}>Cancel</button>
+            </div>
+          </div>
+        )}
         <div className="col-span-1">
           <div className="bg-white p-4 rounded shadow mb-4">
             <h3 className="font-medium mb-2">Personal Info</h3>
