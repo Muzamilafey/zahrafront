@@ -20,6 +20,11 @@ export default function PatientDetail(){
 
   useEffect(()=>{ load(); }, [id]);
 
+  // ensure non-admins cannot stay in edit mode if role changes
+  useEffect(()=>{
+    if(!user || user.role !== 'admin') setIsEditing(false);
+  }, [user]);
+
   useEffect(()=>{
     if(patient) {
       // initialize edit form
@@ -130,8 +135,13 @@ export default function PatientDetail(){
               <>
                 <button onClick={() => setIsEditing(e => !e)} className="btn-outline">{isEditing ? 'Cancel Edit' : 'Edit'}</button>
                 <button onClick={async ()=>{
+                  if(!user || user.role !== 'admin') { setToast({ type: 'error', message: 'Only admins can delete patients' }); return; }
                   if(!window.confirm('Permanently delete this patient? This cannot be undone.')) return;
-                  try{ await axiosInstance.delete(`/patients/${id}`); setToast({ type: 'success', message: 'Patient deleted' }); setTimeout(()=>navigate('/patients'),1000);}catch(e){ setToast({ type: 'error', message: e?.response?.data?.message || 'Delete failed' }); }
+                  try{
+                    await axiosInstance.delete(`/patients/${id}`);
+                    setToast({ type: 'success', message: 'Patient deleted' });
+                    setTimeout(()=>navigate('/patients'),1000);
+                  }catch(e){ setToast({ type: 'error', message: e?.response?.data?.message || 'Delete failed' }); }
                 }} className="btn-danger">Delete</button>
               </>
             )}
@@ -204,6 +214,7 @@ export default function PatientDetail(){
 
             <div className="mt-3 flex gap-2">
               <button className="btn-brand" onClick={async ()=>{
+                if(!user || user.role !== 'admin') { setToast({ type: 'error', message: 'Only admins can edit patient records' }); return; }
                 // prepare payload
                 const payload = { ...editData };
                 // convert allergies to array
