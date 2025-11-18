@@ -99,6 +99,78 @@ export default function DischargeSummaryPage() {
           console.warn('Could not load management charges:', e.message);
         }
 
+        // Fetch lab tests for this patient
+        let labTests = [];
+        try {
+          const labRes = await axiosInstance.get(`/lab/orders`);
+          if (labRes.data.orders && Array.isArray(labRes.data.orders)) {
+            labTests = labRes.data.orders
+              .filter(t => (t.patient?._id === patientData._id || t.patient === patientData._id) && 
+                           t.createdAt >= new Date(admissionData.admittedAt) && 
+                           t.createdAt <= new Date(admissionData.dischargedAt || new Date()))
+              .map(t => ({
+                name: t.testName || t.name || 'Lab Test',
+                type: t.testType || t.type || 'N/A',
+                date: t.createdAt || t.date
+              }));
+          }
+        } catch (e) {
+          console.warn('Could not load lab tests:', e.message);
+        }
+
+        // Fetch internal lab requests
+        try {
+          const internalLabRes = await axiosInstance.get(`/inpatient/internal-lab/${patientId}`);
+          if (internalLabRes.data.requests && Array.isArray(internalLabRes.data.requests)) {
+            const internalTests = internalLabRes.data.requests.map(req => ({
+              name: req.testName || 'Lab Test',
+              type: req.testType || 'N/A',
+              date: req.createdAt
+            }));
+            labTests = [...labTests, ...internalTests];
+          }
+        } catch (e) {
+          console.warn('Could not load internal lab requests:', e.message);
+        }
+
+        // Fetch theatre/procedures if available
+        let procedures = [];
+        try {
+          const procRes = await axiosInstance.get(`/procedures`);
+          if (procRes.data && Array.isArray(procRes.data)) {
+            procedures = procRes.data
+              .filter(p => (p.patient?._id === patientData._id || p.patientId === patientId) &&
+                          p.createdAt >= new Date(admissionData.admittedAt) && 
+                          p.createdAt <= new Date(admissionData.dischargedAt || new Date()))
+              .map(p => ({
+                name: p.name || p.procedureName || 'Procedure',
+                type: p.type || 'Theatre/Surgical',
+                date: p.createdAt || p.date
+              }));
+          }
+        } catch (e) {
+          console.warn('Could not load procedures:', e.message);
+        }
+
+        // Fetch supplies/consumables if available
+        let supplies = [];
+        try {
+          const suppliesRes = await axiosInstance.get(`/supplies`);
+          if (suppliesRes.data && Array.isArray(suppliesRes.data)) {
+            supplies = suppliesRes.data
+              .filter(s => (s.patient?._id === patientData._id || s.patientId === patientId) &&
+                          s.createdAt >= new Date(admissionData.admittedAt) && 
+                          s.createdAt <= new Date(admissionData.dischargedAt || new Date()))
+              .map(s => ({
+                name: s.name || s.supplyName || 'Supply',
+                quantity: s.quantity || 1,
+                date: s.createdAt || s.date
+              }));
+          }
+        } catch (e) {
+          console.warn('Could not load supplies:', e.message);
+        }
+
         // Build discharge object from patient data
         const discharge = {
           patientInfo: {
@@ -122,13 +194,11 @@ export default function DischargeSummaryPage() {
             dosage: med.dosage || med.dose || 'N/A',
             frequency: med.frequency || med.prescriptionTerm || 'N/A'
           })),
+          labTests: labTests,
+          procedures: procedures,
+          supplies: supplies,
           instructionsToPatient: admissionData?.dischargeInstructions || 'Follow medication schedule and attend follow-up appointments as advised.',
-          followUpPlan: admissionData?.followUpDate ? `Follow-up on ${new Date(admissionData.followUpDate).toLocaleDateString()}` : 'To be arranged',
-          charges: charges.map(charge => ({
-            description: charge.description || charge.name || 'Service',
-            qty: charge.quantity || 1,
-            amount: charge.amount || charge.price || 0
-          }))
+          followUpPlan: admissionData?.followUpDate ? `Follow-up on ${new Date(admissionData.followUpDate).toLocaleDateString()}` : 'To be arranged'
         };
 
         setDischarge(discharge);
@@ -240,27 +310,60 @@ export default function DischargeSummaryPage() {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-xl font-semibold border-b-2 border-gray-300 pb-2 mb-2">Charges</h3>
-              {discharge.charges && discharge.charges.length > 0 ? (
-                <table className="w-full text-left">
-                  <thead>
-                    <tr>
-                      <th className="py-2">Description</th>
-                      <th className="py-2">Quantity</th>
-                      <th className="py-2">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {discharge.charges.map((charge, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="py-2">{charge.description}</td>
-                        <td className="py-2">{charge.qty}</td>
-                        <td className="py-2">{charge.amount.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : <p>N/A</p>}
+              <h3 className="text-xl font-semibold border-b-2 border-gray-300 pb-2 mb-2">Items & Services Used During Admission</h3>
+              <div className="space-y-4">
+                {/* Medications */}
+                {discharge.medicationsOnDischarge && discharge.medicationsOnDischarge.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">💊 Medications</h4>
+                    <ul className="list-disc list-inside text-sm">
+                      {discharge.medicationsOnDischarge.map((med, index) => (
+                        <li key={index}>{med.name} - {med.dosage} ({med.frequency})</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Lab Tests */}
+                {discharge.labTests && discharge.labTests.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">🔬 Laboratory Tests</h4>
+                    <ul className="list-disc list-inside text-sm">
+                      {discharge.labTests.map((test, index) => (
+                        <li key={index}>{test.name} ({test.type}) - {test.date ? new Date(test.date).toLocaleDateString() : 'N/A'}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Procedures/Theatre */}
+                {discharge.procedures && discharge.procedures.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">🏥 Theatre/Procedures</h4>
+                    <ul className="list-disc list-inside text-sm">
+                      {discharge.procedures.map((proc, index) => (
+                        <li key={index}>{proc.name} ({proc.type}) - {proc.date ? new Date(proc.date).toLocaleDateString() : 'N/A'}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Supplies */}
+                {discharge.supplies && discharge.supplies.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">📦 Supplies & Consumables</h4>
+                    <ul className="list-disc list-inside text-sm">
+                      {discharge.supplies.map((supply, index) => (
+                        <li key={index}>{supply.name} (Qty: {supply.quantity}) - {supply.date ? new Date(supply.date).toLocaleDateString() : 'N/A'}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!discharge.medicationsOnDischarge?.length && !discharge.labTests?.length && !discharge.procedures?.length && !discharge.supplies?.length && (
+                  <p className="text-gray-500">No items recorded</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
