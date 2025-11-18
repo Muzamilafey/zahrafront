@@ -471,9 +471,62 @@ export default function DischargedPatientSummary() {
       )}
 
       {/* Printable container (wrapped so html2canvas captures only this) */}
-      <div id="discharge-summary">
+      <div id="discharge-summary" className="bg-white print:bg-white">
+      {/* Professional Medical Discharge Summary Header */}
+      <div className="border-b-2 border-gray-800 pb-4 mb-6 print:page-break-after-avoid">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{hospital?.name || 'Healthcare Facility'}</h1>
+            <p className="text-sm text-gray-600">{hospital?.location || 'Location'}</p>
+            {hospital?.phone && <p className="text-sm text-gray-600">Tel: {hospital.phone}</p>}
+          </div>
+          {hospital?.logo && (
+            <img src={hospital.logo} alt="Logo" className="h-20 w-auto" />
+          )}
+        </div>
+        <div className="text-center border-t pt-2">
+          <h2 className="text-lg font-bold text-gray-800">PATIENT DISCHARGE SUMMARY</h2>
+        </div>
+      </div>
+
+      {/* Patient Demographics Section */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded print:page-break-after-avoid">
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">PATIENT NAME</span>
+          <p className="font-semibold text-gray-900">{patient?.firstName || patient?.user?.name || '-'} {patient?.lastName || ''}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">HOSPITAL ID</span>
+          <p className="font-semibold text-gray-900">{patient?.hospitalId || '-'}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">MRN</span>
+          <p className="font-semibold text-gray-900">{patient?.mrn || '-'}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">DATE OF BIRTH</span>
+          <p className="font-semibold text-gray-900">{patient?.dob ? new Date(patient.dob).toLocaleDateString() : '-'}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">AGE / GENDER</span>
+          <p className="font-semibold text-gray-900">{patient?.age || '-'} yrs / {patient?.gender || '-'}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">ADMISSION DATE</span>
+          <p className="font-semibold text-gray-900">{bedSummary?.admittedAt ? new Date(bedSummary.admittedAt).toLocaleDateString() : '-'}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">DISCHARGE DATE</span>
+          <p className="font-semibold text-gray-900">{bedSummary?.dischargedAt ? new Date(bedSummary.dischargedAt).toLocaleDateString() : '-'}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-600 font-semibold">WARD / BED</span>
+          <p className="font-semibold text-gray-900">{bedSummary?.ward || '-'} / {bedSummary?.bed || '-'}</p>
+        </div>
+      </div>
+
       {/* Patient Header Card */}
-      <div className="bg-gradient-to-r from-brand-50 to-brand-100 border border-brand-200 rounded-lg p-6 mb-6">
+      <div className="hidden">
         {/* render hospital header/logo if available */}
         {hospital && (hospital.name || hospital.logo || hospital.logoUrl) && (
           <div className="mb-4 flex justify-between items-start">
@@ -512,8 +565,132 @@ export default function DischargedPatientSummary() {
         </div>
       </div>
 
-          {/* Discharge Details */}
-          <div className="bg-white rounded-lg shadow mb-6 p-6">
+      {/* Clinical Information Section */}
+      <div className="mb-6 p-4 bg-white border rounded print:page-break-after-avoid">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">CLINICAL INFORMATION</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-xs text-gray-600 font-semibold">ADMISSION DIAGNOSIS</label>
+            <p className="text-gray-900 font-medium">{admission?.admissionDiagnosis || admission?.presentingDiagnosis || '-'}</p>
+          </div>
+          <div>
+            <label className="text-xs text-gray-600 font-semibold">FINAL DIAGNOSIS / DISCHARGE DIAGNOSIS</label>
+            <p className="text-gray-900 font-medium">{admission?.finalDiagnosis || admission?.dischargeDiagnosis || '-'}</p>
+          </div>
+        </div>
+
+        {admission?.secondaryDiagnoses && admission.secondaryDiagnoses.length > 0 && (
+          <div className="mb-4">
+            <label className="text-xs text-gray-600 font-semibold">SECONDARY DIAGNOSES</label>
+            <ul className="list-disc list-inside text-gray-900">
+              {admission.secondaryDiagnoses.map((d, i) => <li key={i}>{d}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <div className="mb-4">
+          <label className="text-xs text-gray-600 font-semibold">CLINICAL SUMMARY</label>
+          <p className="text-gray-900 text-sm">{admission?.clinicalSummary || admission?.summaryOfHospitalCourse || '-'}</p>
+        </div>
+
+        {(admission?.testResults || admission?.labFindings) && (
+          <div className="mb-4">
+            <label className="text-xs text-gray-600 font-semibold">TEST RESULTS / LAB FINDINGS</label>
+            <p className="text-gray-900 text-sm">{admission.testResults || admission.labFindings || '-'}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Medications Section */}
+      {medications && medications.length > 0 && (
+        <div className="mb-6 p-4 bg-white border rounded print:page-break-after-avoid">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">MEDICATIONS AT DISCHARGE</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Drug Name</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Dosage</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Frequency</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Duration</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Instructions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medications.map((med, idx) => (
+                  <tr key={idx} className="border-b">
+                    <td className="px-2 py-2">{med.name || '-'}</td>
+                    <td className="px-2 py-2">{med.dosage || '-'}</td>
+                    <td className="px-2 py-2">{med.prescriptionTerm || med.frequency || '-'}</td>
+                    <td className="px-2 py-2">{med.duration || '-'}</td>
+                    <td className="px-2 py-2 text-xs">{med.instructions || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Lab Tests Section */}
+      {labTests && labTests.length > 0 && (
+        <div className="mb-6 p-4 bg-white border rounded print:page-break-after-avoid">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">LAB TESTS PERFORMED</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Test Name</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Result</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Reference Range</th>
+                  <th className="text-left px-2 py-2 font-semibold text-gray-700">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {labTests.map((test, idx) => (
+                  <tr key={idx} className="border-b">
+                    <td className="px-2 py-2">{test.testName || test.name || '-'}</td>
+                    <td className="px-2 py-2">{test.result || '-'}</td>
+                    <td className="px-2 py-2 text-xs">{test.referenceRange || '-'}</td>
+                    <td className="px-2 py-2">{test.createdAt ? new Date(test.createdAt).toLocaleDateString() : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Discharge Instructions Section */}
+      <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded print:page-break-after-avoid">
+        <h3 className="text-lg font-bold text-gray-900 mb-2">DISCHARGE INSTRUCTIONS & FOLLOW-UP</h3>
+        <div className="text-gray-900 text-sm space-y-2">
+          <p><strong>Rest:</strong> Follow prescribed rest period and gradually resume normal activities.</p>
+          <p><strong>Diet:</strong> Maintain healthy diet as recommended. Avoid heavy foods initially.</p>
+          <p><strong>Follow-up Appointment:</strong> {admission?.followUpDate ? `${new Date(admission.followUpDate).toLocaleDateString()}` : 'To be arranged'}</p>
+          <p><strong>Additional Instructions:</strong> {admission?.dischargeInstructions || 'Follow medication schedule. Contact facility if complications arise.'}</p>
+        </div>
+      </div>
+
+      {/* Signature/Provider Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t-2 border-gray-800 print:page-break-after-avoid">
+        <div>
+          <p className="text-xs text-gray-600 mb-12">Attending Physician</p>
+          <p className="border-t border-gray-900 text-sm font-medium">{admission?.attendingDoctor?.name || admission?.doctorName || '_______________'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-600 mb-12">Date</p>
+          <p className="border-t border-gray-900 text-sm">{bedSummary?.dischargedAt ? new Date(bedSummary.dischargedAt).toLocaleDateString() : '_______________'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-600 mb-12">Hospital Seal / Stamp</p>
+          <p className="border-t border-gray-900 text-sm text-center text-gray-400 h-12"></p>
+        </div>
+      </div>
+
+          {/* Discharge Details - Hidden */}
+          <div className="hidden">
             <h2 className="text-lg font-semibold mb-4">Discharge Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
