@@ -10,6 +10,7 @@ export default function AdmissionSummary() {
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [dischargeLoading, setDischargeLoading] = useState(false);
 
   useEffect(() => {
     loadPatientDetails();
@@ -23,6 +24,57 @@ export default function AdmissionSummary() {
       setToast({ message: 'Failed to load patient details', type: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDischarge = async () => {
+    if (!window.confirm('Are you sure you want to discharge this patient? This will finalize the admission and create a discharge summary.')) return;
+    setDischargeLoading(true);
+    setToast(null);
+    try {
+      // Try server discharge endpoint first
+      try {
+        const res = await axiosInstance.post(`/patients/${patientId}/discharge`, { dischargeNotes: '' });
+        // if backend created discharge/invoice, navigate to summary
+        if (res?.data && (res.data.discharge || res.data.summary || res.data.dischargeSummary || res.data.invoice)) {
+          setToast({ message: 'Patient discharged successfully', type: 'success' });
+          // navigate to discharge summary view
+          setTimeout(() => navigate(`/patients/${patientId}/discharge-summary`), 400);
+          return;
+        }
+      } catch (e) {
+        // ignore and try fallback
+      }
+
+      // Fallback: update patient's admission resource
+      try {
+        const payload = { dischargedAt: new Date().toISOString(), isAdmitted: false };
+        await axiosInstance.put(`/patients/${patientId}/admission`, payload);
+        setToast({ message: 'Patient discharged (fallback) successfully', type: 'success' });
+        setTimeout(() => navigate(`/patients/${patientId}/discharge-summary`), 400);
+        return;
+      } catch (err) {
+        // fallback to admissions resource
+        if (patient?.admission?._id) {
+          try {
+            const payload = { dischargedAt: new Date().toISOString(), isAdmitted: false };
+            await axiosInstance.put(`/admissions/${patient.admission._id}`, payload);
+            setToast({ message: 'Patient discharged (admission record) successfully', type: 'success' });
+            setTimeout(() => navigate(`/patients/${patientId}/discharge-summary`), 400);
+            return;
+          } catch (finalErr) {
+            console.error('Final discharge attempt failed', finalErr);
+          }
+        }
+        throw err;
+      }
+    } catch (err) {
+      console.error('Discharge failed', err);
+      setToast({ message: err?.response?.data?.message || 'Failed to discharge patient', type: 'error' });
+    } finally {
+      setDischargeLoading(false);
+      // reload patient to reflect changes
+      setTimeout(() => loadPatientDetails(), 800);
     }
   };
 
@@ -147,7 +199,20 @@ export default function AdmissionSummary() {
   return (
     <div className="p-6">
       <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <h1 className="text-2xl font-bold mb-2">In-Patient Admission Profile</h1>
+        <div className="flex items-start justify-between mb-2">
+          <h1 className="text-2xl font-bold">In-Patient Admission Profile</h1>
+          {patient && patient.admission && !patient.admission.dischargedAt && (
+            <div>
+              <button
+                onClick={handleDischarge}
+                disabled={dischargeLoading}
+                className="btn-brand"
+              >
+                {dischargeLoading ? 'Discharging…' : 'Discharge Patient'}
+              </button>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p><span className="font-semibold">INPATIENT'S FILE NO:</span> {patient.fileNumber || patient.hospitalId}</p>
