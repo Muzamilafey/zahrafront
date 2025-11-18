@@ -45,16 +45,34 @@ export default function DischargeSummaryPage() {
           const prescRes = await axiosInstance.get(`/prescriptions`);
           const allPresc = prescRes?.data?.prescriptions || prescRes?.data || [];
           if (Array.isArray(allPresc)) {
-            medications = allPresc.flatMap(p => {
-              // patient may be in p.patient, p.patient._id, or p.appointment.patient._id
-              const pPatientId = p.patient?._id || p.patient || p.appointment?.patient?._id || p.appointment?.patient;
-              const matchesPatient = String(pPatientId) === String(patientData._id) || String(pPatientId) === String(patientId);
-              if (!matchesPatient) return [];
-              // return drugs array if available
-              return Array.isArray(p.drugs) ? p.drugs : [];
+            let foundCount = 0;
+            // iterate prescriptions and extract medication entries from various shapes
+            allPresc.forEach(p => {
+              const pPatientId = p.patient?._id || p.patient || p.patientId || p.appointment?.patient?._id || p.appointment?.patient || p.patient?.id;
+              const matchesPatient = String(pPatientId) === String(patientData._id) || String(pPatientId) === String(patientData.id) || String(pPatientId) === String(patientId);
+              if (!matchesPatient) return;
+
+              // possible medication lists/fields
+              const medsCandidates = [];
+              if (Array.isArray(p.drugs)) medsCandidates.push(...p.drugs);
+              else if (Array.isArray(p.medications)) medsCandidates.push(...p.medications);
+              else if (Array.isArray(p.items)) medsCandidates.push(...p.items);
+              else if (p.drug) medsCandidates.push(p.drug);
+              else if (p.name && !p.drugs && !p.medications) medsCandidates.push(p);
+
+              // normalize each medication candidate into unified shape
+              medsCandidates.forEach(d => {
+                if (!d) return;
+                const name = d.name || d.drugName || d.medicationName || d.product?.name || d.itemName || d.medication || p.name || d.label;
+                const dosage = d.dosage || d.dose || d.form || d.strength || d.amount || d.quantity;
+                const frequency = d.frequency || d.prescriptionTerm || d.schedule || d.interval || d.timing;
+                const createdAt = d.createdAt || d.date || d.prescribedAt || p.createdAt || p.date;
+                medications.push({ name, dosage, frequency, createdAt, raw: d });
+                foundCount++;
+              });
             });
+            console.log('[DischargeSummary] Prescriptions processed:', allPresc.length, 'prescriptions; medications found:', foundCount);
           }
-          console.log('[DischargeSummary] Prescriptions fetched:', medications.length, 'drugs found');
         } catch (e) {
           console.warn('Could not load prescriptions:', e?.message || e);
         }
