@@ -95,6 +95,7 @@ import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
 import DischargeSummaryTemplate from './pages/patients/DischargeSummaryTemplate';
 import DischargedPatientsList from './pages/patients/DischargedPatientsList';
 import PatientDischargePage from './pages/patients/PatientDischargePage';
+import DischargePage from './pages/DischargePage';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
@@ -196,12 +197,13 @@ function App() {
 
           {/* Clinical Documentation */}
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
-          {/* Unified discharge summary page (single canonical page) */}
-          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryTemplate /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><PatientDischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/discharge/summary/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryTemplate /></ErrorBoundary></Layout></PrivateRoute>} />
+          {/* Unified discharge summary page with real data from tsx components */}
+          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><DischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><DischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/discharge/new" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/discharge/summary/:id" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Dedicated page for discharged patients */}
           <Route path="/patients/discharged" element={<PrivateRoute><Layout><DischargedPatientsList /></Layout></PrivateRoute>} />
