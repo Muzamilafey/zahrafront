@@ -56,9 +56,7 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-2">
-                  If this is a network or timeout error, verify your API is reachable and that the environment variable REACT_APP_API_BASE is correct.
-                </div>
+                {/* Additional troubleshooting details removed per request */}
               </div>
             )}
             <input

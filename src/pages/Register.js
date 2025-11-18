@@ -38,7 +38,10 @@ export default function Register() {
     setError(null);
     try {
       const res = await axios.post(`${API_BASE}/auth/register`, form);
-      setMessage(res.data.message || 'Registration successful. Please check your email to verify.');
+      const msg = res.data.message || 'Registration successful. Please check your email to verify.';
+      setMessage(msg);
+      // redirect to login after successful registration
+      setTimeout(() => navigate('/login'), 700);
     } catch (err) {
       setError(err?.response?.data?.message || 'Registration failed');
     } finally {
