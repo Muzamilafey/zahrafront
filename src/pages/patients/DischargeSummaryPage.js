@@ -78,6 +78,73 @@ export default function DischargeSummaryPage() {
           console.warn('Could not load internal pharmacy requests:', e?.message || e);
         }
 
+        // Fetch diagnosis data from visits/consultations
+        let diagnosisData = {
+          primary: admissionData?.finalDiagnosis || admissionData?.dischargeDiagnosis || admissionData?.admissionDiagnosis || 'N/A',
+          secondary: admissionData?.secondaryDiagnoses || [],
+          icdCodes: []
+        };
+        
+        try {
+          const visitsRes = await axiosInstance.get(`/visits`);
+          const allVisits = visitsRes?.data?.visits || visitsRes?.data || [];
+          if (Array.isArray(allVisits)) {
+            const patientVisits = allVisits.filter(v => {
+              const vPatientId = v.patient?._id || v.patient;
+              const matchesPatient = String(vPatientId) === String(patientData._id) || String(vPatientId) === String(patientId);
+              if (!matchesPatient) return false;
+              // ensure visit within admission period
+              if (!admissionData?.admittedAt) return true;
+              const vDate = new Date(v.visitDate || v.createdAt || null);
+              if (!vDate || isNaN(vDate.getTime())) return true;
+              const admit = new Date(admissionData.admittedAt);
+              const discharged = admissionData?.dischargedAt ? new Date(admissionData.dischargedAt) : new Date();
+              return vDate >= admit && vDate <= discharged;
+            });
+            
+            // Collect diagnoses from visits
+            const primaryDiags = patientVisits
+              .filter(v => v.diagnosis?.description)
+              .map(v => v.diagnosis.description);
+            
+            const icdDiags = patientVisits
+              .filter(v => v.diagnosis?.code)
+              .map(v => v.diagnosis.code);
+            
+            if (primaryDiags.length > 0 && diagnosisData.primary === 'N/A') {
+              diagnosisData.primary = primaryDiags[0];
+            }
+            if (primaryDiags.length > 1) {
+              diagnosisData.secondary = [...new Set([...diagnosisData.secondary, ...primaryDiags.slice(1)])];
+            }
+            if (icdDiags.length > 0) {
+              diagnosisData.icdCodes = [...new Set([...diagnosisData.icdCodes, ...icdDiags])];
+            }
+          }
+          console.log('[DischargeSummary] Diagnosis fetched from visits:', diagnosisData);
+        } catch (e) {
+          console.warn('Could not load diagnosis from visits:', e?.message || e);
+        }
+
+        // Also try to fetch from discharge summary endpoint if available
+        try {
+          const dischargeSumRes = await axiosInstance.get(`/discharge/patient/${patientId}`);
+          const summaries = dischargeSumRes?.data?.summaries || [];
+          if (Array.isArray(summaries) && summaries.length > 0) {
+            const latestSummary = summaries[summaries.length - 1];
+            if (latestSummary.diagnosis) {
+              diagnosisData = {
+                primary: latestSummary.diagnosis.primary || diagnosisData.primary,
+                secondary: latestSummary.diagnosis.secondary || diagnosisData.secondary,
+                icdCodes: latestSummary.diagnosis.icdCodes || diagnosisData.icdCodes
+              };
+            }
+            console.log('[DischargeSummary] Diagnosis fetched from discharge summary:', diagnosisData);
+          }
+        } catch (e) {
+          console.warn('Could not load from discharge summary endpoint:', e?.message || e);
+        }
+
         // Fetch charges/invoices
         let charges = [];
         try {
@@ -212,6 +279,7 @@ export default function DischargeSummaryPage() {
           labTests: labTests.length,
           procedures: procedures.length,
           supplies: supplies.length,
+          diagnosis: diagnosisData,
           patientId,
           patientDataId: patientData._id
         });
@@ -226,10 +294,7 @@ export default function DischargeSummaryPage() {
             admittedAt: admissionData?.admittedAt,
             dischargedAt: admissionData?.dischargedAt
           },
-          diagnosis: {
-            primary: admissionData?.finalDiagnosis || admissionData?.dischargeDiagnosis || admissionData?.admissionDiagnosis || 'N/A',
-            secondary: admissionData?.secondaryDiagnoses || []
-          },
+          diagnosis: diagnosisData,
           hospitalStaySummary: admissionData?.clinicalSummary || admissionData?.summaryOfHospitalCourse || 'N/A',
           dischargeNotes: admissionData?.dischargeNotes || admissionData?.clinicalSummary || 'N/A',
           medicationsOnDischarge: medications.map(med => ({
@@ -312,13 +377,22 @@ export default function DischargeSummaryPage() {
             </div>
             <div className="mb-6">
               <h3 className="text-xl font-semibold border-b-2 border-gray-300 pb-2 mb-2">Discharge Diagnosis</h3>
-              <p>{discharge.diagnosis.primary}</p>
+              <p><strong>Primary:</strong> {discharge.diagnosis.primary}</p>
               {discharge.diagnosis.secondary && discharge.diagnosis.secondary.length > 0 && (
-                <ul className="list-disc list-inside mt-2">
-                  {discharge.diagnosis.secondary.map((diag, index) => (
-                    <li key={index}>{diag}</li>
-                  ))}
-                </ul>
+                <div className="mt-2">
+                  <strong>Secondary:</strong>
+                  <ul className="list-disc list-inside mt-1">
+                    {discharge.diagnosis.secondary.map((diag, index) => (
+                      <li key={index}>{diag}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {discharge.diagnosis.icdCodes && discharge.diagnosis.icdCodes.length > 0 && (
+                <div className="mt-2">
+                  <strong>ICD-10 Codes:</strong>
+                  <p className="text-sm text-gray-600">{discharge.diagnosis.icdCodes.join(', ')}</p>
+                </div>
               )}
             </div>
           </div>
