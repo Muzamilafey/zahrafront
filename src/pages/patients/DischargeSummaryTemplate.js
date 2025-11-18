@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Printer, ArrowLeft } from 'lucide-react';
-import { Button } from 'components/ui/button'; // Assuming you have a Button component
 
 const DischargeSummaryTemplate = () => {
   const { id } = useParams();
@@ -64,15 +63,21 @@ const DischargeSummaryTemplate = () => {
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg" ref={printRef}>
       <div className="flex justify-between items-center mb-8">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
-        </Button>
+        </button>
         <h1 className="text-3xl font-bold text-center">Discharge Summary</h1>
-        <Button onClick={handlePrint}>
+        <button
+          onClick={handlePrint}
+          className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+        >
           <Printer className="mr-2 h-4 w-4" />
           Print
-        </Button>
+        </button>
       </div>
 
       {/* Patient and Admission Info */}
