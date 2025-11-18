@@ -21,10 +21,86 @@ export default function DischargeSummaryPage() {
     const loadDischargeSummary = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get(`/discharge/${patientId}`);
-        setDischarge(response.data);
+        // Fetch patient data instead of non-existent /discharge endpoint
+        const patientResponse = await axiosInstance.get(`/patients/${patientId}`);
+        const patientData = patientResponse.data.patient;
+        
+        // Get the most recent admission (discharge summary)
+        let admissionData = null;
+        if (patientData?.admissionHistory && patientData.admissionHistory.length > 0) {
+          admissionData = patientData.admissionHistory[patientData.admissionHistory.length - 1];
+        } else if (patientData?.admission) {
+          admissionData = patientData.admission;
+        }
+
+        if (!admissionData) {
+          setDischarge(null);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch prescriptions for medications
+        let medications = [];
+        try {
+          const prescRes = await axiosInstance.get(`/prescriptions`);
+          if (prescRes.data.prescriptions) {
+            medications = prescRes.data.prescriptions
+              .filter(p => p.appointment?.patient?._id === patientData._id)
+              .flatMap(p => p.drugs || []);
+          }
+        } catch (e) {
+          console.warn('Could not load prescriptions:', e.message);
+        }
+
+        // Fetch charges/invoices
+        let charges = [];
+        try {
+          const billingRes = await axiosInstance.get(`/billing`);
+          if (billingRes.data.invoices) {
+            charges = billingRes.data.invoices
+              .filter(inv => inv.patient?._id === patientData._id || inv.patientId === patientId)
+              .flatMap(inv => inv.items || []);
+          }
+        } catch (e) {
+          console.warn('Could not load billing:', e.message);
+        }
+
+        // Build discharge object from patient data
+        const discharge = {
+          patientInfo: {
+            name: `${patientData.firstName || ''} ${patientData.lastName || ''}`.trim() || patientData.user?.name || 'Unknown',
+            mrn: patientData.mrn || patientData.hospitalId || 'N/A',
+            dob: patientData.dob
+          },
+          dischargingDoctorName: admissionData?.attendingDoctor?.name || admissionData?.doctorName || 'N/A',
+          admissionInfo: {
+            admittedAt: admissionData?.admittedAt,
+            dischargedAt: admissionData?.dischargedAt
+          },
+          diagnosis: {
+            primary: admissionData?.finalDiagnosis || admissionData?.dischargeDiagnosis || admissionData?.admissionDiagnosis || 'N/A',
+            secondary: admissionData?.secondaryDiagnoses || []
+          },
+          hospitalStaySummary: admissionData?.clinicalSummary || admissionData?.summaryOfHospitalCourse || 'N/A',
+          dischargeNotes: admissionData?.dischargeNotes || admissionData?.clinicalSummary || 'N/A',
+          medicationsOnDischarge: medications.map(med => ({
+            name: med.name || med.medicationName || 'Unknown',
+            dosage: med.dosage || med.dose || 'N/A',
+            frequency: med.frequency || med.prescriptionTerm || 'N/A'
+          })),
+          instructionsToPatient: admissionData?.dischargeInstructions || 'Follow medication schedule and attend follow-up appointments as advised.',
+          followUpPlan: admissionData?.followUpDate ? `Follow-up on ${new Date(admissionData.followUpDate).toLocaleDateString()}` : 'To be arranged',
+          charges: charges.map(charge => ({
+            description: charge.description || charge.name || 'Service',
+            qty: charge.quantity || 1,
+            amount: charge.amount || charge.price || 0
+          }))
+        };
+
+        setDischarge(discharge);
       } catch (error) {
         console.error('Failed to load discharge summary:', error);
+        setDischarge(null);
       }
       setLoading(false);
     };
