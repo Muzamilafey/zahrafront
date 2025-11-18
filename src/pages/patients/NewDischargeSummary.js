@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import PatientSearch from 'components/patientSearch';
-import DischargeSummary from 'components/DischargeSummary';
-import Invoice from 'components/Invoice';
-import PrintButton from 'components/PrintButton';
-import Spinner from 'components/Spinner';
+import PatientSearch from '../../components/patientSearch';
+import DischargeSummary from '../../components/DischargeSummary';
+import Invoice from '../../components/Invoice';
+import PrintButton from '../../components/PrintButton';
+import Spinner from '../../components/Spinner';
 import axios from 'axios';
 
 const NewDischargeSummary = () => {
