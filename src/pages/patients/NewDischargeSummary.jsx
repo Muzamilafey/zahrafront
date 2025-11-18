@@ -109,7 +109,7 @@ export default function NewDischargeSummary() {
         if (Array.isArray(billData.lineItems) && billData.lineItems.length) {
           const mapped = billData.lineItems.map((c, i) => ({
             id: c._id || `b${i}`,
-            description: c.description || c.name || 'Charge',
+            description: c.description || c.name || 'Charge.',
             quantity: c.quantity || 1,
             unitPrice: parseFloat(c.unitPrice || c.amount || c.price || 0)
           }));
