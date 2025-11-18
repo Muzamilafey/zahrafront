@@ -39,35 +39,41 @@ export default function DischargeSummaryPage() {
           return;
         }
 
-        // Fetch prescriptions for medications
+        // Fetch prescriptions for medications (robust patient matching and date parsing)
         let medications = [];
         try {
           const prescRes = await axiosInstance.get(`/prescriptions`);
-          if (prescRes.data.prescriptions && Array.isArray(prescRes.data.prescriptions)) {
-            medications = prescRes.data.prescriptions
-              .filter(p => p.appointment?.patient?._id === patientData._id)
-              .flatMap(p => (p.drugs && Array.isArray(p.drugs)) ? p.drugs : []);
+          const allPresc = prescRes?.data?.prescriptions || prescRes?.data || [];
+          if (Array.isArray(allPresc)) {
+            medications = allPresc.flatMap(p => {
+              // patient may be in p.patient, p.patient._id, or p.appointment.patient._id
+              const pPatientId = p.patient?._id || p.patient || p.appointment?.patient?._id || p.appointment?.patient;
+              const matchesPatient = String(pPatientId) === String(patientData._id) || String(pPatientId) === String(patientId);
+              if (!matchesPatient) return [];
+              // return drugs array if available
+              return Array.isArray(p.drugs) ? p.drugs : [];
+            });
           }
         } catch (e) {
-          console.warn('Could not load prescriptions:', e.message);
+          console.warn('Could not load prescriptions:', e?.message || e);
         }
 
         // Also fetch internal pharmacy requests for this patient
         try {
           const internalPharmRes = await axiosInstance.get(`/inpatient/internal-pharmacy/${patientId}`);
-          if (internalPharmRes.data.requests && Array.isArray(internalPharmRes.data.requests)) {
-            const internalMeds = internalPharmRes.data.requests.map(req => ({
-              name: req.drugName,
-              dosage: req.dosage || 'N/A',
+          const reqs = internalPharmRes?.data?.requests || internalPharmRes?.data || [];
+          if (Array.isArray(reqs)) {
+            const internalMeds = reqs.map(req => ({
+              name: req.drugName || req.name,
+              dosage: req.dosage || req.form || 'N/A',
               frequency: req.prescriptionTerm || 'As prescribed',
               dose: req.dosage,
-              price: req.price,
-              quantity: req.quantity
+              createdAt: req.createdAt || req.date
             }));
             medications = [...medications, ...internalMeds];
           }
         } catch (e) {
-          console.warn('Could not load internal pharmacy requests:', e.message);
+          console.warn('Could not load internal pharmacy requests:', e?.message || e);
         }
 
         // Fetch charges/invoices
@@ -99,38 +105,47 @@ export default function DischargeSummaryPage() {
           console.warn('Could not load management charges:', e.message);
         }
 
-        // Fetch lab tests for this patient
+        // Fetch lab tests for this patient (robust matching and safe date handling)
         let labTests = [];
         try {
           const labRes = await axiosInstance.get(`/lab/orders`);
-          if (labRes.data.orders && Array.isArray(labRes.data.orders)) {
-            labTests = labRes.data.orders
-              .filter(t => (t.patient?._id === patientData._id || t.patient === patientData._id) && 
-                           t.createdAt >= new Date(admissionData.admittedAt) && 
-                           t.createdAt <= new Date(admissionData.dischargedAt || new Date()))
-              .map(t => ({
-                name: t.testName || t.name || 'Lab Test',
-                type: t.testType || t.type || 'N/A',
-                date: t.createdAt || t.date
-              }));
+          const allLab = labRes?.data?.orders || labRes?.data?.tests || labRes?.data || [];
+          if (Array.isArray(allLab)) {
+            labTests = allLab.filter(t => {
+              const tPatientId = t.patient?._id || t.patient;
+              const matchesPatient = String(tPatientId) === String(patientData._id) || String(tPatientId) === String(patientId);
+              if (!matchesPatient) return false;
+              // if admission dates available, ensure test date within range; else include
+              if (!admissionData?.admittedAt) return true;
+              const tDate = new Date(t.createdAt || t.date || t.requestedAt || null);
+              if (!tDate || isNaN(tDate.getTime())) return true;
+              const admit = new Date(admissionData.admittedAt);
+              const discharged = admissionData?.dischargedAt ? new Date(admissionData.dischargedAt) : new Date();
+              return tDate >= admit && tDate <= discharged;
+            }).map(t => ({
+              name: t.testName || t.name || 'Lab Test',
+              type: t.testType || t.type || 'N/A',
+              date: t.createdAt || t.date || t.requestedAt
+            }));
           }
         } catch (e) {
-          console.warn('Could not load lab tests:', e.message);
+          console.warn('Could not load lab tests:', e?.message || e);
         }
 
         // Fetch internal lab requests
         try {
           const internalLabRes = await axiosInstance.get(`/inpatient/internal-lab/${patientId}`);
-          if (internalLabRes.data.requests && Array.isArray(internalLabRes.data.requests)) {
-            const internalTests = internalLabRes.data.requests.map(req => ({
-              name: req.testName || 'Lab Test',
-              type: req.testType || 'N/A',
-              date: req.createdAt
+          const reqs = internalLabRes?.data?.requests || internalLabRes?.data || [];
+          if (Array.isArray(reqs)) {
+            const internalTests = reqs.map(req => ({
+              name: req.testName || req.name || 'Lab Test',
+              type: req.testType || req.type || 'N/A',
+              date: req.createdAt || req.date
             }));
             labTests = [...labTests, ...internalTests];
           }
         } catch (e) {
-          console.warn('Could not load internal lab requests:', e.message);
+          console.warn('Could not load internal lab requests:', e?.message || e);
         }
 
         // Fetch theatre/procedures if available
