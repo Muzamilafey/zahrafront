@@ -39,8 +39,8 @@ const DischargeSummaryTemplate = () => {
     return <div>{error}</div>;
   }
 
-  if (!summary) {
-    return <div>No discharge summary found.</div>;
+  if (!summary || !summary.patientInfo || !summary.admissionInfo || !summary.diagnosis) {
+    return <div>No discharge summary found or data is incomplete.</div>;
   }
 
   const {
@@ -119,7 +119,7 @@ const DischargeSummaryTemplate = () => {
         <div>
           <h2 className="text-xl font-semibold mb-2">Investigations</h2>
           <ul>
-            {investigations.map((item, index) => (
+            {investigations && investigations.map((item, index) => (
               <li key={index}>{item.name} - {item.results}</li>
             ))}
           </ul>
@@ -127,7 +127,7 @@ const DischargeSummaryTemplate = () => {
         <div>
           <h2 className="text-xl font-semibold mb-2">Procedures</h2>
           <ul>
-            {procedures.map((item, index) => (
+            {procedures && procedures.map((item, index) => (
               <li key={index}>{item.name}</li>
             ))}
           </ul>
@@ -138,7 +138,7 @@ const DischargeSummaryTemplate = () => {
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-2">Medications on Discharge</h2>
         <ul>
-          {medicationsOnDischarge.map((med, index) => (
+          {medicationsOnDischarge && medicationsOnDischarge.map((med, index) => (
             <li key={index}>
               {med.name} - {med.dosage} {med.frequency} for {med.duration}
             </li>
@@ -147,33 +147,35 @@ const DischargeSummaryTemplate = () => {
       </div>
 
       {/* Charges */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Charges</h2>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left">Item</th>
-              <th className="text-right">Quantity</th>
-              <th className="text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {charges.map((charge, index) => (
-              <tr key={index}>
-                <td>{charge.name}</td>
-                <td className="text-right">{charge.quantity}</td>
-                <td className="text-right">{charge.amount.toFixed(2)}</td>
+      {charges && totalCharges && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-2">Charges</h2>
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left">Item</th>
+                <th className="text-right">Quantity</th>
+                <th className="text-right">Amount</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan="2" className="text-right font-bold">Total</td>
-              <td className="text-right font-bold">{totalCharges.toFixed(2)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {charges.map((charge, index) => (
+                <tr key={index}>
+                  <td>{charge.name}</td>
+                  <td className="text-right">{charge.quantity}</td>
+                  <td className="text-right">{charge.amount.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan="2" className="text-right font-bold">Total</td>
+                <td className="text-right font-bold">{totalCharges.toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
 
       {/* Discharge and Follow-up */}
       <div className="mb-8">
