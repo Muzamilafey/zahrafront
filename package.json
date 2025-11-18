@@ -17,7 +17,8 @@
     "date-fns": "^2.30.0",
     "web-vitals": "^2.1.4",
     "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "lucide-react": "^0.268.0"
   },
   "scripts": {
     "start": "react-scripts start",
