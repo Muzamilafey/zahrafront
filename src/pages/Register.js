@@ -50,7 +50,6 @@ export default function Register() {
   };
 
   return (
-  return (
     <div className="min-h-screen flex items-center justify-center page-hero">
       <style>{`
         @keyframes float {
