@@ -201,6 +201,7 @@ function App() {
           <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryTemplate /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><PatientDischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/discharge/summary/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryTemplate /></ErrorBoundary></Layout></PrivateRoute>} />
 
           {/* Dedicated page for discharged patients */}
           <Route path="/patients/discharged" element={<PrivateRoute><Layout><DischargedPatientsList /></Layout></PrivateRoute>} />
