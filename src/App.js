@@ -92,6 +92,7 @@ import Placeholder from './components/Placeholder';
 import DischargeSummary from './pages/patients/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
+import DischargeSummaryTemplate from './pages/patients/DischargeSummaryTemplate';
 import DischargedPatientsList from './pages/patients/DischargedPatientsList';
 import PatientDischargePage from './pages/patients/PatientDischargePage';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
@@ -197,6 +198,7 @@ function App() {
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Unified discharge summary page (single canonical page) */}
           <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryTemplate /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><PatientDischargePage /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummaryPage /></ErrorBoundary></Layout></PrivateRoute>} />
 
