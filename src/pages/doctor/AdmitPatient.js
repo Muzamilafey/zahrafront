@@ -27,12 +27,8 @@ export default function AdmitPatient(){
     const t = setTimeout(()=>{
       const q = patientQuery && patientQuery.trim().toLowerCase();
       if (!q) { setPatientResults([]); return; }
-      axiosInstance.get(`/patients?search=${encodeURIComponent(q)}`).then(r=>{
-        // Filter results to only show patients whose names match the query
-        const filtered = (r.data.patients || []).filter(p => 
-          (p.user?.name || '').toLowerCase().includes(q)
-        );
-        setPatientResults(filtered);
+      axiosInstance.get(`/patients/search?q=${encodeURIComponent(q)}`).then(r=>{
+        setPatientResults(r.data.patients || []);
       }).catch(()=>{});
     }, 400);
     return ()=>clearTimeout(t);

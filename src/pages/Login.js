@@ -1,7 +1,11 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { AuthLayout } from '../components/AuthLayout';
+import { AlertIcon, SpinnerIcon } from '../components/Icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatedPage } from '../components/AnimatedPage';
+import { InputField } from '../components/InputField';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -9,99 +13,107 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const submit = async e => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       setLoading(true);
       setError(null);
       await login(email, password);
       navigate('/dashboard');
-    } catch (err) {
-      // AuthContext.login now throws normalized Error messages (including timeout)
-      setError(err?.message || err?.response?.data?.message || 'Login failed');
+    } catch (err: any) {
+      setError(err?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  
-
   return (
-    <div className="min-h-screen flex items-center justify-center page-hero">
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        .animated-logo {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}</style>
-      <div className="w-full max-w-2xl p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          <div className="hidden md:flex flex-col items-center justify-center p-6 rounded-xl floating">
-            <img src="/logo3.png" alt="Hospital Logo" className="animated-logo w-32 h-32 mb-6 object-contain" />
-            <div className="bg-gradient-to-br from-brand-200 to-brand-50 rounded-xl p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-brand-700 mb-2">Welcome Back</h3>
-              <p className="text-gray-600">Sign in to access your Muzamilafey HMIS dashboard and manage appointments, prescriptions and billing.</p>
-            </div>
-          </div>
-
-          <form onSubmit={submit} className="card">
-            <h2 className="text-2xl mb-4 font-bold text-center text-brand-700">Login</h2>
+    <AnimatedPage>
+      <AuthLayout
+        title="Welcome Back"
+        description="Sign in to continue to your dashboard."
+      >
+        <form onSubmit={submit} className="space-y-6">
+          <AnimatePresence>
             {error && (
-              <div className="mb-4 rounded p-3 bg-red-50 border border-red-200">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="text-sm text-red-700">{error}</div>
-                  <div className="flex items-center gap-2">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+                className="rounded-md bg-red-50 p-4"
+              >
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertIcon className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">Login Error</h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>{error}</p>
+                    </div>
                     <button
-                      type="button"
-                      className="text-sm underline text-red-600"
-                      onClick={() => setError(null)}
-                    >
-                      Dismiss
-                    </button>
+                        type="button"
+                        className="mt-2 text-sm font-medium text-red-800 hover:text-red-700"
+                        onClick={() => setError(null)}
+                      >
+                        Dismiss
+                      </button>
                   </div>
                 </div>
-                {/* Additional troubleshooting details removed per request */}
-              </div>
+              </motion.div>
             )}
-            <input
-              type="email"
-              placeholder="Email"
-              className="input mb-3"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="input mb-4"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="submit"
-              className="btn-brand w-full"
-              disabled={loading}
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-            <div className="my-4 text-center">or</div>
-            
+          </AnimatePresence>
+          
+          <InputField
+            id="email"
+            type="email"
+            label="Email address"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
 
-            <div className="mt-4 flex justify-between text-sm">
-              <Link to="/forgot-password" className="text-brand-600 hover:underline">Forgot Password?</Link>
-              <Link to="/register" className="text-brand-600 hover:underline">Create an account</Link>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          <InputField
+            id="password"
+            type="password"
+            label="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
+          
+          <div className="flex items-center justify-end">
+              <div className="text-sm">
+                  <Link to="/forgot-password" className="font-medium text-brand-600 hover:text-brand-500 transition-colors duration-200">
+                      Forgot your password?
+                  </Link>
+              </div>
+          </div>
+
+          <div>
+            <motion.button
+              type="submit"
+              className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {loading && <SpinnerIcon className="h-5 w-5 mr-2" />}
+              {loading ? 'Signing in...' : 'Sign in'}
+            </motion.button>
+          </div>
+
+          <div className="text-center text-sm text-gray-600">
+            Not a member?{' '}
+            <Link to="/register" className="font-medium text-brand-600 hover:text-brand-500 transition-colors duration-200">
+              Create an account
+            </Link>
+          </div>
+        </form>
+      </AuthLayout>
+    </AnimatedPage>
   );
 }

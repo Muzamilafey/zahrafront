@@ -1,64 +1,138 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useSearchParams, Link } from 'react-router-dom';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
+import React, { useState, useContext } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { AuthContext } from '../contexts/AuthContext';
+import { AuthLayout } from '../components/AuthLayout';
+import { AlertIcon, SuccessIcon, SpinnerIcon } from '../components/Icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatedPage } from '../components/AnimatedPage';
+import { InputField } from '../components/InputField';
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
+  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+  const { resetPassword } = useContext(AuthContext);
+
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState(null);
-  const [email, setEmail] = useState(null);
-
-  useEffect(() => {
-    setToken(searchParams.get('token'));
-    setEmail(searchParams.get('email'));
-  }, [searchParams]);
-
-  const submit = async e => {
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!token) return setError('Invalid or missing token');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (!token) {
+        setError('Invalid reset link. No token provided.');
+        return;
+    }
+
     setLoading(true);
     setError(null);
     setMessage(null);
+
     try {
-      const res = await axios.post(`${API_BASE}/auth/reset-password`, { token, password });
-      setMessage(res.data.message || 'Password reset successful');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Reset failed');
+      await resetPassword(token, password);
+      setMessage('Your password has been reset successfully! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 3000);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to reset password. The link may be invalid or expired.');
     } finally {
       setLoading(false);
     }
   };
+  
+  const alertVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center page-hero">
-      <div className="w-full max-w-md p-6">
-        <form onSubmit={submit} className="card">
-          <h2 className="text-2xl mb-4 font-bold text-center text-brand-700">Reset Password</h2>
-          {message && <p className="text-green-600 mb-4">{message}</p>}
-          {error && <p className="text-red-600 mb-4">{error}</p>}
-
-          <input
-            type="password"
-            placeholder="New password"
-            className="input mb-3"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-
-          <button type="submit" className="btn-brand w-full" disabled={loading}>{loading ? 'Resetting...' : 'Reset password'}</button>
-
-          <div className="mt-4 text-center">
-            <Link to="/login" className="text-brand-600 hover:underline">Back to login</Link>
+    <AnimatedPage>
+      <AuthLayout
+        title="Reset Your Password"
+        description="Enter and confirm your new password below."
+      >
+        <form onSubmit={submit} className="space-y-6">
+          <AnimatePresence>
+            {message && (
+                <motion.div variants={alertVariants} initial="hidden" animate="visible" exit="exit" className="rounded-md bg-green-50 p-4">
+                    <div className="flex">
+                    <div className="flex-shrink-0">
+                        <SuccessIcon className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm font-medium text-green-800">{message}</p>
+                    </div>
+                    </div>
+                </motion.div>
+            )}
+            {error && (
+                <motion.div variants={alertVariants} initial="hidden" animate="visible" exit="exit" className="rounded-md bg-red-50 p-4">
+                    <div className="flex">
+                    <div className="flex-shrink-0">
+                        <AlertIcon className="h-5 w-5 text-red-400" />
+                    </div>
+                    <div className="ml-3">
+                        <p className="text-sm font-medium text-red-800">{error}</p>
+                    </div>
+                    </div>
+                </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <AnimatePresence>
+          {!message && (
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <InputField
+                id="password"
+                type="password"
+                label="New Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+              <InputField
+                id="confirm-password"
+                type="password"
+                label="Confirm New Password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                required
+              />
+              
+              <div>
+                <motion.button
+                  type="submit"
+                  className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {loading && <SpinnerIcon className="h-5 w-5 mr-2" />}
+                  {loading ? 'Resetting...' : 'Reset Password'}
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+          </AnimatePresence>
+          <div className="text-center text-sm text-gray-600">
+            <Link to="/login" className="font-medium text-brand-600 hover:text-brand-500 transition-colors duration-200">
+              Back to Sign in
+            </Link>
           </div>
         </form>
-      </div>
-    </div>
+      </AuthLayout>
+    </AnimatedPage>
   );
 }
