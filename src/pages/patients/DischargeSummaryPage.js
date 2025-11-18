@@ -43,26 +43,60 @@ export default function DischargeSummaryPage() {
         let medications = [];
         try {
           const prescRes = await axiosInstance.get(`/prescriptions`);
-          if (prescRes.data.prescriptions) {
+          if (prescRes.data.prescriptions && Array.isArray(prescRes.data.prescriptions)) {
             medications = prescRes.data.prescriptions
               .filter(p => p.appointment?.patient?._id === patientData._id)
-              .flatMap(p => p.drugs || []);
+              .flatMap(p => (p.drugs && Array.isArray(p.drugs)) ? p.drugs : []);
           }
         } catch (e) {
           console.warn('Could not load prescriptions:', e.message);
+        }
+
+        // Also fetch internal pharmacy requests for this patient
+        try {
+          const internalPharmRes = await axiosInstance.get(`/inpatient/internal-pharmacy/${patientId}`);
+          if (internalPharmRes.data.requests && Array.isArray(internalPharmRes.data.requests)) {
+            const internalMeds = internalPharmRes.data.requests.map(req => ({
+              name: req.drugName,
+              dosage: req.dosage || 'N/A',
+              frequency: req.prescriptionTerm || 'As prescribed',
+              dose: req.dosage,
+              price: req.price,
+              quantity: req.quantity
+            }));
+            medications = [...medications, ...internalMeds];
+          }
+        } catch (e) {
+          console.warn('Could not load internal pharmacy requests:', e.message);
         }
 
         // Fetch charges/invoices
         let charges = [];
         try {
           const billingRes = await axiosInstance.get(`/billing`);
-          if (billingRes.data.invoices) {
+          if (billingRes.data.invoices && Array.isArray(billingRes.data.invoices)) {
             charges = billingRes.data.invoices
-              .filter(inv => inv.patient?._id === patientData._id || inv.patientId === patientId)
-              .flatMap(inv => inv.items || []);
+              .filter(inv => (inv.patient?._id === patientData._id || inv.patientId === patientId) && inv.items)
+              .flatMap(inv => (Array.isArray(inv.items) ? inv.items : []));
           }
         } catch (e) {
           console.warn('Could not load billing:', e.message);
+        }
+
+        // Also fetch management charges if available
+        try {
+          const chargesRes = await axiosInstance.get(`/charges`);
+          if (chargesRes.data && Array.isArray(chargesRes.data)) {
+            const patientCharges = chargesRes.data.filter(c => c.patient?._id === patientData._id || c.patientId === patientId);
+            const chargeItems = patientCharges.map(c => ({
+              description: c.description || c.name || 'Service Charge',
+              qty: c.quantity || 1,
+              amount: c.amount || c.price || 0
+            }));
+            charges = [...charges, ...chargeItems];
+          }
+        } catch (e) {
+          console.warn('Could not load management charges:', e.message);
         }
 
         // Build discharge object from patient data

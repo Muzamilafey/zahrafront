@@ -31,9 +31,19 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center page-hero">
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        .animated-logo {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
       <div className="w-full max-w-2xl p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          <div className="hidden md:block p-6 rounded-xl floating">
+          <div className="hidden md:flex flex-col items-center justify-center p-6 rounded-xl floating">
+            <img src="/logo3.png" alt="Hospital Logo" className="animated-logo w-32 h-32 mb-6 object-contain" />
             <div className="bg-gradient-to-br from-brand-200 to-brand-50 rounded-xl p-8 shadow-lg">
               <h3 className="text-2xl font-bold text-brand-700 mb-2">Welcome Back</h3>
               <p className="text-gray-600">Sign in to access your Muzamilafey HMIS dashboard and manage appointments, prescriptions and billing.</p>
