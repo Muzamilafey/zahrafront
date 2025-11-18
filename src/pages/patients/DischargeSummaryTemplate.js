@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Printer, ArrowLeft } from 'lucide-react';
 
 const DischargeSummaryTemplate = () => {
   const { id } = useParams();
@@ -67,7 +66,9 @@ const DischargeSummaryTemplate = () => {
           onClick={() => navigate(-1)}
           className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5A1 1 0 017.707 4.293L4.414 7.586H18a1 1 0 110 2H4.414l3.293 3.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
           Back
         </button>
         <h1 className="text-3xl font-bold text-center">Discharge Summary</h1>
@@ -75,7 +76,11 @@ const DischargeSummaryTemplate = () => {
           onClick={handlePrint}
           className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
         >
-          <Printer className="mr-2 h-4 w-4" />
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <path d="M6 9V2h12v7" />
+            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+            <rect x="6" y="14" width="12" height="8" rx="2" />
+          </svg>
           Print
         </button>
       </div>
