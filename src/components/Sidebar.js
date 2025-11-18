@@ -72,6 +72,7 @@ export default function Sidebar() {
         { to: '/patients/register', label: 'Register Patient', perm: 'patients' },
         { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', perm: 'patients' },
         { to: '/patients/admitted', label: 'Admitted Patients', perm: 'patients' },
+        { to: '/patients/discharged', label: 'Discharged Patients', perm: 'patients' },
         { to: '/patients/visits', label: 'Patient Visits', perm: 'patients' },
         { to: '/patients/visits/report', label: 'Visits Report', perm: 'patients' },
       ],
