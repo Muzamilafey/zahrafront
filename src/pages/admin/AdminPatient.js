@@ -21,12 +21,81 @@ export default function AdminPatient(){
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [showDischargeModal, setShowDischargeModal] = useState(false);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [invoiceSuccess, setInvoiceSuccess] = useState(false);
+  const [invoiceError, setInvoiceError] = useState('');
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [summarySuccess, setSummarySuccess] = useState(false);
+  const [summaryError, setSummaryError] = useState('');
+  const [dischargeSummary, setDischargeSummary] = useState(null);
 
   useEffect(()=>{ try{ const saved = localStorage.getItem('notificationRecipient'); if (saved) setExportRecipient(saved); }catch(e){} },[]);
 
   const openExportModal = (id)=>{ setExportInvoiceId(id); setExportModalOpen(true); };
   const closeExportModal = ()=>{ setExportInvoiceId(null); setExportModalOpen(false); };
+  
+  const openDischargeModal = () => setShowDischargeModal(true);
+  const closeDischargeModal = () => {
+    setShowDischargeModal(false);
+    setInvoiceSuccess(false);
+    setInvoiceError('');
+    setSummarySuccess(false);
+    setSummaryError('');
+    setDischargeSummary(null);
+  };
 
+  const generateInvoice = async () => {
+    setGeneratingInvoice(true);
+    setInvoiceSuccess(false);
+    setInvoiceError('');
+    try {
+      await axiosInstance.post(`/discharge/${id}/generate-invoice`);
+      setInvoiceSuccess(true);
+      // Refresh invoices
+      const res = await axiosInstance.get(`/patients/${id}`);
+      setInvoices(res.data.invoices || []);
+    } catch (error) {
+      console.error(error);
+      setInvoiceError('Failed to generate invoice.');
+    }
+    setGeneratingInvoice(false);
+  };
+
+  const generateDischargeSummary = async () => {
+    setGeneratingSummary(true);
+    setSummarySuccess(false);
+    setSummaryError('');
+    setDischargeSummary(null);
+    try {
+      // We need admissionId and dischargingDoctorId
+      const admissionId = patient.admission?._id || id;
+      const dischargingDoctorId = user._id;
+
+      if (!patient.admission?.isAdmitted) {
+        setSummaryError('Patient is not currently admitted.');
+        setGeneratingSummary(false);
+        return;
+      }
+
+      const response = await axiosInstance.post('/discharge/create', {
+        patientId: id,
+        admissionId,
+        dischargingDoctorId,
+      });
+
+      setDischargeSummary(response.data.dischargeSummary);
+      setSummarySuccess(true);
+      // Refresh patient data
+      const res = await axiosInstance.get(`/patients/${id}`);
+      setPatient(res.data.patient || null);
+    } catch (error) {
+      console.error(error);
+      setSummaryError('Failed to generate discharge summary.');
+    }
+    setGeneratingSummary(false);
+  };
+  
   const sendExportEmail = async ()=>{
     if (!exportRecipient) { setExportError('Enter recipient'); setTimeout(()=>setExportError(''),3000); return; }
     setExportLoading(true);
@@ -198,7 +267,32 @@ export default function AdminPatient(){
               </form>
               <div className="mt-3">
                 <button className="btn-outline" onClick={()=>setShowAssignModal(true)}>Assign doctor</button>
+                <button className="btn-outline ml-2" onClick={openDischargeModal}>Discharge</button>
               </div>
+              {/* Discharge modal */}
+              {showDischargeModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                  <div className="bg-white p-6 rounded shadow max-w-lg w-full">
+                    <h3 className="text-lg font-semibold mb-3">Discharge Patient</h3>
+                    {invoiceSuccess && <div className="text-green-500 mb-2">Invoice generated successfully.</div>}
+                    {invoiceError && <div className="text-red-500 mb-2">{invoiceError}</div>}
+                    {summarySuccess && <div className="text-green-500 mb-2">Discharge summary generated successfully.</div>}
+                    {summaryError && <div className="text-red-500 mb-2">{summaryError}</div>}
+                    <div className="flex gap-2 justify-end">
+                      <button className="btn-outline" onClick={closeDischargeModal}>Cancel</button>
+                      {dischargeSummary && (
+                        <Link to={`/discharge/${dischargeSummary._id}`} target="_blank" className="btn-outline">View Summary</Link>
+                      )}
+                      <button className="btn-brand" onClick={generateDischargeSummary} disabled={generatingSummary}>
+                        {generatingSummary ? 'Generating...' : 'Generate Discharge Summary'}
+                      </button>
+                      <button className="btn-brand" onClick={generateInvoice} disabled={generatingInvoice}>
+                        {generatingInvoice ? 'Generating...' : 'Generate Invoice'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Assign doctor modal */}
               {showAssignModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
