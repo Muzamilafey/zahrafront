@@ -54,6 +54,7 @@ export default function DischargeSummaryPage() {
               return Array.isArray(p.drugs) ? p.drugs : [];
             });
           }
+          console.log('[DischargeSummary] Prescriptions fetched:', medications.length, 'drugs found');
         } catch (e) {
           console.warn('Could not load prescriptions:', e?.message || e);
         }
@@ -72,6 +73,7 @@ export default function DischargeSummaryPage() {
             }));
             medications = [...medications, ...internalMeds];
           }
+          console.log('[DischargeSummary] Internal pharmacy fetched:', reqs.length, 'requests, total meds now:', medications.length);
         } catch (e) {
           console.warn('Could not load internal pharmacy requests:', e?.message || e);
         }
@@ -148,45 +150,71 @@ export default function DischargeSummaryPage() {
           console.warn('Could not load internal lab requests:', e?.message || e);
         }
 
-        // Fetch theatre/procedures if available
+        // Fetch theatre/procedures if available (robust matching and safe date handling)
         let procedures = [];
         try {
           const procRes = await axiosInstance.get(`/procedures`);
-          if (procRes.data && Array.isArray(procRes.data)) {
-            procedures = procRes.data
-              .filter(p => (p.patient?._id === patientData._id || p.patientId === patientId) &&
-                          p.createdAt >= new Date(admissionData.admittedAt) && 
-                          p.createdAt <= new Date(admissionData.dischargedAt || new Date()))
-              .map(p => ({
-                name: p.name || p.procedureName || 'Procedure',
-                type: p.type || 'Theatre/Surgical',
-                date: p.createdAt || p.date
-              }));
+          const allProc = procRes?.data?.procedures || procRes?.data?.data || procRes?.data || [];
+          if (Array.isArray(allProc)) {
+            procedures = allProc.filter(p => {
+              const pPatientId = p.patient?._id || p.patient || p.patientId;
+              const matchesPatient = String(pPatientId) === String(patientData._id) || String(pPatientId) === String(patientId);
+              if (!matchesPatient) return false;
+              // if admission dates available, ensure procedure date within range; else include
+              if (!admissionData?.admittedAt) return true;
+              const pDate = new Date(p.createdAt || p.date || p.procedureDate || null);
+              if (!pDate || isNaN(pDate.getTime())) return true;
+              const admit = new Date(admissionData.admittedAt);
+              const discharged = admissionData?.dischargedAt ? new Date(admissionData.dischargedAt) : new Date();
+              return pDate >= admit && pDate <= discharged;
+            }).map(p => ({
+              name: p.name || p.procedureName || 'Procedure',
+              type: p.type || 'Theatre/Surgical',
+              date: p.createdAt || p.date || p.procedureDate
+            }));
           }
+          console.log('[DischargeSummary] Procedures fetched:', procedures.length, 'procedures found');
         } catch (e) {
-          console.warn('Could not load procedures:', e.message);
+          console.warn('Could not load procedures:', e?.message || e);
         }
 
-        // Fetch supplies/consumables if available
+        // Fetch supplies/consumables if available (robust matching and safe date handling)
         let supplies = [];
         try {
           const suppliesRes = await axiosInstance.get(`/supplies`);
-          if (suppliesRes.data && Array.isArray(suppliesRes.data)) {
-            supplies = suppliesRes.data
-              .filter(s => (s.patient?._id === patientData._id || s.patientId === patientId) &&
-                          s.createdAt >= new Date(admissionData.admittedAt) && 
-                          s.createdAt <= new Date(admissionData.dischargedAt || new Date()))
-              .map(s => ({
-                name: s.name || s.supplyName || 'Supply',
-                quantity: s.quantity || 1,
-                date: s.createdAt || s.date
-              }));
+          const allSupp = suppliesRes?.data?.supplies || suppliesRes?.data?.data || suppliesRes?.data || [];
+          if (Array.isArray(allSupp)) {
+            supplies = allSupp.filter(s => {
+              const sPatientId = s.patient?._id || s.patient || s.patientId;
+              const matchesPatient = String(sPatientId) === String(patientData._id) || String(sPatientId) === String(patientId);
+              if (!matchesPatient) return false;
+              // if admission dates available, ensure supply date within range; else include
+              if (!admissionData?.admittedAt) return true;
+              const sDate = new Date(s.createdAt || s.date || s.supplyDate || null);
+              if (!sDate || isNaN(sDate.getTime())) return true;
+              const admit = new Date(admissionData.admittedAt);
+              const discharged = admissionData?.dischargedAt ? new Date(admissionData.dischargedAt) : new Date();
+              return sDate >= admit && sDate <= discharged;
+            }).map(s => ({
+              name: s.name || s.supplyName || 'Supply',
+              quantity: s.quantity || 1,
+              date: s.createdAt || s.date || s.supplyDate
+            }));
           }
+          console.log('[DischargeSummary] Supplies fetched:', supplies.length, 'supplies found');
         } catch (e) {
-          console.warn('Could not load supplies:', e.message);
+          console.warn('Could not load supplies:', e?.message || e);
         }
 
         // Build discharge object from patient data
+        console.log('[DischargeSummary] FINAL SUMMARY:', {
+          medications: medications.length,
+          labTests: labTests.length,
+          procedures: procedures.length,
+          supplies: supplies.length,
+          patientId,
+          patientDataId: patientData._id
+        });
         const discharge = {
           patientInfo: {
             name: `${patientData.firstName || ''} ${patientData.lastName || ''}`.trim() || patientData.user?.name || 'Unknown',
