@@ -21,7 +21,8 @@ const DischargeSummary = () => {
         setPatient(response.data.patient);
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch patient data');
+        console.error('Failed to load patient data:', err);
+        setError('Failed to fetch patient data. You may not have permission to view this patient.');
         setLoading(false);
       }
     };
@@ -41,45 +42,50 @@ const DischargeSummary = () => {
       
       alert('Patient Discharged Successfully');
       if (response.data.invoice && response.data.invoice._id) {
-        navigate(`/billing/${response.data.invoice._id}`); // Redirect to invoice after discharge
+        navigate(`/finance/invoices/${response.data.invoice._id}`); // Redirect to invoice after discharge
       } else {
         navigate(`/patients/${id}`); // Fallback redirect
       }
     } catch (err) {
+      console.error('Error discharging patient:', err);
       alert('Error discharging patient');
     }
   };
 
-  if (loading) return <div>Loading patient details...</div>;
-  if (error) return <div className="error">{error}</div>;
-  if (!patient) return <div>No patient data found.</div>;
+  if (loading) return <div className="text-center p-8">Loading patient details...</div>;
+  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+  if (!patient) return <div className="text-center p-8">No patient data found.</div>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Hospital Discharge Form</h2>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Hospital Discharge Form</h2>
       
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h3 className="text-xl font-semibold mb-2">Patient Details</h3>
-        <p><strong>Name:</strong> {patient.user?.name || `${patient.firstName} ${patient.lastName}`}</p>
-        <p><strong>Age/Sex:</strong> {patient.age} / {patient.gender}</p>
-        <p><strong>Admission Date:</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</p>
-        <p><strong>Room Number:</strong> {patient.admission?.room || 'N/A'}</p>
-        <p><strong>Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
+      <div className="bg-white shadow-lg rounded-xl p-8 mb-6 border border-gray-200">
+        <h3 className="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">Patient Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p><strong>Name:</strong> {patient.user?.name || `${patient.firstName} ${patient.lastName}`}</p>
+          <p><strong>Age/Sex:</strong> {patient.age ? `${patient.age} / ${patient.gender}` : 'N/A'}</p>
+          <p><strong>Admission Date:</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</p>
+          <p><strong>Room Number:</strong> {patient.admission?.room || 'N/A'}</p>
+          <p className="md:col-span-2"><strong>Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
+        </div>
       </div>
 
-      <form onSubmit={handleDischarge} className="bg-white shadow-md rounded-lg p-6">
-        <h3 className="text-xl font-semibold mb-2">Medical Discharge Summary</h3>
+      <form onSubmit={handleDischarge} className="bg-white shadow-lg rounded-xl p-8 border border-gray-200">
+        <h3 className="text-2xl font-semibold mb-4 text-gray-700">Medical Discharge Summary</h3>
         <textarea
-          rows="6"
-          placeholder="Enter medication instructions, follow-up details, and notes..."
+          rows="8"
+          placeholder="Enter medication instructions, follow-up details, and any other clinical notes for the discharge summary..."
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           required
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
         />
         
-        <div className="mt-4">
-          <button type="submit" className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-red-700 transition duration-300">Finalize Discharge</button>
+        <div className="mt-6 text-right">
+          <button type="submit" className="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-300">
+            Finalize Discharge
+          </button>
         </div>
       </form>
     </div>

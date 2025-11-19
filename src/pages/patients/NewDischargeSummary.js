@@ -1,153 +1,95 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import PatientSearch from '../../components/patientSearch';
-import DischargeSummary from '../../components/DischargeSummary';
-import Invoice from '../../components/Invoice';
-import PrintButton from '../../components/PrintButton';
-import Spinner from '../../components/Spinner';
-import axios from 'axios';
 
 const NewDischargeSummary = () => {
+  const { id } = useParams(); // Patient ID from URL
+  const navigate = useNavigate();
+  const { axiosInstance, user } = useContext(AuthContext);
+  
   const [patient, setPatient] = useState(null);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [autoLoaded, setAutoLoaded] = useState(false);
-  const { id: routePatientId } = useParams();
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const { axiosInstance } = useContext(AuthContext);
+  // Fetch Patient Data on Load
+  useEffect(() => {
+    if (!id || !axiosInstance) return;
+    const fetchPatient = async () => {
+      try {
+        const response = await axiosInstance.get(`/patients/${id}`);
+        setPatient(response.data.patient);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to load patient data:', err);
+        setError('Failed to fetch patient data. You may not have permission to view this patient.');
+        setLoading(false);
+      }
+    };
+    fetchPatient();
+  }, [id, axiosInstance]);
 
-  const handleSearch = async (patientId) => {
-    setLoading(true);
-    setError(null);
-    setSummary(null);
-    setPatient(null);
+  const handleDischarge = async (e) => {
+    e.preventDefault();
+    if (!window.confirm('Are you sure you want to discharge this patient? This will finalize their admission and generate an invoice.')) return;
 
     try {
-      // Try fetching discharge summaries directly by the provided id first
-      // (handles cases where user enters an admission/patient _id)
-      let dischargeResponse = null;
-      try {
-        dischargeResponse = await axiosInstance.get(`/discharge/patient/${patientId}`);
-      } catch (e) {
-        // ignore and fall back to patient lookup below
-        dischargeResponse = null;
-      }
+      // This endpoint in patientRoutes.js handles setting discharge date, notes, and finalizing the invoice.
+      const response = await axiosInstance.post(`/patients/${id}/discharge`, {
+        dischargeNotes: summary,
+      });
+      
+      alert('Patient Discharged Successfully');
+      
+      // The user is likely a doctor or admin, so redirect to the patient's main page or the discharged list
+      navigate(`/patients/${id}`);
 
-      let latestSummary = null;
-      if (dischargeResponse && dischargeResponse.data) {
-        const dischargeData = dischargeResponse.data;
-        if (Array.isArray(dischargeData) && dischargeData.length > 0) latestSummary = dischargeData[0];
-        else if (dischargeData && Array.isArray(dischargeData.summaries) && dischargeData.summaries.length > 0) latestSummary = dischargeData.summaries[0];
-        else if (dischargeData && dischargeData.summary) latestSummary = dischargeData.summary;
-      }
-
-      if (latestSummary && latestSummary._id) {
-        // found a summary directly — fetch details and show it
-        const summaryResponse = await axiosInstance.get(`/discharge/${latestSummary._id}`);
-        setSummary(summaryResponse.data);
-        // attempt to set patient if available in the returned summary
-        if (summaryResponse.data && summaryResponse.data.patient) setPatient(summaryResponse.data.patient);
-        return;
-      }
-
-      // If no summary found directly, attempt to resolve the provided id as a patient identifier
-      const patientResponse = await axiosInstance.get(`/patients/${patientId}`);
-      let foundPatient = patientResponse.data;
-      if (Array.isArray(foundPatient)) foundPatient = foundPatient[0];
-      if (!foundPatient || !foundPatient._id) {
-        // Don't show a "patient not found" block — instead, surface a summary-missing message
-        setError('No discharge summary found for the provided identifier.');
-        return;
-      }
-
-      setPatient(foundPatient);
-
-      // Now query discharges using the resolved patient _id
-      const dischargeByPatient = await axiosInstance.get(`/discharge/patient/${foundPatient._id}`);
-      const ddata = dischargeByPatient.data;
-      if (Array.isArray(ddata) && ddata.length > 0) latestSummary = ddata[0];
-      else if (ddata && Array.isArray(ddata.summaries) && ddata.summaries.length > 0) latestSummary = ddata.summaries[0];
-      else if (ddata && ddata.summary) latestSummary = ddata.summary;
-
-      if (!latestSummary || !latestSummary._id) {
-        setError('No discharge summary found for this patient.');
-        return;
-      }
-
-      const summaryResponse = await axiosInstance.get(`/discharge/${latestSummary._id}`);
-      setSummary(summaryResponse.data);
     } catch (err) {
-      setError('Failed to fetch data.');
-      console.error(err);
-    } finally {
-      setLoading(false);
+      console.error('Error discharging patient:', err);
+      alert(err.response?.data?.message || 'Error discharging patient');
     }
   };
 
-  useEffect(() => {
-    // If the page was opened with a patient id in the route, auto-load that patient's summary
-    if (routePatientId && !autoLoaded) {
-      setAutoLoaded(true);
-      handleSearch(routePatientId);
-    }
-  }, [routePatientId, autoLoaded]);
-
-  const handlePrint = () => {
-    window.print();
-  };
+  if (loading) return <div className="text-center p-8">Loading patient details...</div>;
+  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+  if (!patient) return <div className="text-center p-8">No patient data found.</div>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Create Discharge Summary</h1>
-
-      {/* If we have a routePatientId or resolved patient, show the summaries list directly */}
-      {(routePatientId || patient) ? (
-        <div>
-          <div className="mb-4">
-            <PatientSearch onSearch={handleSearch} isLoading={loading} />
-          </div>
-
-          {loading && <Spinner />}
-          {error && <div className="text-red-500">{error}</div>}
-
-          {/* Summary list removed (component not present). */}
-          <div className="mb-4 text-sm text-gray-600">Summary list is not available.</div>
-
-          {/* If a single summary is loaded, show the detailed view below the list */}
-          {summary && (
-            <div className="mt-8">
-              <div className="flex justify-end mb-4">
-                <PrintButton onClick={handlePrint} />
-              </div>
-              <div id="print-area">
-                <DischargeSummary summary={summary} patient={patient} />
-                <Invoice summary={summary} />
-              </div>
-            </div>
-          )}
+    <div className="container mx-auto p-4 max-w-4xl">
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Hospital Discharge Form</h2>
+      
+      <div className="bg-white shadow-lg rounded-xl p-8 mb-6 border border-gray-200">
+        <h3 className="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">Patient Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p><strong>Name:</strong> {patient.user?.name || `${patient.firstName} ${patient.lastName}`}</p>
+          <p><strong>Age/Sex:</strong> {patient.age ? `${patient.age} / ${patient.gender}` : 'N/A'}</p>
+          <p><strong>Admission Date:</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</p>
+          <p><strong>Room Number:</strong> {patient.admission?.room || 'N/A'}</p>
+          <p className="md:col-span-2"><strong>Primary Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
         </div>
-      ) : (
-        <div>
-          <PatientSearch onSearch={handleSearch} isLoading={loading} />
+      </div>
 
-          {loading && <Spinner />}
-          {error && <div className="text-red-500">{error}</div>}
-
-          {summary && (
-            <div className="mt-8">
-              <div className="flex justify-end mb-4">
-                <PrintButton onClick={handlePrint} />
-              </div>
-              <div id="print-area">
-                <DischargeSummary summary={summary} />
-                <Invoice summary={summary} />
-              </div>
-            </div>
-          )}
+      <form onSubmit={handleDischarge} className="bg-white shadow-lg rounded-xl p-8 border border-gray-200">
+        <h3 className="text-2xl font-semibold mb-4 text-gray-700">Medical Discharge Summary</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Enter the final discharge summary below. This will include medication instructions, follow-up details, and other clinical notes. 
+          This action is final and will lock the patient's admission record.
+        </p>
+        <textarea
+          rows="8"
+          placeholder="Enter medication instructions, follow-up details, and any other clinical notes for the discharge summary..."
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          required
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
+        />
+        
+        <div className="mt-6 text-right">
+          <button type="submit" className="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-300">
+            Finalize Discharge
+          </button>
         </div>
-      )}
+      </form>
     </div>
   );
 };

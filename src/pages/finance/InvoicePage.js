@@ -1,117 +1,135 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import { Icons } from '../../components/Icons';
 
 const InvoicePage = () => {
-  const { id } = useParams(); // Patient ID
+  const { id } = useParams(); // This is the patient ID from the route /patients/:id/invoice
   const { axiosInstance } = useContext(AuthContext);
   const [invoiceData, setInvoiceData] = useState(null);
-  const [hospitalDetails, setHospitalDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchInvoice = async () => {
       if (!id || !axiosInstance) return;
       try {
+        // This endpoint returns a consolidated invoice for a patient, including all charges.
         const response = await axiosInstance.get(`/billing/patient/${id}`);
         setInvoiceData(response.data);
+        setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch invoice:", err);
+        setError(err.response?.data?.message || 'Failed to load invoice data.');
+        setLoading(false);
       }
     };
-
-    const fetchSettings = async () => {
-        if (!axiosInstance) return;
-        try {
-            const response = await axiosInstance.get('/setting/hospitalDetails');
-            setHospitalDetails(response.data);
-        } catch (err) {
-            console.error("Failed to fetch hospital details", err);
-        }
-    };
-
-    const loadData = async () => {
-        setLoading(true);
-        await Promise.all([fetchInvoice(), fetchSettings()]);
-        setLoading(false);
-    }
-
-    loadData();
+    fetchInvoice();
   }, [id, axiosInstance]);
 
   const handlePrint = () => {
     window.print();
   };
 
-  if (loading) return <div className="p-8 text-center">Generating Invoice...</div>;
-  if (!invoiceData) return <div className="p-8 text-center text-red-500">No invoice found for this patient.</div>;
+  if (loading) return <div className="text-center p-8 animate-pulse">Generating Invoice...</div>;
+  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+  if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
-  // Calculate Total
-  const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.10; // Assuming 10% tax
-  const total = subtotal + tax;
+  const { patient, items, subtotal, tax, total, invoiceId } = invoiceData;
+
+  const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
 
   return (
-    <div className="max-w-4xl mx-auto my-8 p-8 border border-gray-200 bg-white font-sans">
-      <header className="flex justify-between border-b-2 border-gray-800 pb-4 mb-8">
-        <div className="hospital-info">
-          <h1 className="text-3xl font-bold">{hospitalDetails?.name || 'City General Hospital'}</h1>
-          <p>{hospitalDetails?.address || '123 Health St, Medtown'}</p>
-          <p>{hospitalDetails?.phone || 'Ph: +1-555-0199'}</p>
-        </div>
-        <div className="invoice-meta text-right">
-          <h2 className="text-3xl font-bold">INVOICE</h2>
-          <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-          <p><strong>Invoice #:</strong> {invoiceData.invoiceId}</p>
-        </div>
-      </header>
+    <div className="bg-gray-50 min-h-screen" id="invoice-page">
+      <div className="max-w-5xl mx-auto p-4 sm:p-8">
+        <div className="bg-white shadow-2xl rounded-xl" id="printable-area">
+          <div className="p-8 sm:p-12">
+            <header className="flex justify-between items-start pb-8 border-b border-gray-200">
+              <div className="hospital-info">
+                <h1 className="text-3xl font-bold text-teal-600">Genz Community Hospital</h1>
+                <p className="text-gray-600">123 Health St, Medtown, Kajiado</p>
+                <p className="text-gray-600">Ph: +254 722 651 888</p>
+              </div>
+              <div className="invoice-meta text-right">
+                <h2 className="text-4xl font-bold text-gray-700">INVOICE</h2>
+                <p className="text-gray-500"><strong className="text-gray-600">Date:</strong> {new Date().toLocaleDateString()}</p>
+                <p className="text-gray-500"><strong className="text-gray-600">Invoice #:</strong> {invoiceId || `N/A`}</p>
+              </div>
+            </header>
 
-      <section className="mb-8">
-        <strong className="block mb-2">Bill To:</strong>
-        <p>{invoiceData.patientName}</p>
-        <p>ID: {invoiceData.patientId}</p>
-        <p>{invoiceData.address}</p>
-      </section>
+            <section className="patient-info mt-8">
+              <strong className="text-gray-600 font-semibold">Bill To:</strong>
+              <p className="text-xl font-bold text-gray-800">{patient?.name || 'N/A'}</p>
+              <p className="text-gray-600">Patient ID: {patient?.id || id}</p>
+              <p className="text-gray-600">{patient?.address || 'Address not available'}</p>
+            </section>
 
-      <table className="w-full border-collapse mb-8">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2 text-left">Service / Description</th>
-            <th className="border p-2 text-left">Quantity</th>
-            <th className="border p-2 text-left">Unit Price</th>
-            <th className="border p-2 text-left">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoiceData.items.map((item, index) => (
-            <tr key={index}>
-              <td className="border p-2">{item.description}</td>
-              <td className="border p-2">{item.quantity}</td>
-              <td className="border p-2">${item.price.toFixed(2)}</td>
-              <td className="border p-2">${(item.quantity * item.price).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <div className="mt-10 overflow-x-auto">
+              <table className="w-full invoice-table">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service / Description</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {items && items.map((item, index) => (
+                    <tr key={index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{item.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{item.quantity}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{currencyFormatter.format(item.price)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-right">{currencyFormatter.format(item.quantity * item.price)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-      <div className="text-right">
-        <div className="flex justify-end gap-8 mb-1">
-          <span>Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+            <div className="flex justify-end mt-8">
+              <div className="w-full max-w-sm">
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="text-gray-800 font-semibold">{currencyFormatter.format(subtotal)}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Tax (10%):</span>
+                  <span className="text-gray-800 font-semibold">{currencyFormatter.format(tax)}</span>
+                </div>
+                <div className="flex justify-between py-4 text-teal-600">
+                  <span className="text-xl font-bold">Total Amount:</span>
+                  <span className="text-xl font-bold">{currencyFormatter.format(total)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-end gap-8 mb-2">
-          <span>Tax (10%):</span>
-          <span>${tax.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-end gap-8 font-bold text-xl border-t border-gray-800 pt-2">
-          <span>Total Amount:</span>
-          <span>${total.toFixed(2)}</span>
-        </div>
+        <footer className="mt-8 text-center no-print">
+            <button onClick={handlePrint} className="bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 inline-flex items-center">
+              <Icons.Print className="w-5 h-5 mr-2" />
+              Print Invoice
+            </button>
+        </footer>
       </div>
-
-      <footer className="mt-8 text-center print:hidden">
-        <button onClick={handlePrint} className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700">Print Invoice</button>
-      </footer>
+      <style jsx global>{`
+        @media print {
+          .no-print { display: none; }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          #invoice-page {
+            padding: 0;
+          }
+          #printable-area {
+            box-shadow: none;
+            margin: 0;
+            max-width: 100%;
+            border-radius: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };

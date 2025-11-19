@@ -201,7 +201,7 @@ function App() {
           {/* Clinical Documentation */}
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Unified discharge summary page with real data from tsx components */}
-          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/discharge" element={<PrivateRoute><Layout><ErrorBoundary><DischargeLauncher /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
@@ -264,6 +264,7 @@ function App() {
           <Route path="/pharmacy/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
           <Route path="/billing" element={<PrivateRoute><Layout><Billing /></Layout></PrivateRoute>} />
           <Route path="/billing/:invoiceId" element={<PrivateRoute><Layout><InvoiceDetail /></Layout></PrivateRoute>} />
+          <Route path="/finance/invoices/:id" element={<PrivateRoute><Layout><InvoicePage /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/appointments" element={<PrivateRoute><Layout><AppointmentsBilling /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/transactions" element={<PrivateRoute><Layout><Transactions /></Layout></PrivateRoute>} />
           <Route path="/dashboard/finance/reports" element={<PrivateRoute><Layout><Reports /></Layout></PrivateRoute>} />
