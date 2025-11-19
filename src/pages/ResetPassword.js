@@ -4,7 +4,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import { AuthLayout } from '../components/AuthLayout';
 import { AlertIcon, SuccessIcon, SpinnerIcon } from '../components/Icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AnimatedPage } from '../components/AnimatedPage';
+import AnimatedPage from '../components/AnimatedPage';
 import { InputField } from '../components/InputField';
 
 export default function ResetPassword() {
