@@ -1,148 +1,89 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
-import { useParams } from 'react-router-dom';
-import { AuthContext } from "../contexts/AuthContext";
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../contexts/AuthContext';
 
-export default function DischargeSummary({ patientId }) {
-  const { id: routeId } = useParams();
+const DischargeSummary = () => {
+  const { id } = useParams(); // Patient ID from URL
+  const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
-  const effectivePatientId = patientId || routeId;
-  const [admission, setAdmission] = useState(null);
-  const [treatmentSummary, setTreatmentSummary] = useState("");
-  const [dischargeMedications, setDischargeMedications] = useState("");
-  const summaryRef = useRef();
+  
+  const [patient, setPatient] = useState(null);
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  // Fetch Patient Data on Load
   useEffect(() => {
-    if (!effectivePatientId || !axiosInstance) return;
-    axiosInstance
-      .get(`/admissions/${effectivePatientId}`)
-      .then((res) => {
-        const admissionData = res.data;
-        // Map the received data to the structure the component expects
-        const mappedAdmission = {
-          patientName: admissionData.patient?.user?.name || 'N/A',
-          patientId: admissionData.patient?.mrn || 'N/A',
-          age: admissionData.patient?.age || 'N/A',
-          gender: admissionData.patient?.gender || 'N/A',
-          ward: admissionData.ward || 'N/A',
-          diagnosis: admissionData.finalDiagnosis || 'N/A',
-          dateAdmitted: admissionData.admittedAt || admissionData.createdAt,
-          dateDischarged: admissionData.dischargedAt,
-          doctorInCharge: admissionData.doctor?.user?.name || 'N/A', // Assuming doctor is populated
-          treatmentSummary: admissionData.clinicalSummary || '',
-          dischargeMedications: '', // This seems to be an editable field, not from API
-          finalNotes: admissionData.dischargeNotes || ''
-        };
-        setAdmission(mappedAdmission);
-        setTreatmentSummary(mappedAdmission.treatmentSummary);
-      })
-      .catch((err) => {
-        console.error("Failed to load admission data:", err);
-      });
-  }, [effectivePatientId, axiosInstance]);
+    if (!id || !axiosInstance) return;
+    const fetchPatient = async () => {
+      try {
+        const response = await axiosInstance.get(`/patients/${id}`);
+        setPatient(response.data.patient);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to fetch patient data');
+        setLoading(false);
+      }
+    };
+    fetchPatient();
+  }, [id, axiosInstance]);
 
-  const printSummary = () => {
-    if (!summaryRef.current) return;
-    const printContents = summaryRef.current.innerHTML;
-    const originalContents = document.body.innerHTML;
-    document.body.innerHTML = printContents;
-    window.print();
-    document.body.innerHTML = originalContents;
-    window.location.reload();
+  const handleDischarge = async (e) => {
+    e.preventDefault();
+    if (!window.confirm('Are you sure you want to discharge this patient?')) return;
+
+    try {
+      // Update DB status to 'Discharged'
+      const response = await axiosInstance.post(`/patients/${id}/discharge`, {
+        dischargeNotes: summary,
+        dischargeDate: new Date().toISOString()
+      });
+      
+      alert('Patient Discharged Successfully');
+      if (response.data.invoice && response.data.invoice._id) {
+        navigate(`/billing/${response.data.invoice._id}`); // Redirect to invoice after discharge
+      } else {
+        navigate(`/patients/${id}`); // Fallback redirect
+      }
+    } catch (err) {
+      alert('Error discharging patient');
+    }
   };
 
-  if (!admission) {
-    return (
-      <div className="p-4 text-center text-gray-600">Loading admission info...</div>
-    );
-  }
+  if (loading) return <div>Loading patient details...</div>;
+  if (error) return <div className="error">{error}</div>;
+  if (!patient) return <div>No patient data found.</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded mt-6 font-sans">
-      <div ref={summaryRef}>
-        <h1 className="text-3xl font-bold mb-6 text-center">Discharge Summary</h1>
-
-        <section className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className="font-semibold text-gray-700">Patient Name</p>
-            <p>{admission.patientName}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Patient ID</p>
-            <p>{admission.patientId}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Age</p>
-            <p>{admission.age}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Gender</p>
-            <p>{admission.gender}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Ward</p>
-            <p>{admission.ward}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Diagnosis</p>
-            <p>{admission.diagnosis}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Date Admitted</p>
-            <p>{admission.dateAdmitted ? new Date(admission.dateAdmitted).toLocaleDateString() : 'N/A'}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Date Discharged</p>
-            <p>{admission.dateDischarged ? new Date(admission.dateDischarged).toLocaleDateString() : 'N/A'}</p>
-          </div>
-          <div className="sm:col-span-2">
-            <p className="font-semibold text-gray-700">Doctor in Charge</p>
-            <p>{admission.doctorInCharge}</p>
-          </div>
-        </section>
-
-        <section className="mb-6">
-          <label className="font-semibold text-gray-700 block mb-1" htmlFor="treatmentSummary">
-            Treatment Summary
-          </label>
-          <textarea
-            id="treatmentSummary"
-            rows={6}
-            className="w-full border border-gray-300 rounded p-2 resize-y"
-            value={treatmentSummary}
-            onChange={(e) => setTreatmentSummary(e.target.value)}
-          />
-        </section>
-
-        <section className="mb-6">
-          <label className="font-semibold text-gray-700 block mb-1" htmlFor="dischargeMedications">
-            Discharge Medications
-          </label>
-          <textarea
-            id="dischargeMedications"
-            rows={4}
-            className="w-full border border-gray-300 rounded p-2 resize-y"
-            value={dischargeMedications}
-            onChange={(e) => setDischargeMedications(e.target.value)}
-          />
-        </section>
-
-        <section className="mb-6">
-          <p className="font-semibold text-gray-700 mb-1">Final Notes</p>
-          <p className="whitespace-pre-wrap border border-gray-200 rounded p-3 bg-gray-50">
-            {admission.finalNotes || "-"}
-          </p>
-        </section>
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Hospital Discharge Form</h2>
+      
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-2">Patient Details</h3>
+        <p><strong>Name:</strong> {patient.user?.name || `${patient.firstName} ${patient.lastName}`}</p>
+        <p><strong>Age/Sex:</strong> {patient.age} / {patient.gender}</p>
+        <p><strong>Admission Date:</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</p>
+        <p><strong>Room Number:</strong> {patient.admission?.room || 'N/A'}</p>
+        <p><strong>Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
       </div>
 
-      <div className="text-center">
-        <button
-          onClick={printSummary}
-          className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition"
-          type="button"
-        >
-          Print Discharge Summary
-        </button>
-      </div>
+      <form onSubmit={handleDischarge} className="bg-white shadow-md rounded-lg p-6">
+        <h3 className="text-xl font-semibold mb-2">Medical Discharge Summary</h3>
+        <textarea
+          rows="6"
+          placeholder="Enter medication instructions, follow-up details, and notes..."
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          required
+          className="w-full p-2 border border-gray-300 rounded-md"
+        />
+        
+        <div className="mt-4">
+          <button type="submit" className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-red-700 transition duration-300">Finalize Discharge</button>
+        </div>
+      </form>
     </div>
   );
-}
+};
+
+export default DischargeSummary;

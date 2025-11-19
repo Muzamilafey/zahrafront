@@ -89,7 +89,7 @@ import LabBills from './pages/admission/billing/LabBills';
 import PharmacyBills from './pages/admission/billing/PharmacyBills';
 import MiscellaneousBills from './pages/admission/billing/MiscellaneousBills';
 import Placeholder from './components/Placeholder';
-import DischargeSummary from './pages/DischargeSummary';
+import DischargeSummary from './pages/patients/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
 import DischargeSummaryTemplate from './pages/patients/DischargeSummaryTemplate';
@@ -98,6 +98,7 @@ import PatientDischargePage from './pages/patients/PatientDischargePage';
 import NewDischargeSummary from './pages/patients/NewDischargeSummary';
 import DischargeLauncher from './pages/patients/DischargeLauncher';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
+import InvoicePage from './pages/finance/InvoicePage';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
 
@@ -138,6 +139,7 @@ function App() {
           <Route path="/patients/visits/new" element={<PrivateRoute><Layout><NewVisit /></Layout></PrivateRoute>} />
           <Route path="/patients/:id" element={<PrivateRoute><Layout><ErrorBoundary><PatientDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/invoice" element={<PrivateRoute><Layout><ErrorBoundary><InvoicePage /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Admission patient-specific pages (history, bed mgmt, visits, meal bills) */}
           <Route path="/patients/:id/outpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><OutpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/inpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><InpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />

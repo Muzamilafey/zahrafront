@@ -101,82 +101,11 @@ export default function DischargeSummary() {
         };
         setPatient(patientData);
 
-        // Find the related invoice for this patient/admission and normalize shapes
-        if (summary.admission) {
-          try {
-            // Prefer querying invoices for this patient
-            const invoicesResponse = await axiosInstance.get(`/billing?patientId=${summary.patient._id}`);
-            // Support different response shapes: { invoices: [...] } or an array or single object
-            let allInvoices = [];
-            if (Array.isArray(invoicesResponse.data)) allInvoices = invoicesResponse.data;
-            else if (Array.isArray(invoicesResponse.data.invoices)) allInvoices = invoicesResponse.data.invoices;
-            else if (invoicesResponse.data.invoice) allInvoices = [invoicesResponse.data.invoice];
-
-            // Find invoice matching this admission if possible, otherwise pick the latest
-            let relatedInvoice = allInvoices.find(inv => String(inv.admissionId) === String(summary.admission._id)) || allInvoices[0];
-
-            // If server returned a single invoice object in data (not wrapped), handle that
-            if (!relatedInvoice && invoicesResponse.data && typeof invoicesResponse.data === 'object' && !Array.isArray(invoicesResponse.data)) {
-              relatedInvoice = invoicesResponse.data;
-            }
-
-            if (relatedInvoice) {
-              // Normalize both the backend invoice model and the simple sample invoice shape
-              const categoryTotals = relatedInvoice.categoryTotals || relatedInvoice.category_total || {};
-
-              // compute number of days from admission info (fallback to 1)
-              const admittedAt = summary.admissionInfo?.admittedAt || summary.admission?.admittedAt || summary.admissionInfo?.admittedAt;
-              const dischargedAt = summary.admissionInfo?.dischargedAt || summary.admission?.dischargedAt || summary.admissionInfo?.dischargedAt;
-              let days = 1;
-              try {
-                const s = new Date(admittedAt);
-                const e = new Date(dischargedAt);
-                days = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
-                if (isNaN(days) || days <= 0) days = 1;
-              } catch (e) { days = 1; }
-
-              // If invoice uses 'items' (sample shape), map them, else map from lineItems
-              let items = [];
-              if (Array.isArray(relatedInvoice.items) && relatedInvoice.items.length) {
-                items = relatedInvoice.items.map(it => ({ description: it.description, quantity: it.quantity || it.qty || 1, unitPrice: it.unitPrice || it.unit_price || it.price || 0, amount: (it.quantity || it.qty || 1) * (it.unitPrice || it.unit_price || it.price || 0) }));
-              } else if (Array.isArray(relatedInvoice.lineItems) && relatedInvoice.lineItems.length) {
-                items = relatedInvoice.lineItems.map(li => ({ description: li.description, quantity: li.qty || li.quantity || 1, unitPrice: li.price || li.unitPrice || li.amount || 0, amount: (li.qty || li.quantity || 1) * (li.price || li.unitPrice || li.amount || 0) }));
-              }
-
-              // Build legacy-friendly labTests/drugs lists for existing UI
-              const labTests = (relatedInvoice.lineItems || []).filter(li => /lab|laboratory/i.test(li.category || li.category || '')).map(li => ({ id: li._id || li.relatedId, name: li.description, cost: li.amount }));
-              const drugs = (relatedInvoice.lineItems || []).filter(li => /pharm|drug|pharmacy/i.test(li.category || '')).map(li => ({ id: li._id || li.relatedId, name: li.description, cost: li.amount }));
-
-              // Try to extract accommodation total and compute per-day charge
-              const accommodationTotal = categoryTotals['Accommodation'] || categoryTotals['accommodation'] || categoryTotals['bed_charge'] || categoryTotals['Accommodation'] || 0;
-              const dailyBedCharge = days ? Math.round((accommodationTotal || 0) / days) : 0;
-
-              const transformedInvoice = {
-                _id: relatedInvoice._id || relatedInvoice.invoiceId || relatedInvoice.invoiceNumber,
-                invoiceNumber: relatedInvoice.invoiceNumber || relatedInvoice.invoiceNo || relatedInvoice._id,
-                invoiceDate: relatedInvoice.invoiceDate || relatedInvoice.createdAt || relatedInvoice.date,
-                paymentStatus: relatedInvoice.status || relatedInvoice.paymentStatus || 'unknown',
-                items,
-                subtotal: relatedInvoice.subtotal || relatedInvoice.amount || items.reduce((s, it) => s + (it.amount || 0), 0),
-                tax: relatedInvoice.tax || 0,
-                total: relatedInvoice.total || relatedInvoice.totalPayable || relatedInvoice.amount || 0,
-                dailyBedCharge,
-                labTests,
-                drugs,
-                doctorFee: categoryTotals['Consultation'] || categoryTotals['consultation'] || 0,
-                nursingFee: categoryTotals['Nursing'] || categoryTotals['nursing'] || 0,
-              };
-
-              setInvoice(transformedInvoice);
-            } else {
-              setInvoice({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0, items: [], subtotal: 0, tax: 0, total: 0 });
-            }
-          } catch (e) {
-            console.error('Error fetching invoices for discharge summary:', e);
-            setInvoice({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0, items: [], subtotal: 0, tax: 0, total: 0 });
-          }
+        if (summary.invoice) {
+            // The backend now provides a consolidated invoice
+            setInvoice(summary.invoice);
         } else {
-          setInvoice({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0, items: [], subtotal: 0, tax: 0, total: 0 });
+            setInvoice({ items: [], subtotal: 0, tax: 0, total: 0 });
         }
 
       } catch (err) {
@@ -209,67 +138,6 @@ export default function DischargeSummary() {
       window.removeEventListener('afterprint', handleAfterPrint);
     };
   }, []);
-
-  const calculateTotal = useCallback(() => {
-    if (!patient || !invoice) return 0;
-
-    const startDate = new Date(patient.dateAdmitted);
-    const endDate = new Date(patient.dateDischarged);
-    let days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (days <= 0 || isNaN(days)) days = 1;
-    setNumberOfDays(days);
-
-    const bedTotal = invoice.dailyBedCharge * days;
-    const labTotal = (invoice.labTests || []).reduce((sum, item) => sum + Number(item.cost || 0), 0);
-    const drugTotal = (invoice.drugs || []).reduce((sum, item) => sum + Number(item.cost || 0), 0);
-    const itemsTotal = (invoice.items || []).reduce((sum, it) => sum + Number(it.amount || (Number(it.quantity||1) * Number(it.unitPrice||0)) || 0), 0);
-
-    // If the invoice object already provides a definitive total, prefer it
-    if (invoice.total && Number(invoice.total) > 0) {
-      return Number(invoice.total);
-    }
-
-    return bedTotal + labTotal + drugTotal + itemsTotal + Number(invoice.doctorFee || 0) + Number(invoice.nursingFee || 0);
-  }, [patient, invoice]);
-
-  useEffect(() => {
-    setTotalCost(calculateTotal());
-  }, [patient, invoice, calculateTotal]);
-
-  const handlePatientChange = (e) => {
-    const { name, value } = e.target;
-    setPatient(prev => prev ? { ...prev, [name]: value } : null);
-  };
-
-  const handleInvoiceChange = (e) => {
-    const { name, value } = e.target;
-    setInvoice(prev => prev ? { ...prev, [name]: Number(value) } : null);
-  };
-
-  const handleInvoiceItemChange = (index, field, value, itemType) => {
-    setInvoice(prev => {
-      if (!prev) return null;
-      const items = [...(prev[itemType] || [])];
-      items[index] = { ...items[index], [field]: value };
-      return { ...prev, [itemType]: items };
-    });
-  };
-
-  const addInvoiceItem = (itemType) => {
-    setInvoice(prev => {
-      if (!prev) return null;
-      const newItems = [...(prev[itemType] || []), { id: Date.now(), name: '', cost: 0 }];
-      return { ...prev, [itemType]: newItems };
-    });
-  };
-
-  const removeInvoiceItem = (index, itemType) => {
-    setInvoice(prev => {
-      if (!prev) return null;
-      const newItems = (prev[itemType] || []).filter((_, i) => i !== index);
-      return { ...prev, [itemType]: newItems };
-    });
-  };
 
   const handlePrint = () => {
     window.print();
@@ -315,17 +183,14 @@ export default function DischargeSummary() {
 
   // Print invoice PDF fetched from billing endpoint (if invoice has id)
   const handlePrintInvoice = async () => {
-    if (!invoice || !invoice._id) {
+    if (!invoice || !invoice.invoiceId) {
       alert('No invoice available to print');
       return;
     }
     try {
-      const resp = await axiosInstance.get(`/billing/${invoice._id}/print`, { responseType: 'blob' });
-      const blob = new Blob([resp.data], { type: resp.headers['content-type'] || 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const w = window.open(url, '_blank');
-      if (!w) window.location.href = url;
-      setTimeout(() => { try { window.URL.revokeObjectURL(url); } catch(e) {} }, 10000);
+      // The consolidated invoice doesn't have a single ID, so we can't use this.
+      // We can print the current view instead.
+      handlePrint();
     } catch (e) {
       console.error('Failed to fetch invoice PDF for printing', e);
       alert(e?.response?.data?.message || 'Failed to load invoice for printing');
@@ -358,9 +223,6 @@ export default function DischargeSummary() {
             {isExporting ? 'Exporting...' : 'Export as PDF'}
           </button>
           <button onClick={handlePrint} className="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-indigo-700 transition duration-300">Print</button>
-          {invoice && invoice._id && (
-            <button onClick={handlePrintInvoice} className="bg-gray-800 text-white font-bold py-2 px-3 rounded-lg shadow hover:bg-gray-900 transition duration-200">Print Invoice (PDF)</button>
-          )}
         </div>
       </header>
 
@@ -375,40 +237,28 @@ export default function DischargeSummary() {
               <InfoField label="Gender" value={patient.gender} />
               <InfoField label="Ward" value={patient.ward} />
               <InfoField label="Treating Doctor" value={patient.treatingDoctor} />
-              <InfoField label="Date Admitted" value={patient.dateAdmitted} />
-              <InfoField label="Date Discharged" value={patient.dateDischarged} />
+              <InfoField label="Date Admitted" value={patient.dateAdmitted ? new Date(patient.dateAdmitted).toLocaleDateString() : 'N/A'} />
+              <InfoField label="Date Discharged" value={patient.dateDischarged ? new Date(patient.dateDischarged).toLocaleDateString() : 'N/A'} />
               <div className="sm:col-span-3">
                 <InfoField label="Diagnosis" value={patient.diagnosis} />
               </div>
             </div>
-            <EditableField label="Treatment Summary" name="treatmentSummary" value={patient.treatmentSummary} onChange={handlePatientChange} rows={6} />
-            <EditableField label="Discharge Medication" name="dischargeMedication" value={patient.dischargeMedication} onChange={handlePatientChange} />
-            <EditableField label="Additional Notes" name="additionalNotes" value={patient.additionalNotes} onChange={handlePatientChange} />
+            <EditableField label="Treatment Summary" name="treatmentSummary" value={patient.treatmentSummary} onChange={() => {}} rows={6} />
+            <EditableField label="Discharge Medication" name="dischargeMedication" value={patient.dischargeMedication} onChange={() => {}} />
+            <EditableField label="Additional Notes" name="additionalNotes" value={patient.additionalNotes} onChange={() => {}} />
           </section>
 
           <section className="space-y-6">
             <h2 className="text-2xl font-semibold text-gray-900 border-b pb-2">Invoice Details</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-gray-600">Daily Bed Charge (KES)</label>
-                <input type="number" name="dailyBedCharge" value={invoice.dailyBedCharge} onChange={handleInvoiceChange} className="w-32 text-right p-1 border rounded-md" />
-                <span>x {numberOfDays} days</span>
-                <span className="font-semibold">{currencyFormatter.format(invoice.dailyBedCharge * numberOfDays)}</span>
-              </div>
-
-              <InvoiceItemsTable title="Lab Tests" items={invoice.labTests} onUpdate={handleInvoiceItemChange} onAdd={addInvoiceItem} onRemove={removeInvoiceItem} itemType="labTests" />
-              <InvoiceItemsTable title="Drugs/Supplies" items={invoice.drugs} onUpdate={handleInvoiceItemChange} onAdd={addInvoiceItem} onRemove={removeInvoiceItem} itemType="drugs" />
-
-              {invoice.items && invoice.items.length > 0 && (
+            
+              {invoice && invoice.items && invoice.items.length > 0 ? (
                 <div className="mt-4">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Invoice Items</h3>
                   <div className="bg-white rounded-lg shadow overflow-hidden">
                     <table className="min-w-full">
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
                           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
                         </tr>
                       </thead>
@@ -417,63 +267,31 @@ export default function DischargeSummary() {
                           <tr key={idx}>
                             <td className="px-6 py-4 text-sm text-gray-900">{it.description}</td>
                             <td className="px-6 py-4 text-sm text-gray-500">{it.quantity}</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">{currencyFormatter.format(it.unitPrice)}</td>
-                            <td className="px-6 py-4 text-right text-sm text-gray-900">{currencyFormatter.format(it.amount)}</td>
+                            <td className="px-6 py-4 text-right text-sm text-gray-900">{currencyFormatter.format(it.price * it.quantity)}</td>
                           </tr>
                         ))}
-                        <tr className="bg-gray-50">
-                          <td colSpan={3} className="px-6 py-4 text-sm font-medium text-gray-900">Subtotal</td>
-                          <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">{currencyFormatter.format(invoice.subtotal || 0)}</td>
+                        <tr className="bg-gray-50 font-bold">
+                          <td colSpan={2} className="px-6 py-4 text-right text-sm text-gray-900">Subtotal</td>
+                          <td className="px-6 py-4 text-right text-sm text-gray-900">{currencyFormatter.format(invoice.subtotal || 0)}</td>
                         </tr>
-                        <tr>
-                          <td colSpan={3} className="px-6 py-4 text-sm font-medium text-gray-900">Tax</td>
-                          <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">{currencyFormatter.format(invoice.tax || 0)}</td>
+                        <tr className="font-bold">
+                          <td colSpan={2} className="px-6 py-4 text-right text-sm text-gray-900">Tax (10%)</td>
+                          <td className="px-6 py-4 text-right text-sm text-gray-900">{currencyFormatter.format(invoice.tax || 0)}</td>
                         </tr>
-                        <tr>
-                          <td colSpan={3} className="px-6 py-4 text-sm font-medium text-gray-900">Total</td>
-                          <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">{currencyFormatter.format(invoice.total || invoice.subtotal || 0)}</td>
+                        <tr className="bg-gray-100 font-bold text-lg">
+                          <td colSpan={2} className="px-6 py-4 text-right text-gray-900">Total</td>
+                          <td className="px-6 py-4 text-right text-gray-900">{currencyFormatter.format(invoice.total || 0)}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
+              ) : (
+                <p>No invoice items found.</p>
               )}
-
-              <div className="flex items-center justify-between">
-                <label className="text-gray-600">Doctor Fee (KES)</label>
-                <input type="number" name="doctorFee" value={invoice.doctorFee} onChange={handleInvoiceChange} className="w-32 text-right p-1 border rounded-md" />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-gray-600">Nursing Fee (KES)</label>
-                <input type="number" name="nursingFee" value={invoice.nursingFee} onChange={handleInvoiceChange} className="w-32 text-right p-1 border rounded-md" />
-              </div>
-            </div>
-
-            <div className="border-t-2 border-gray-300 pt-4 mt-6 flex justify-end">
-              <div className="flex items-baseline space-x-4">
-                <span className="text-xl font-bold text-gray-600">TOTAL (KES)</span>
-                <span className="text-3xl font-bold text-gray-900">{currencyFormatter.format(totalCost)}</span>
-              </div>
-            </div>
           </section>
         </div>
       </main>
     </div>
   );
 }
-
-const InvoiceItemsTable = ({ title, items = [], onUpdate, onAdd, onRemove, itemType }) => (
-  <div>
-    <h3 className="text-lg font-semibold text-gray-700 mb-2">{title}</h3>
-    <div className="space-y-2">
-      {items.map((item, index) => (
-        <div key={item.id || index} className="flex items-center space-x-2">
-          <input type="text" value={item.name} onChange={e => onUpdate(index, 'name', e.target.value, itemType)} placeholder="Item name" className="flex-grow p-1 border rounded-md" />
-          <input type="number" value={item.cost} onChange={e => onUpdate(index, 'cost', Number(e.target.value), itemType)} placeholder="Cost" className="w-32 text-right p-1 border rounded-md" />
-          <button onClick={() => onRemove(index, itemType)} className="text-red-500 hover:text-red-700 font-bold">✕</button>
-        </div>
-      ))}
-    </div>
-    <button onClick={() => onAdd(itemType)} className="no-print mt-2 text-sm text-indigo-600 hover:text-indigo-800">+ Add Item</button>
-  </div>
-);
