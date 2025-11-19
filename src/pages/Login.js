@@ -106,12 +106,7 @@ export default function Login() {
             </motion.button>
           </div>
 
-          <div className="text-center text-sm text-gray-600">
-            Not a member?{' '}
-            <Link to="/register" className="font-medium text-brand-600 hover:text-brand-500 transition-colors duration-200">
-              Create an account
-            </Link>
-          </div>
+          
         </form>
       </AuthLayout>
     </AnimatedPage>
