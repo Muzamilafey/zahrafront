@@ -47,4 +47,15 @@ export const CloseIcon = ({ className = 'h-5 w-5', ...props }) => (
   </svg>
 );
 
+// Group all icons into one object (fixes your import error)
+export const Icons = {
+  CoreCareLogo,
+  AlertIcon,
+  SuccessIcon,
+  SpinnerIcon,
+  PrintIcon,
+  CloseIcon,
+};
+
+// Default export (still allowed)
 export default CoreCareLogo;
