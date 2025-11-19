@@ -4,17 +4,17 @@ import { AuthContext } from '../contexts/AuthContext';
 import { AuthLayout } from '../components/AuthLayout';
 import { AlertIcon, SuccessIcon, SpinnerIcon } from '../components/Icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AnimatedPage } from '../components/AnimatedPage';
+import AnimatedPage from '../components/AnimatedPage';
 import { InputField } from '../components/InputField';
 
 export default function ForgotPassword() {
   const { requestPasswordReset } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);

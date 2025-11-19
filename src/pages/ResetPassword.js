@@ -8,17 +8,17 @@ import { AnimatedPage } from '../components/AnimatedPage';
 import { InputField } from '../components/InputField';
 
 export default function ResetPassword() {
-  const { token } = useParams<{ token: string }>();
+  const { token } = useParams();
   const navigate = useNavigate();
   const { resetPassword } = useContext(AuthContext);
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
   
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError('Passwords do not match.');

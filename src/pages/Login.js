@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthLayout } from '../components/AuthLayout';
 import { AlertIcon, SpinnerIcon } from '../components/Icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AnimatedPage } from '../components/AnimatedPage';
+import AnimatedPage from '../components/AnimatedPage';
 import { InputField } from '../components/InputField';
 
 export default function Login() {
@@ -13,10 +13,10 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
