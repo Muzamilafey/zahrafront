@@ -199,7 +199,7 @@ function App() {
           {/* Clinical Documentation */}
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Unified discharge summary page with real data from tsx components */}
-          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><DischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/discharge" element={<PrivateRoute><Layout><ErrorBoundary><DischargeLauncher /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
