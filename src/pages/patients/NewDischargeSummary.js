@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import PatientSearch from '../../components/patientSearch';
 import DischargeSummary from '../../components/DischargeSummary';
 import Invoice from '../../components/Invoice';
@@ -11,6 +12,8 @@ const NewDischargeSummary = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [autoLoaded, setAutoLoaded] = useState(false);
+  const { id: routePatientId } = useParams();
 
   const handleSearch = async (patientId) => {
     setLoading(true);
@@ -79,6 +82,14 @@ const NewDischargeSummary = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // If the page was opened with a patient id in the route, auto-load that patient's summary
+    if (routePatientId && !autoLoaded) {
+      setAutoLoaded(true);
+      handleSearch(routePatientId);
+    }
+  }, [routePatientId, autoLoaded]);
 
   const handlePrint = () => {
     window.print();
