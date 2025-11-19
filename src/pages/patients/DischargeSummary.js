@@ -75,92 +75,73 @@ export default function DischargeSummary() {
 
   // Replace mock fetch with real API calls
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
+    const loadDischargeSummary = async () => {
       setLoading(true);
       setError(null);
+      setPatient(null);
+      setInvoice(null);
+
       try {
-        // Try to fetch discharge summary by patient id
-        let discharge = null;
-        try {
-          const dres = await axiosInstance.get(`/discharge/patient/${routePatientId}`);
-          const ddata = dres.data;
-          if (Array.isArray(ddata)) discharge = ddata[0] || null;
-          else if (Array.isArray(ddata?.summaries)) discharge = ddata.summaries[0] || null;
-          else if (ddata?.summary) discharge = ddata.summary;
-          else discharge = ddata;
-        } catch (e) {
-          // ignore — will try patient endpoint next
-          discharge = null;
-        }
+        const response = await axiosInstance.get(`/discharge/patient/${routePatientId}/latest`);
+        const summary = response.data;
 
-        // Fetch patient and invoices
-        let patientRes = null;
-        try {
-          patientRes = await axiosInstance.get(`/patients/${routePatientId}`);
-        } catch (e) {
-          patientRes = null;
-        }
+        const patientData = {
+          patientName: summary.patient?.name || summary.patientInfo?.name,
+          patientId: summary.patient?.mrn || summary.patientInfo?.mrn,
+          age: summary.patient?.age || summary.patientInfo?.age,
+          gender: summary.patient?.gender || summary.patientInfo?.gender,
+          diagnosis: summary.diagnosis?.primary,
+          ward: summary.admissionInfo?.ward,
+          dateAdmitted: summary.admissionInfo?.admittedAt,
+          dateDischarged: summary.admissionInfo?.dischargedAt,
+          treatingDoctor: summary.dischargingDoctorName,
+          treatmentSummary: summary.hospitalStaySummary,
+          dischargeMedication: (summary.medicationsOnDischarge || []).map(m => `${m.name} ${m.dosage || ''} ${m.frequency || ''}`).join('\n'),
+          additionalNotes: summary.dischargeNotes || summary.instructionsToPatient || ''
+        };
+        setPatient(patientData);
 
-        if (!mounted) return;
+        // Find the related invoice
+        if (summary.admission) {
+            const invoicesResponse = await axiosInstance.get(`/billing`);
+            const allInvoices = invoicesResponse.data.invoices || [];
+            const patientInvoices = allInvoices.filter(inv => inv.patient?._id === summary.patient._id);
+            const relatedInvoice = patientInvoices.find(inv => inv.admissionId === summary.admission._id);
 
-        if (discharge) {
-          // map discharge into local shape used by this component
-          const p = {
-            patientName: discharge.patientInfo?.name || discharge.patient?.name || discharge.patient || (patientRes?.data?.patient?.user?.name),
-            patientId: discharge.patientInfo?.mrn || discharge.patient?._id || routePatientId,
-            age: discharge.patientInfo?.age || (patientRes?.data?.patient?.age),
-            gender: discharge.patientInfo?.gender || (patientRes?.data?.patient?.gender),
-            diagnosis: discharge.diagnosis?.primary || discharge.patientInfo?.diagnosis || discharge.admissionInfo?.diagnosis || '',
-            ward: discharge.admissionInfo?.ward || '',
-            dateAdmitted: discharge.admissionInfo?.admittedAt,
-            dateDischarged: discharge.admissionInfo?.dischargedAt,
-            treatingDoctor: discharge.dischargingDoctorName || discharge.dischargingDoctor?.name,
-            treatmentSummary: discharge.hospitalStaySummary || discharge.hospitalStaySummary,
-            dischargeMedication: (discharge.medicationsOnDischarge || []).map(m => `${m.name} ${m.dosage || ''} ${m.frequency || ''}`).join('\n'),
-            additionalNotes: discharge.dischargeNotes || discharge.instructionsToPatient || ''
-          };
-          setPatient(p);
-        } else if (patientRes?.data?.patient) {
-          const src = patientRes.data.patient;
-          const p = {
-            patientName: src.user?.name || `${src.firstName || ''} ${src.lastName || ''}`.trim(),
-            patientId: src.mrn || src.hospitalId || routePatientId,
-            age: src.age,
-            gender: src.gender,
-            diagnosis: src.admission?.finalDiagnosis || src.diagnoses?.[0]?.condition || '',
-            ward: src.admission?.ward,
-            dateAdmitted: src.admission?.admittedAt,
-            dateDischarged: src.admission?.dischargedAt,
-            treatingDoctor: src.admission?.admittingDoctor?.name || '',
-            treatmentSummary: src.admission?.clinicalSummary || '',
-            dischargeMedication: '',
-            additionalNotes: src.admission?.dischargeNotes || ''
-          };
-          setPatient(p);
+            if (relatedInvoice) {
+                // The invoice in the DB has lineItems. The component expects labTests and drugs.
+                // I need to transform the invoice data.
+                const transformedInvoice = {
+                    _id: relatedInvoice._id,
+                    dailyBedCharge: relatedInvoice.categoryTotals?.bed_charge || 0,
+                    labTests: relatedInvoice.lineItems.filter(item => item.category === 'lab').map(item => ({id: item._id, name: item.description, cost: item.amount})),
+                    drugs: relatedInvoice.lineItems.filter(item => item.category === 'pharmacy').map(item => ({id: item._id, name: item.description, cost: item.amount})),
+                    doctorFee: relatedInvoice.categoryTotals?.consultation || 0,
+                    nursingFee: relatedInvoice.categoryTotals?.nursing_fee || 0,
+                };
+                setInvoice(transformedInvoice);
+            } else {
+                setInvoice({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0 });
+            }
         } else {
-          // fallback to mock
-          setPatient(mockPatientData);
+            setInvoice({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0 });
         }
 
-        // invoice: prefer invoice returned via patient endpoint
-        let inv = null;
-        if (patientRes?.data?.invoices) {
-          inv = (patientRes.data.invoices || []).find(i => i.type === 'admission' || i.type === 'discharge') || (patientRes.data.invoices || [])[0] || null;
-        }
-        // fallback: if discharge contains invoice-like field
-        if (!inv && discharge?.invoice) inv = discharge.invoice;
-        if (!inv) inv = mockInvoiceData;
-        setInvoice(inv);
       } catch (err) {
+        if (err.response && err.response.status === 404) {
+            setError('No discharge summary found for this patient.');
+        } else {
+            setError(err.response?.data?.message || 'Failed to load discharge data.');
+        }
         console.error('Failed to load discharge info', err);
-        setError(err?.response?.data?.message || 'Failed to load discharge data');
       } finally {
         setLoading(false);
       }
     };
-    if (routePatientId) load();
-    return () => { mounted = false; };
+
+    if (routePatientId) {
+      loadDischargeSummary();
+    }
   }, [routePatientId, axiosInstance]);
 
   // Effect to handle print events for the overlay
