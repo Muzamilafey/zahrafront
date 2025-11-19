@@ -1,25 +1,44 @@
-import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { useParams } from 'react-router-dom';
+import { AuthContext } from "../contexts/AuthContext";
 
 export default function DischargeSummary({ patientId }) {
+  const { id: routeId } = useParams();
+  const { axiosInstance } = useContext(AuthContext);
+  const effectivePatientId = patientId || routeId;
   const [admission, setAdmission] = useState(null);
   const [treatmentSummary, setTreatmentSummary] = useState("");
   const [dischargeMedications, setDischargeMedications] = useState("");
   const summaryRef = useRef();
 
   useEffect(() => {
-    if (!patientId) return;
-    axios
-      .get(`https://zahra-7bi2.onrender.com/api/admissions/${patientId}`)
+    if (!effectivePatientId || !axiosInstance) return;
+    axiosInstance
+      .get(`/admissions/${effectivePatientId}`)
       .then((res) => {
-        setAdmission(res.data);
-        setTreatmentSummary(res.data.treatmentSummary || "");
-        setDischargeMedications(res.data.dischargeMedications || "");
+        const admissionData = res.data;
+        // Map the received data to the structure the component expects
+        const mappedAdmission = {
+          patientName: admissionData.patient?.user?.name || 'N/A',
+          patientId: admissionData.patient?.mrn || 'N/A',
+          age: admissionData.patient?.age || 'N/A',
+          gender: admissionData.patient?.gender || 'N/A',
+          ward: admissionData.ward || 'N/A',
+          diagnosis: admissionData.finalDiagnosis || 'N/A',
+          dateAdmitted: admissionData.admittedAt || admissionData.createdAt,
+          dateDischarged: admissionData.dischargedAt,
+          doctorInCharge: admissionData.doctor?.user?.name || 'N/A', // Assuming doctor is populated
+          treatmentSummary: admissionData.clinicalSummary || '',
+          dischargeMedications: '', // This seems to be an editable field, not from API
+          finalNotes: admissionData.dischargeNotes || ''
+        };
+        setAdmission(mappedAdmission);
+        setTreatmentSummary(mappedAdmission.treatmentSummary);
       })
       .catch((err) => {
         console.error("Failed to load admission data:", err);
       });
-  }, [patientId]);
+  }, [effectivePatientId, axiosInstance]);
 
   const printSummary = () => {
     if (!summaryRef.current) return;
@@ -37,17 +56,6 @@ export default function DischargeSummary({ patientId }) {
     );
   }
 
-  // Calculate Age from birthdate if available or from admission data
-  // If age is not provided, calculate from DOB or admission date is not specified
-  // Here we fallback to admission.age if exists
-  const age = admission.age || (() => {
-    if (!admission.dateOfBirth) return "N/A";
-    const dob = new Date(admission.dateOfBirth);
-    const diffMs = Date.now() - dob.getTime();
-    const ageDt = new Date(diffMs);
-    return Math.abs(ageDt.getUTCFullYear() - 1970);
-  })();
-
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded mt-6 font-sans">
       <div ref={summaryRef}>
@@ -64,7 +72,7 @@ export default function DischargeSummary({ patientId }) {
           </div>
           <div>
             <p className="font-semibold text-gray-700">Age</p>
-            <p>{age}</p>
+            <p>{admission.age}</p>
           </div>
           <div>
             <p className="font-semibold text-gray-700">Gender</p>
@@ -80,11 +88,11 @@ export default function DischargeSummary({ patientId }) {
           </div>
           <div>
             <p className="font-semibold text-gray-700">Date Admitted</p>
-            <p>{new Date(admission.dateAdmitted).toLocaleDateString()}</p>
+            <p>{admission.dateAdmitted ? new Date(admission.dateAdmitted).toLocaleDateString() : 'N/A'}</p>
           </div>
           <div>
             <p className="font-semibold text-gray-700">Date Discharged</p>
-            <p>{new Date(admission.dateDischarged).toLocaleDateString()}</p>
+            <p>{admission.dateDischarged ? new Date(admission.dateDischarged).toLocaleDateString() : 'N/A'}</p>
           </div>
           <div className="sm:col-span-2">
             <p className="font-semibold text-gray-700">Doctor in Charge</p>

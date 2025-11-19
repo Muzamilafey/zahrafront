@@ -89,7 +89,7 @@ import LabBills from './pages/admission/billing/LabBills';
 import PharmacyBills from './pages/admission/billing/PharmacyBills';
 import MiscellaneousBills from './pages/admission/billing/MiscellaneousBills';
 import Placeholder from './components/Placeholder';
-import DischargeSummary from './pages/patients/DischargeSummary';
+import DischargeSummary from './pages/DischargeSummary';
 import DischargedPatientSummary from './pages/patients/DischargedPatientSummary';
 import DischargeSummaryPage from './pages/patients/DischargeSummaryPage';
 import DischargeSummaryTemplate from './pages/patients/DischargeSummaryTemplate';
