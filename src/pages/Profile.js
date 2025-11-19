@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
-import DischargeWithInvoice from '../components/DischargeWithInvoice';
 
 export default function Profile() {
   const { user, axiosInstance } = useContext(AuthContext);
@@ -385,8 +384,19 @@ export function ProfileRecords({ records, profile }) {
                 <div className="text-sm text-gray-600">No discharge summary found for this patient.</div>
               )}
               {dischargeSummary && (
-                <div className="mt-2">
-                  <DischargeWithInvoice patient={profile} summary={dischargeSummary} invoice={dischargeInvoice} />
+                <div className="mt-2 space-y-2">
+                  <div><strong>Primary Diagnosis:</strong> {dischargeSummary.diagnosis?.primary || dischargeSummary.diagnosis || 'N/A'}</div>
+                  <div>
+                    <strong>Summary:</strong>
+                    <div className="whitespace-pre-wrap text-sm text-gray-700 mt-1">{dischargeSummary.hospitalStaySummary || dischargeSummary.summary || dischargeSummary.clinicalSummary || 'No summary available.'}</div>
+                  </div>
+                  {dischargeInvoice ? (
+                    <div className="mt-2">
+                      <button className="btn-outline" onClick={() => navigate(`/billing/${dischargeInvoice._id}`)}>View Invoice</button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">No invoice available.</div>
+                  )}
                 </div>
               )}
             </div>
