@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
+import DischargeWithInvoice from '../components/DischargeWithInvoice';
 
 export default function Profile() {
   const { user, axiosInstance } = useContext(AuthContext);
@@ -142,7 +144,7 @@ export default function Profile() {
       </div>
       {patientRecords && (
         <div className="mt-8">
-          <ProfileRecords records={patientRecords} />
+          <ProfileRecords records={patientRecords} profile={profile} />
         </div>
       )}
       </div>
@@ -151,9 +153,10 @@ export default function Profile() {
 }
 
 // Below the main card, render patient records if available
-export function ProfileRecords({ records }) {
+export function ProfileRecords({ records, profile }) {
   // Hooks must be called unconditionally
   const { axiosInstance, user } = React.useContext(AuthContext);
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = React.useState(false);
   const [recipient, setRecipient] = React.useState('');
   const [currentAppointmentId, setCurrentAppointmentId] = React.useState(null);
@@ -203,6 +206,45 @@ export function ProfileRecords({ records }) {
     w.document.close();
     w.focus();
     setTimeout(()=>{ w.print(); w.close(); }, 300);
+  };
+
+  // Discharge summary section state
+  const [dischargeOpen, setDischargeOpen] = React.useState(false);
+  const [dischargeLoading, setDischargeLoading] = React.useState(false);
+  const [dischargeError, setDischargeError] = React.useState(null);
+  const [dischargeSummary, setDischargeSummary] = React.useState(null);
+  const [dischargeInvoice, setDischargeInvoice] = React.useState(null);
+
+  const toggleDischarge = async () => {
+    setDischargeOpen(s => !s);
+    if (!dischargeSummary && !dischargeLoading && profile) {
+      setDischargeLoading(true);
+      setDischargeError(null);
+      try {
+        // Try discharge summary by patient id
+        const res = await axiosInstance.get(`/discharge/patient/${profile._id}`);
+        const data = res.data || {};
+        // normalize: could be array or { summaries: [...] } or single object
+        let summary = null;
+        if (Array.isArray(data)) summary = data[0] || null;
+        else if (Array.isArray(data.summaries)) summary = data.summaries[0] || null;
+        else if (data.summary) summary = data.summary;
+        else summary = data;
+        setDischargeSummary(summary || null);
+      } catch (e) {
+        console.warn('Failed to load discharge summary', e);
+        setDischargeError(e?.response?.data?.message || 'No discharge summary available');
+      } finally {
+        // choose an invoice from records if available
+        try {
+          const inv = (records?.invoices || []).find(i => i.type === 'admission' || i.type === 'discharge') || (records?.invoices || [])[0] || null;
+          setDischargeInvoice(inv);
+        } catch(_) {
+          setDischargeInvoice(null);
+        }
+        setDischargeLoading(false);
+      }
+    }
   };
 
   return (
@@ -324,6 +366,31 @@ export function ProfileRecords({ records }) {
               <div className="text-sm text-gray-600">Status: {p.status}</div>
             </div>
           ))}
+        </section>
+
+        {/* Discharge Summary (collapsible) */}
+        <section className="bg-white shadow rounded p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Discharge Summary</h3>
+            <div className="flex items-center gap-2">
+              <button className="btn-outline text-sm" onClick={toggleDischarge}>{dischargeOpen ? 'Hide' : 'Show'}</button>
+              <button className="btn-primary text-sm" onClick={()=>navigate(`/patients/${profile?._id}/discharge-summary`)}>Open Full</button>
+            </div>
+          </div>
+          {dischargeOpen && (
+            <div className="mt-3">
+              {dischargeLoading && <div className="text-sm text-gray-500">Loading discharge summary...</div>}
+              {dischargeError && <div className="text-sm text-red-600">{dischargeError}</div>}
+              {!dischargeLoading && !dischargeError && !dischargeSummary && (
+                <div className="text-sm text-gray-600">No discharge summary found for this patient.</div>
+              )}
+              {dischargeSummary && (
+                <div className="mt-2">
+                  <DischargeWithInvoice patient={profile} summary={dischargeSummary} invoice={dischargeInvoice} />
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </div>
