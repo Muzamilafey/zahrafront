@@ -6,6 +6,7 @@ import Invoice from '../../components/Invoice';
 import PrintButton from '../../components/PrintButton';
 import Spinner from '../../components/Spinner';
 import axios from 'axios';
+import DischargeSummaryList from '../../components/DischargeSummaryList';
 
 const NewDischargeSummary = () => {
   const [patient, setPatient] = useState(null);
@@ -98,20 +99,51 @@ const NewDischargeSummary = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Create Discharge Summary</h1>
-      <PatientSearch onSearch={handleSearch} isLoading={loading} />
 
-      {loading && <Spinner />}
-      {error && <div className="text-red-500">{error}</div>}
+      {/* If we have a routePatientId or resolved patient, show the summaries list directly */}
+      {(routePatientId || patient) ? (
+        <div>
+          <div className="mb-4">
+            <PatientSearch onSearch={handleSearch} isLoading={loading} />
+          </div>
 
-      {summary && (
-        <div className="mt-8">
-          <div className="flex justify-end mb-4">
-            <PrintButton onClick={handlePrint} />
-          </div>
-          <div id="print-area">
-            <DischargeSummary summary={summary} />
-            <Invoice summary={summary} />
-          </div>
+          {loading && <Spinner />}
+          {error && <div className="text-red-500">{error}</div>}
+
+          {/* Show list of summaries for the patient */}
+          <DischargeSummaryList patientId={patient?._id || routePatientId} />
+
+          {/* If a single summary is loaded, show the detailed view below the list */}
+          {summary && (
+            <div className="mt-8">
+              <div className="flex justify-end mb-4">
+                <PrintButton onClick={handlePrint} />
+              </div>
+              <div id="print-area">
+                <DischargeSummary summary={summary} patient={patient} />
+                <Invoice summary={summary} />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <PatientSearch onSearch={handleSearch} isLoading={loading} />
+
+          {loading && <Spinner />}
+          {error && <div className="text-red-500">{error}</div>}
+
+          {summary && (
+            <div className="mt-8">
+              <div className="flex justify-end mb-4">
+                <PrintButton onClick={handlePrint} />
+              </div>
+              <div id="print-area">
+                <DischargeSummary summary={summary} />
+                <Invoice summary={summary} />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
