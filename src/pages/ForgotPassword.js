@@ -23,7 +23,7 @@ export default function ForgotPassword() {
       await requestPasswordReset(email);
       setMessage('If an account with that email exists, we have sent a password reset link.');
       setEmail('');
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.message || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);

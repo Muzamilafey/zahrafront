@@ -37,7 +37,7 @@ export default function ResetPassword() {
       await resetPassword(token, password);
       setMessage('Your password has been reset successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 3000);
-    } catch (err: any) {
+    } catch (err) {
       setError(err?.message || 'Failed to reset password. The link may be invalid or expired.');
     } finally {
       setLoading(false);
