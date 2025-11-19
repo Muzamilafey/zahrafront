@@ -7,7 +7,6 @@ import Invoice from '../../components/Invoice';
 import PrintButton from '../../components/PrintButton';
 import Spinner from '../../components/Spinner';
 import axios from 'axios';
-import DischargeSummaryList from '../../components/DischargeSummaryList';
 
 const NewDischargeSummary = () => {
   const [patient, setPatient] = useState(null);
@@ -113,8 +112,8 @@ const NewDischargeSummary = () => {
           {loading && <Spinner />}
           {error && <div className="text-red-500">{error}</div>}
 
-          {/* Show list of summaries for the patient */}
-          <DischargeSummaryList patientId={patient?._id || routePatientId} />
+          {/* Summary list removed (component not present). */}
+          <div className="mb-4 text-sm text-gray-600">Summary list is not available.</div>
 
           {/* If a single summary is loaded, show the detailed view below the list */}
           {summary && (
