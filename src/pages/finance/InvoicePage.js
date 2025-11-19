@@ -107,7 +107,7 @@ const InvoicePage = () => {
         </div>
         <footer className="mt-8 text-center no-print">
             <button onClick={handlePrint} className="bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 inline-flex items-center">
-              <Icons.Print className="w-5 h-5 mr-2" />
+              <Icons.PrintIcon className="w-5 h-5 mr-2" />
               Print Invoice
             </button>
         </footer>
