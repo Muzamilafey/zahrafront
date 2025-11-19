@@ -38,7 +38,7 @@ const InvoicePage = () => {
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
-  const { patient, items, subtotal, tax, total, invoiceId } = invoiceData;
+  const { patientName, patientId, address, items, subtotal, tax, total, invoiceId } = invoiceData;
 
   const groupedItems = items.reduce((acc, item) => {
     const category = item.category || 'Miscellaneous';
@@ -71,9 +71,9 @@ const InvoicePage = () => {
 
             <section className="patient-info mt-8">
               <strong className="text-gray-600 font-semibold">Bill To:</strong>
-              <p className="text-xl font-bold text-gray-800">{patient?.name || 'N/A'}</p>
-              <p className="text-gray-600">Patient ID: {patient?.id || id}</p>
-              <p className="text-gray-600">{patient?.address || 'Address not available'}</p>
+              <p className="text-xl font-bold text-gray-800">{patientName || 'N/A'}</p>
+              <p className="text-gray-600">Patient ID: {patientId || id}</p>
+              <p className="text-gray-600">{address || 'Address not available'}</p>
             </section>
 
             <div className="mt-10 overflow-x-auto">
