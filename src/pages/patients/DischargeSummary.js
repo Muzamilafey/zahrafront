@@ -62,7 +62,7 @@ export default function DischargeSummary() {
   // Local demo: if you want to hook this up to the real backend, replace
   // the mocked fetch with axios calls and map fields accordingly.
   const [patient, setPatient] = useState(null);
-  const [invoice, setInvoice] = useState(null);
+  const [invoice, setInvoice] = useState({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalCost, setTotalCost] = useState(0);
@@ -276,7 +276,8 @@ export default function DischargeSummary() {
 
   if (loading) return <div className="flex items-center justify-center h-screen"><p className="text-xl">Loading Patient Record...</p></div>;
   if (error) return <div className="flex items-center justify-center h-screen"><p className="text-xl text-red-500">{error}</p></div>;
-  if (!patient || !invoice) return null;
+  // Render as soon as we have patient data. Invoice may be empty/default — render anyway.
+  if (!patient) return null;
 
   const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
 
