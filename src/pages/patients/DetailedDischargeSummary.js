@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaFileInvoiceDollar, FaPrint } from 'react-icons/fa';
 
 const DetailedDischargeSummary = () => {
   const { id } = useParams();
@@ -28,6 +28,10 @@ const DetailedDischargeSummary = () => {
     fetchData();
   }, [id, axiosInstance]);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) return <div className="text-center p-8">Loading Comprehensive Discharge Summary...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!data) return <div className="text-center p-8">No data found for this patient.</div>;
@@ -35,16 +39,25 @@ const DetailedDischargeSummary = () => {
   const { patient, appointments, invoices, labTests, prescriptions } = data;
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto p-4 max-w-6xl" id="printable-area">
+      <div className="flex justify-between items-center mb-6 no-print">
         <h2 className="text-3xl font-bold text-gray-800">Comprehensive Discharge Summary</h2>
-        <button 
-          onClick={() => navigate(`/patients/${id}/invoice`)}
-          className="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 flex items-center"
-        >
-          <FaFileInvoiceDollar className="mr-2" />
-          View Combined Invoice
-        </button>
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => navigate(`/patients/${id}/invoice`)}
+            className="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 flex items-center"
+          >
+            <FaFileInvoiceDollar className="mr-2" />
+            View Combined Invoice
+          </button>
+          <button 
+            onClick={handlePrint}
+            className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 flex items-center"
+          >
+            <FaPrint className="mr-2" />
+            Print Summary
+          </button>
+        </div>
       </div>
 
       {/* Patient Details */}
@@ -97,7 +110,21 @@ const DetailedDischargeSummary = () => {
           <p>No lab tests found.</p>
         )}
       </div>
-
+      <style jsx global>{`
+        @media print {
+          .no-print { display: none; }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          #printable-area {
+            box-shadow: none;
+            margin: 0;
+            max-width: 100%;
+            border-radius: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };
