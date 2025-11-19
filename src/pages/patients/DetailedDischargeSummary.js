@@ -2,11 +2,13 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { FaFileInvoice, FaPrint } from 'react-icons/fa';
+import useHospitalDetails from '../../hooks/useHospitalDetails';
 
 const DetailedDischargeSummary = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
+  const { hospitalDetails, loading: hospitalDetailsLoading } = useHospitalDetails();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ const DetailedDischargeSummary = () => {
     window.print();
   };
 
-  if (loading) return <div className="text-center p-8">Loading Discharge Summary...</div>;
+  if (loading || hospitalDetailsLoading) return <div className="text-center p-8">Loading Discharge Summary...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!data) return <div className="text-center p-8">No data found for this patient.</div>;
 
@@ -44,8 +46,9 @@ const DetailedDischargeSummary = () => {
         
         {/* Header */}
         <header className="text-center mb-8 p-4 border-b-4 border-black">
-          <h1 className="text-3xl font-bold text-black">KENYATTA NATIONAL HOSPITAL</h1>
-          <p className="text-lg">P.O. Box 20723, Nairobi</p>
+          <h1 className="text-3xl font-bold text-black">{hospitalDetails.name || 'Kenyatta National Hospital'}</h1>
+          <p className="text-lg">{hospitalDetails.location || 'P.O. Box 20723, Nairobi'}</p>
+          <p className="text-lg">{hospitalDetails.contacts || ''}</p>
           <h2 className="text-2xl font-semibold mt-4 bg-black text-white py-1">PROVISIONAL DISCHARGE SUMMARY</h2>
         </header>
 

@@ -2,10 +2,13 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Icons } from '../../components/Icons';
+import useHospitalDetails from '../../hooks/useHospitalDetails';
 
 const InvoicePage = () => {
   const { id } = useParams(); // This is the patient ID from the route /patients/:id/invoice
   const { axiosInstance } = useContext(AuthContext);
+  const { hospitalDetails, loading: hospitalDetailsLoading } = useHospitalDetails();
+  
   const [invoiceData, setInvoiceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,7 +34,7 @@ const InvoicePage = () => {
     window.print();
   };
 
-  if (loading) return <div className="text-center p-8 animate-pulse">Generating Invoice...</div>;
+  if (loading || hospitalDetailsLoading) return <div className="text-center p-8 animate-pulse">Generating Invoice...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
@@ -55,9 +58,9 @@ const InvoicePage = () => {
           <div className="p-8 sm:p-12">
             <header className="flex justify-between items-start pb-8 border-b border-gray-200">
               <div className="hospital-info">
-                <h1 className="text-3xl font-bold text-teal-600">Genz Community Hospital</h1>
-                <p className="text-gray-600">123 Health St, Medtown, Kajiado</p>
-                <p className="text-gray-600">Ph: +254 722 651 888</p>
+                <h1 className="text-3xl font-bold text-teal-600">{hospitalDetails.name || 'Genz Community Hospital'}</h1>
+                <p className="text-gray-600">{hospitalDetails.location || '123 Health St, Medtown, Kajiado'}</p>
+                <p className="text-gray-600">{hospitalDetails.contacts || 'Ph: +254 722 651 888'}</p>
               </div>
               <div className="invoice-meta text-right">
                 <h2 className="text-4xl font-bold text-gray-700">INVOICE</h2>
