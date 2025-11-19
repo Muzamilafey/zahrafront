@@ -10,7 +10,7 @@ export default function DischargeSummary({ patientId }) {
   useEffect(() => {
     if (!patientId) return;
     axios
-      .get(`http://localhost:5000/api/admissions/${patientId}`)
+      .get(`https://zahra-7bi2.onrender.com/api/admissions/${patientId}`)
       .then((res) => {
         setAdmission(res.data);
         setTreatmentSummary(res.data.treatmentSummary || "");
