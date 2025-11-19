@@ -166,6 +166,13 @@ export function ProfileRecords({ records, profile }) {
   const [errorVisible, setErrorVisible] = React.useState(false);
   const [errorText, setErrorText] = React.useState('');
 
+  // Discharge summary section state (moved up so hooks run unconditionally)
+  const [dischargeOpen, setDischargeOpen] = React.useState(false);
+  const [dischargeLoading, setDischargeLoading] = React.useState(false);
+  const [dischargeError, setDischargeError] = React.useState(null);
+  const [dischargeSummary, setDischargeSummary] = React.useState(null);
+  const [dischargeInvoice, setDischargeInvoice] = React.useState(null);
+
   React.useEffect(()=>{
     try{ const saved = localStorage.getItem('notificationRecipient'); if (saved) setRecipient(saved); }catch(e){}
   },[]);
@@ -207,13 +214,6 @@ export function ProfileRecords({ records, profile }) {
     w.focus();
     setTimeout(()=>{ w.print(); w.close(); }, 300);
   };
-
-  // Discharge summary section state
-  const [dischargeOpen, setDischargeOpen] = React.useState(false);
-  const [dischargeLoading, setDischargeLoading] = React.useState(false);
-  const [dischargeError, setDischargeError] = React.useState(null);
-  const [dischargeSummary, setDischargeSummary] = React.useState(null);
-  const [dischargeInvoice, setDischargeInvoice] = React.useState(null);
 
   const toggleDischarge = async () => {
     setDischargeOpen(s => !s);
