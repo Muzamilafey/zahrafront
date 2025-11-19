@@ -1,20 +1,15 @@
-import React, { useState, FocusEvent } from 'react';
+import React, { useState } from 'react';
 
-interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  id: string;
-}
-
-export const InputField: React.FC<InputFieldProps> = ({ label, id, type = 'text', value, onFocus, onBlur, ...props }) => {
+export const InputField = ({ label, id, type = 'text', value, onFocus, onBlur, ...props }) => {
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = value && String(value).length > 0;
 
-  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
+  const handleFocus = (e) => {
     setIsFocused(true);
     if (onFocus) onFocus(e);
   };
 
-  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+  const handleBlur = (e) => {
     setIsFocused(false);
     if (onBlur) onBlur(e);
   };
@@ -40,3 +35,5 @@ export const InputField: React.FC<InputFieldProps> = ({ label, id, type = 'text'
     </div>
   );
 };
+
+export default InputField;

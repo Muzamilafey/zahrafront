@@ -1,17 +1,11 @@
-
 import React, { useState } from 'react';
 
-interface PatientSearchProps {
-  onSearch: (patientId: string) => void;
-  isLoading: boolean;
-}
+const PatientSearch = ({ onSearch, isLoading }) => {
+  const [patientId, setPatientId] = useState('PT12345');
 
-const PatientSearch: React.FC<PatientSearchProps> = ({ onSearch, isLoading }) => {
-  const [patientId, setPatientId] = useState<string>('PT12345');
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    onSearch(patientId);
+    if (typeof onSearch === 'function') onSearch(patientId);
   };
 
   return (

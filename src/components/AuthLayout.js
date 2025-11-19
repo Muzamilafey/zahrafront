@@ -1,13 +1,7 @@
 import React from 'react';
 import { CoreCareLogo } from './Icons';
 
-interface AuthLayoutProps {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}
-
-export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, description, children }) => {
+export const AuthLayout = ({ title, description, children }) => {
   return (
     <div className="min-h-screen bg-brand-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md transition-transform duration-500 ease-out">
@@ -26,3 +20,5 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ title, description, chil
     </div>
   );
 };
+
+export default AuthLayout;

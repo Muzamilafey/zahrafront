@@ -1,22 +1,14 @@
 import React from 'react';
 import PrintButton from './PrintButton';
 
-interface InvoiceProps {
-  summary: any;
-}
+const Invoice = ({ summary, patient, charges }) => {
+  // Accept either `summary` or (patient + charges)
+  const data = summary || {};
+  const patientData = patient || data.patientInfo || {};
+  const lineItems = charges || data.charges || data.lineItems || [];
+  const total = data.totalCharges || data.total || lineItems.reduce((s, c) => s + ((c.unitPrice || c.amount || c.price || 0) * (c.quantity || c.qty || 1)), 0);
 
-const Invoice: React.FC<InvoiceProps> = ({ summary }) => {
-  if (!summary || !summary.patientInfo || !summary.charges) {
-    return <div>No invoice data available</div>;
-  }
-
-  const { patientInfo, charges, totalCharges } = summary;
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    });
-  };
+  const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const handlePrint = () => {
     const printContents = document.getElementById('invoice-printable')?.innerHTML;
@@ -29,17 +21,14 @@ const Invoice: React.FC<InvoiceProps> = ({ summary }) => {
     }
   };
 
+  if (!patientData || (!lineItems || !lineItems.length)) {
+    return <div>No invoice data available</div>;
+  }
+
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden mt-8">
       <div id="invoice-printable">
-        <style>{`
-          @media print {
-            body * { visibility: hidden; }
-            #invoice-printable, #invoice-printable * { visibility: visible; }
-            #invoice-printable { position: absolute; left: 0; top: 0; width: 100%; }
-            .print-header { display: flex !important; }
-          }
-        `}</style>
+        <style>{`@media print { body * { visibility: hidden; } #invoice-printable, #invoice-printable * { visibility: visible; } #invoice-printable { position: absolute; left: 0; top: 0; width: 100%; } .print-header { display: flex !important; } }`}</style>
         <div className="p-6">
           <div className="print-header hidden justify-between items-start mb-6">
             <div>
@@ -52,11 +41,11 @@ const Invoice: React.FC<InvoiceProps> = ({ summary }) => {
           <div className="grid grid-cols-2 gap-4 text-sm mb-8">
             <div>
               <h4 className="font-semibold text-gray-600">Billed To:</h4>
-              <p className="font-bold text-gray-900">{patientInfo.name}</p>
-              <p className="text-gray-700">{patientInfo.address}</p>
+              <p className="font-bold text-gray-900">{patientData.name}</p>
+              <p className="text-gray-700">{patientData.address}</p>
             </div>
             <div className="text-right">
-              <p><strong className="text-gray-600">Invoice #:</strong> INV-{patientInfo.mrn?.slice(-5)}-{new Date().getFullYear()}</p>
+              <p><strong className="text-gray-600">Invoice #:</strong> INV-{(patientData.id || patientData.mrn || '').toString().slice(-5)}-{new Date().getFullYear()}</p>
               <p><strong className="text-gray-600">Date Issued:</strong> {formatDate(new Date().toISOString())}</p>
               <p><strong className="text-gray-600">Due Date:</strong> {formatDate(new Date(new Date().setDate(new Date().getDate() + 30)).toISOString())}</p>
             </div>
@@ -73,14 +62,18 @@ const Invoice: React.FC<InvoiceProps> = ({ summary }) => {
                 </tr>
               </thead>
               <tbody>
-                {charges.map((charge, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-2">{charge.name}</td>
-                    <td className="px-4 py-2 text-right">{charge.quantity}</td>
-                    <td className="px-4 py-2 text-right">${charge.amount.toFixed(2)}</td>
-                    <td className="px-4 py-2 text-right">${(charge.quantity * charge.amount).toFixed(2)}</td>
-                  </tr>
-                ))}
+                {lineItems.map((ch, i) => {
+                  const qty = ch.quantity || ch.qty || 1;
+                  const unit = parseFloat(ch.unitPrice || ch.amount || ch.price || 0) || 0;
+                  return (
+                    <tr key={i} className="border-b">
+                      <td className="px-4 py-2">{ch.description || ch.name || ch.item || 'Charge'}</td>
+                      <td className="px-4 py-2 text-right">{qty}</td>
+                      <td className="px-4 py-2 text-right">${unit.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-right">${(qty * unit).toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -89,14 +82,15 @@ const Invoice: React.FC<InvoiceProps> = ({ summary }) => {
             <div className="w-full max-w-xs text-sm">
               <div className="flex justify-between py-2 mt-2 border-t-2 border-gray-300">
                 <span className="font-bold text-base">Total Due:</span>
-                <span className="font-bold text-base">${totalCharges.toFixed(2)}</span>
+                <span className="font-bold text-base">${(total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
-           <div className="mt-8 text-xs text-gray-500 text-center">
-                <p>Thank you for choosing Hopewell Hospital. Please make payment within 30 days.</p>
-                <p>For billing questions, please call +1 (555) 234-5678.</p>
-           </div>
+
+          <div className="mt-8 text-xs text-gray-500 text-center">
+            <p>Thank you for choosing Hopewell Hospital. Please make payment within 30 days.</p>
+            <p>For billing questions, please call +1 (555) 234-5678.</p>
+          </div>
         </div>
       </div>
       <div className="px-6 py-4 bg-gray-50 border-t print:hidden">

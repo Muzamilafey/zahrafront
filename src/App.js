@@ -96,6 +96,7 @@ import DischargeSummaryTemplate from './pages/patients/DischargeSummaryTemplate'
 import DischargedPatientsList from './pages/patients/DischargedPatientsList';
 import PatientDischargePage from './pages/patients/PatientDischargePage';
 import NewDischargeSummary from './pages/patients/NewDischargeSummary';
+import DischargeLauncher from './pages/patients/DischargeLauncher';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
@@ -199,6 +200,7 @@ function App() {
           <Route path="/patients/:id/clinical-summary" element={<PrivateRoute><Layout><ErrorBoundary><ClinicalSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Unified discharge summary page with real data from tsx components */}
           <Route path="/patients/:id/discharge-summary" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/discharge" element={<PrivateRoute><Layout><ErrorBoundary><DischargeLauncher /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />

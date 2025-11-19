@@ -68,6 +68,7 @@ export default function Sidebar() {
       title: 'Patient Management',
       defaultCheck: user?.role === 'admin',
       items: [
+        { to: '/patients/discharge', label: 'Discharge Summary', perm: 'patients' },
         { to: '/patients', label: 'All Patients', perm: 'patients' },
         { to: '/patients/register', label: 'Register Patient', perm: 'patients' },
         { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', perm: 'patients' },
