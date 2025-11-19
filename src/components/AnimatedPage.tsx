@@ -1,37 +1,11 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    x: '-5vw',
-  },
-  in: {
-    opacity: 1,
-    x: 0,
-  },
-  out: {
-    opacity: 0,
-    x: '5vw',
-  },
-};
-
-const pageTransition = {
-  type: 'tween',
-  ease: 'anticipate',
-  duration: 0.4,
-};
-
+// Lightweight animated page wrapper without framer-motion dependency.
+// Uses CSS transition for a simple fade/slide effect when mounted.
 export const AnimatedPage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-    >
+    <div className="transition-transform duration-300 ease-out transform-gpu" style={{ willChange: 'transform, opacity' }}>
       {children}
-    </motion.div>
+    </div>
   );
 };
