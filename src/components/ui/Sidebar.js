@@ -147,7 +147,7 @@ export default function Sidebar({ role, onCollapse }) {
     { to: '/patients/register', label: 'Register Patient', icon: <FaUserPlus />, perm: 'patients' },
     { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus />, perm: 'patients' },
     { to: '/patients/admitted', label: 'Admitted Patients', icon: <FaUsers />, perm: 'patients' },
-  { to: '/patients/discharged', label: 'Discharged Patients', icon: <FaUsers />, perm: 'patients' },
+    { to: '/patients/discharged', label: 'Discharge / Invoices', icon: <FaFileInvoiceDollar />, perm: 'patients' },
     { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt />, perm: 'patients' },
     { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar />, perm: 'patients' },
   ];
