@@ -1,9 +1,13 @@
 import React from 'react';
 import { PrintIcon } from './Icons';
 
-const PrintButton = ({ targetId, label = 'Print', className = '', disabled = false }) => {
+const PrintButton = ({ targetId = 'discharge-summary-printable', label = 'Print', text, className = '', disabled = false, onClick }) => {
   const handleClick = (e) => {
     e.preventDefault();
+    if (typeof onClick === 'function') {
+      try { onClick(e); } catch(err) { console.error('PrintButton onClick handler failed', err); }
+      return;
+    }
     try {
       if (targetId) {
         const el = document.getElementById(targetId);
@@ -56,7 +60,7 @@ const PrintButton = ({ targetId, label = 'Print', className = '', disabled = fal
       }
     >
       <PrintIcon className="-ml-0.5 mr-2 h-4 w-4" />
-      <span>{label}</span>
+      <span>{text || label}</span>
     </button>
   );
 };

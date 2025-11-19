@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
 import PatientSearch from '../../components/patientSearch';
 import DischargeSummary from '../../components/DischargeSummary';
 import Invoice from '../../components/Invoice';
@@ -16,6 +17,8 @@ const NewDischargeSummary = () => {
   const [autoLoaded, setAutoLoaded] = useState(false);
   const { id: routePatientId } = useParams();
 
+  const { axiosInstance } = useContext(AuthContext);
+
   const handleSearch = async (patientId) => {
     setLoading(true);
     setError(null);
@@ -27,7 +30,7 @@ const NewDischargeSummary = () => {
       // (handles cases where user enters an admission/patient _id)
       let dischargeResponse = null;
       try {
-        dischargeResponse = await axios.get(`/api/discharge/patient/${patientId}`);
+        dischargeResponse = await axiosInstance.get(`/discharge/patient/${patientId}`);
       } catch (e) {
         // ignore and fall back to patient lookup below
         dischargeResponse = null;
@@ -43,7 +46,7 @@ const NewDischargeSummary = () => {
 
       if (latestSummary && latestSummary._id) {
         // found a summary directly — fetch details and show it
-        const summaryResponse = await axios.get(`/api/discharge/${latestSummary._id}`);
+        const summaryResponse = await axiosInstance.get(`/discharge/${latestSummary._id}`);
         setSummary(summaryResponse.data);
         // attempt to set patient if available in the returned summary
         if (summaryResponse.data && summaryResponse.data.patient) setPatient(summaryResponse.data.patient);
@@ -51,7 +54,7 @@ const NewDischargeSummary = () => {
       }
 
       // If no summary found directly, attempt to resolve the provided id as a patient identifier
-      const patientResponse = await axios.get(`/api/patients/${patientId}`);
+      const patientResponse = await axiosInstance.get(`/patients/${patientId}`);
       let foundPatient = patientResponse.data;
       if (Array.isArray(foundPatient)) foundPatient = foundPatient[0];
       if (!foundPatient || !foundPatient._id) {
@@ -63,7 +66,7 @@ const NewDischargeSummary = () => {
       setPatient(foundPatient);
 
       // Now query discharges using the resolved patient _id
-      const dischargeByPatient = await axios.get(`/api/discharge/patient/${foundPatient._id}`);
+      const dischargeByPatient = await axiosInstance.get(`/discharge/patient/${foundPatient._id}`);
       const ddata = dischargeByPatient.data;
       if (Array.isArray(ddata) && ddata.length > 0) latestSummary = ddata[0];
       else if (ddata && Array.isArray(ddata.summaries) && ddata.summaries.length > 0) latestSummary = ddata.summaries[0];
@@ -74,7 +77,7 @@ const NewDischargeSummary = () => {
         return;
       }
 
-      const summaryResponse = await axios.get(`/api/discharge/${latestSummary._id}`);
+      const summaryResponse = await axiosInstance.get(`/discharge/${latestSummary._id}`);
       setSummary(summaryResponse.data);
     } catch (err) {
       setError('Failed to fetch data.');

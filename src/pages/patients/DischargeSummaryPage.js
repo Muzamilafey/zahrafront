@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AuthContext } from 'contexts/AuthContext';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const FACILITY_INFO = {
   name: 'ZAHRA MATERNITY & CHILD CARE HOSPITAL',

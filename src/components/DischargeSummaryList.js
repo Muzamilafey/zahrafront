@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from 'contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
 
 export default function DischargeSummaryList({ patientId }) {
   const navigate = useNavigate();
@@ -21,7 +21,10 @@ export default function DischargeSummaryList({ patientId }) {
     setError(null);
     try {
       const res = await axiosInstance.get(`/discharge/patient/${patientId}`);
-      setSummaries(res.data.summaries || []);
+      // normalize shapes: res.data may be { summaries: [...] } or an array
+      const payload = res.data;
+      const list = Array.isArray(payload) ? payload : (payload.summaries || []);
+      setSummaries(list || []);
     } catch (e) {
       setError(e?.response?.data?.message || 'Failed to load discharge summaries');
     } finally {
@@ -45,6 +48,7 @@ export default function DischargeSummaryList({ patientId }) {
       <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700">
         <p className="font-semibold">Error loading summaries</p>
         <p className="text-sm">{error}</p>
+        <p className="mt-2 text-xs text-gray-600">If this looks like a backend schema or server error, check the server logs or contact the backend maintainer.</p>
       </div>
     );
   }
