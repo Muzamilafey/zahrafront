@@ -37,6 +37,15 @@ const InvoicePage = () => {
 
   const { patient, items, subtotal, tax, total, invoiceId } = invoiceData;
 
+  const groupedItems = items.reduce((acc, item) => {
+    const category = item.category || 'Miscellaneous';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {});
+
   const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
 
   return (
@@ -65,26 +74,31 @@ const InvoicePage = () => {
             </section>
 
             <div className="mt-10 overflow-x-auto">
-              <table className="w-full invoice-table">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service / Description</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {items && items.map((item, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{item.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{item.quantity}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{currencyFormatter.format(item.price)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-right">{currencyFormatter.format(item.quantity * item.price)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {Object.entries(groupedItems).map(([category, items]) => (
+                <div key={category} className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2 pl-6 bg-gray-100 py-2">{category}</h3>
+                  <table className="w-full invoice-table">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service / Description</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {items.map((item, index) => (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{item.description}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{item.quantity}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{currencyFormatter.format(item.price)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-right">{currencyFormatter.format(item.quantity * item.price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
 
             <div className="flex justify-end mt-8">
