@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const NewDischargeSummary = () => {
@@ -56,7 +56,12 @@ const NewDischargeSummary = () => {
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Hospital Discharge Form</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-800">Hospital Discharge Form</h2>
+        <Link to={`/patients/${id}/detailed-discharge-summary`} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+            Open Detailed Summary
+        </Link>
+      </div>
       
       <div className="bg-white shadow-lg rounded-xl p-8 mb-6 border border-gray-200">
         <h3 className="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">Patient Details</h3>
