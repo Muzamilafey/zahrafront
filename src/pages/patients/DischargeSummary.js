@@ -86,7 +86,7 @@ export default function DischargeSummary() {
         const summary = response.data;
 
         const patientData = {
-          patientName: summary.patient?.name || summary.patientInfo?.name,
+          patientName: summary.patient?.user?.name || summary.patientInfo?.name,
           patientId: summary.patient?.mrn || summary.patientInfo?.mrn,
           age: summary.patient?.age || summary.patientInfo?.age,
           gender: summary.patient?.gender || summary.patientInfo?.gender,
