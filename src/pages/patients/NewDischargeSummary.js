@@ -19,40 +19,57 @@ const NewDischargeSummary = () => {
     setPatient(null);
 
     try {
-      // Search for the patient by ID
+      // Try fetching discharge summaries directly by the provided id first
+      // (handles cases where user enters an admission/patient _id)
+      let dischargeResponse = null;
+      try {
+        dischargeResponse = await axios.get(`/api/discharge/patient/${patientId}`);
+      } catch (e) {
+        // ignore and fall back to patient lookup below
+        dischargeResponse = null;
+      }
+
+      let latestSummary = null;
+      if (dischargeResponse && dischargeResponse.data) {
+        const dischargeData = dischargeResponse.data;
+        if (Array.isArray(dischargeData) && dischargeData.length > 0) latestSummary = dischargeData[0];
+        else if (dischargeData && Array.isArray(dischargeData.summaries) && dischargeData.summaries.length > 0) latestSummary = dischargeData.summaries[0];
+        else if (dischargeData && dischargeData.summary) latestSummary = dischargeData.summary;
+      }
+
+      if (latestSummary && latestSummary._id) {
+        // found a summary directly — fetch details and show it
+        const summaryResponse = await axios.get(`/api/discharge/${latestSummary._id}`);
+        setSummary(summaryResponse.data);
+        // attempt to set patient if available in the returned summary
+        if (summaryResponse.data && summaryResponse.data.patient) setPatient(summaryResponse.data.patient);
+        return;
+      }
+
+      // If no summary found directly, attempt to resolve the provided id as a patient identifier
       const patientResponse = await axios.get(`/api/patients/${patientId}`);
       let foundPatient = patientResponse.data;
-
-      // API may return an array or an object
       if (Array.isArray(foundPatient)) foundPatient = foundPatient[0];
-
       if (!foundPatient || !foundPatient._id) {
-        setError('Patient not found.');
+        // Don't show a "patient not found" block — instead, surface a summary-missing message
+        setError('No discharge summary found for the provided identifier.');
         return;
       }
 
       setPatient(foundPatient);
 
-      // First, find the latest discharge summary for the patient
-      const dischargeResponse = await axios.get(`/api/discharge/patient/${foundPatient._id}`);
-      const dischargeData = dischargeResponse.data;
-
-      // dischargeData shape may vary: array, { summaries: [...] }, or { summary: { ... } }
-      let latestSummary = null;
-      if (Array.isArray(dischargeData) && dischargeData.length > 0) {
-        latestSummary = dischargeData[0];
-      } else if (dischargeData && Array.isArray(dischargeData.summaries) && dischargeData.summaries.length > 0) {
-        latestSummary = dischargeData.summaries[0];
-      } else if (dischargeData && dischargeData.summary) {
-        latestSummary = dischargeData.summary;
-      }
+      // Now query discharges using the resolved patient _id
+      const dischargeByPatient = await axios.get(`/api/discharge/patient/${foundPatient._id}`);
+      const ddata = dischargeByPatient.data;
+      if (Array.isArray(ddata) && ddata.length > 0) latestSummary = ddata[0];
+      else if (ddata && Array.isArray(ddata.summaries) && ddata.summaries.length > 0) latestSummary = ddata.summaries[0];
+      else if (ddata && ddata.summary) latestSummary = ddata.summary;
 
       if (!latestSummary || !latestSummary._id) {
         setError('No discharge summary found for this patient.');
         return;
       }
 
-      // Then, fetch the full details of that summary
       const summaryResponse = await axios.get(`/api/discharge/${latestSummary._id}`);
       setSummary(summaryResponse.data);
     } catch (err) {
