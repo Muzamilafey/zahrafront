@@ -88,6 +88,7 @@ export default function Sidebar() {
         { to: '/dashboard/admin/doctors', label: 'Doctors', perm: 'doctors' },
         { to: '/dashboard/admin/settings', label: 'Settings', perm: 'settings' },
         { to: '/dashboard/admin/register', label: 'Register User', perm: 'manageUsers' },
+        { to: '/dashboard/admin/meals', label: 'Manage Meals', perm: 'manageMeals' },
       ],
     },
     {
@@ -121,6 +122,16 @@ export default function Sidebar() {
         { to: '/billing', label: 'Billing Overview', perm: 'billing' },
         { to: '/billing/transactions', label: 'Transactions', perm: 'billing' },
         { to: '/billing/reports', label: 'Reports', perm: 'billing' },
+      ],
+    },
+    {
+      id: 'pharmacy',
+      title: 'Pharmacy',
+      defaultCheck: ['admin', 'pharmacist'].includes(user?.role),
+      items: [
+        { to: '/dashboard/pharmacy/dispense', label: 'Dispense Drugs', perm: 'dispenseDrugs' },
+        { to: '/pharmacy', label: 'Pharmacy Home', perm: 'pharmacy' },
+        { to: '/pharmacy/pos', label: 'POS', perm: 'pharmacy' },
       ],
     },
   ];

@@ -166,7 +166,7 @@ export default function PatientDetail(){
         <div className="flex items-center gap-2">
             <button onClick={() => navigate(`/patients/${id}/payments`)} className="btn-outline">View Payments</button>
             {(user && (user.role === 'doctor' || user.role === 'admin')) && (
-              <button onClick={() => navigate(`/patients/${id}/lab-request/new`)} className="btn-brand">Add Lab Request</button>
+              <button onClick={() => navigate(`/patients/${id}/lab-requests`)} className="btn-brand">Add Lab Request</button>
             )}
             <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="btn-brand">New Visit</button>
             {user && user.role === 'admin' && (

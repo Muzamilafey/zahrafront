@@ -102,8 +102,9 @@ import DischargeLauncher from './pages/patients/DischargeLauncher';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InvoicePage from './pages/finance/InvoicePage';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
+import DispenseDrugs from './pages/pharmacy/DispenseDrugs';
 import RegisterUser from './pages/admin/RegisterUser';
-import CreateLabRequest from './pages/lab/CreateLabRequest';
+import ManageMeals from './pages/admin/ManageMeals';
 import LabTestDetail from './pages/lab/LabTestDetail';
 
 function App() {
@@ -144,7 +145,6 @@ function App() {
           <Route path="/patients/:id" element={<PrivateRoute><Layout><ErrorBoundary><PatientDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
           <Route path="/patients/:id/invoice" element={<PrivateRoute><Layout><ErrorBoundary><InvoicePage /></ErrorBoundary></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/lab-request/new" element={<PrivateRoute><Layout><ErrorBoundary><CreateLabRequest /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/labtests/:id" element={<PrivateRoute><Layout><ErrorBoundary><LabTestDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Admission patient-specific pages (history, bed mgmt, visits, meal bills) */}
           <Route path="/patients/:id/outpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><OutpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />
@@ -255,6 +255,7 @@ function App() {
           <Route path="/dashboard/admin/slots" element={<PrivateRoute><Layout><AdminSlots /></Layout></PrivateRoute>} />
             <Route path="/dashboard/admin/managewards" element={<PrivateRoute><Layout><ManageWards /></Layout></PrivateRoute>} />
             <Route path="/dashboard/admin/drugs" element={<PrivateRoute><Layout><DrugsAdmin /></Layout></PrivateRoute>} />
+            <Route path="/dashboard/admin/meals" element={<PrivateRoute><Layout><ManageMeals /></Layout></PrivateRoute>} />
 
           {/* Doctor specific routes */}
           <Route path="/dashboard/doctor/patients" element={<PrivateRoute><Layout><PatientsForMe /></Layout></PrivateRoute>} />
@@ -269,6 +270,7 @@ function App() {
           <Route path="/dashboard/patient/prescriptions" element={<PrivateRoute><Layout><PatientPrescriptions /></Layout></PrivateRoute>} />
           <Route path="/pharmacy" element={<PrivateRoute><Layout><Pharmacy /></Layout></PrivateRoute>} />
           <Route path="/pharmacy/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/pharmacy/dispense" element={<PrivateRoute><Layout><DispenseDrugs /></Layout></PrivateRoute>} />
           <Route path="/billing" element={<PrivateRoute><Layout><Billing /></Layout></PrivateRoute>} />
           <Route path="/billing/:invoiceId" element={<PrivateRoute><Layout><InvoiceDetail /></Layout></PrivateRoute>} />
           <Route path="/finance/invoices/:id" element={<PrivateRoute><Layout><InvoicePage /></Layout></PrivateRoute>} />
