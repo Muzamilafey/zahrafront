@@ -18,7 +18,10 @@ const DetailedDischargeSummary = () => {
     if (!id || !axiosInstance) return;
     const fetchData = async () => {
       try {
-        const response = await axiosInstance.get(`/patients/${id}`);
+        // The backend should provide a comprehensive summary endpoint.
+        // This might include patient details, admission info, diagnosis,
+        // clinical summary, investigations, and medications.
+        const response = await axiosInstance.get(`/admission/${id}/summary`);
         setData(response.data);
         setLoading(false);
       } catch (err) {
@@ -38,57 +41,65 @@ const DetailedDischargeSummary = () => {
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!data) return <div className="text-center p-8">No data found for this patient.</div>;
 
-  const { patient, labTests, prescriptions } = data;
+  // Assuming the API returns a structure like { patient, admission, summary, labTests, prescriptions }
+  const { patient, admission, summary, labTests, prescriptions } = data;
 
   return (
     <div className="bg-gray-100 min-h-screen py-8">
       <div className="container mx-auto p-4 max-w-4xl bg-white shadow-lg" id="printable-area">
         
-        {/* Header */}
-        <header className="text-center mb-8 p-4 border-b-4 border-black">
-          <h1 className="text-3xl font-bold text-black">{hospitalDetails.name || 'Kenyatta National Hospital'}</h1>
+        {/* Hospital Information and Action Buttons */}
+        <div className="flex justify-between items-start mb-8 no-print">
+          <div className="text-left">
+            <h1 className="text-2xl font-bold text-black">{hospitalDetails.name || 'Zahra Maternity Hospital'}</h1>
+            <p className="text-md">{hospitalDetails.location || 'P.O. Box 20723, Nairobi'}</p>
+            <p className="text-md">{hospitalDetails.contacts || ''}</p>
+          </div>
+          <div className="flex flex-col items-end space-y-2">
+            <button 
+              onClick={() => navigate(`/patients/${id}/invoice`)}
+              className="bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-green-700 transition duration-300 flex items-center"
+            >
+              <FaFileInvoice className="mr-2" />
+              View Invoice
+            </button>
+            <button 
+              onClick={handlePrint}
+              className="bg-gray-700 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-gray-800 transition duration-300 flex items-center"
+            >
+              <FaPrint className="mr-2" />
+              Print
+            </button>
+          </div>
+        </div>
+
+        {/* Header for the printable summary */}
+        <header className="text-center mb-8 p-4 border-b-4 border-black print-only">
+          <h1 className="text-3xl font-bold text-black">{hospitalDetails.name || 'Zahra Maternity Hospital'}</h1>
           <p className="text-lg">{hospitalDetails.location || 'P.O. Box 20723, Nairobi'}</p>
           <p className="text-lg">{hospitalDetails.contacts || ''}</p>
-          <h2 className="text-2xl font-semibold mt-4 bg-black text-white py-1">PROVISIONAL DISCHARGE SUMMARY</h2>
+          <h2 className="text-2xl font-semibold mt-4 bg-black text-white py-1">DISCHARGE SUMMARY</h2>
         </header>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-2 mb-4 no-print">
-          <button 
-            onClick={() => navigate(`/patients/${id}/invoice`)}
-            className="bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-green-700 transition duration-300 flex items-center"
-          >
-            <FaFileInvoice className="mr-2" />
-            View Invoice
-          </button>
-          <button 
-            onClick={handlePrint}
-            className="bg-gray-700 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-gray-800 transition duration-300 flex items-center"
-          >
-            <FaPrint className="mr-2" />
-            Print
-          </button>
-        </div>
 
         {/* Patient and Admission Details */}
         <section className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-6 border-t-2 border-b-2 border-black py-4">
-          <div><strong>PATIENT NAME:</strong> {patient.user?.name}</div>
-          <div><strong>ADMISSION DATE:</strong> {new Date(patient.admission?.admittedAt).toLocaleDateString()}</div>
-          <div><strong>AGE/SEX:</strong> {patient.age} / {patient.gender}</div>
-          <div><strong>DISCHARGE DATE:</strong> {patient.admission?.dischargedAt ? new Date(patient.admission.dischargedAt).toLocaleDateString() : 'N/A'}</div>
-          <div><strong>MRN NO.:</strong> {patient.mrn}</div>
-          <div><strong>CONSULTANT:</strong> {patient.assignedDoctor?.name || 'N/A'}</div>
+          <div><strong>PATIENT NAME:</strong> {patient?.user?.name || patient?.name}</div>
+          <div><strong>ADMISSION DATE:</strong> {admission?.admittedAt ? new Date(admission.admittedAt).toLocaleDateString() : 'N/A'}</div>
+          <div><strong>AGE/SEX:</strong> {patient?.age} / {patient?.gender}</div>
+          <div><strong>DISCHARGE DATE:</strong> {admission?.dischargedAt ? new Date(admission.dischargedAt).toLocaleDateString() : 'N/A'}</div>
+          <div><strong>MRN NO.:</strong> {patient?.mrn || patient?.hospitalId}</div>
+          <div><strong>CONSULTANT:</strong> {admission?.consultant?.name || 'N/A'}</div>
         </section>
 
         {/* Clinical Details */}
         <section className="mb-6">
           <h3 className="font-bold border-b border-black mb-2">ADMISSION DIAGNOSIS</h3>
-          <p>{patient.admission?.finalDiagnosis || 'N/A'}</p>
+          <p>{summary?.admissionDiagnosis || 'N/A'}</p>
         </section>
 
         <section className="mb-6">
           <h3 className="font-bold border-b border-black mb-2">COURSE IN WARD / CLINICAL SUMMARY</h3>
-          <p className="whitespace-pre-wrap">{patient.admission?.dischargeNotes || 'No summary available.'}</p>
+          <p className="whitespace-pre-wrap">{summary?.clinicalSummary || 'No summary available.'}</p>
         </section>
 
         <section className="mb-6">
@@ -103,21 +114,40 @@ const DetailedDischargeSummary = () => {
         </section>
 
         <section className="mb-6">
-          <h3 className="font-bold border-b border-black mb-2">MEDICATION ON DISCHARGE</h3>
+          <h3 className="font-bold border-b border-black mb-2">MEDICATIONS</h3>
           {prescriptions && prescriptions.length > 0 ? (
-            <ul className="list-disc list-inside">
-              {prescriptions.flatMap(p => p.drugs).map((drug, index) => (
-                <li key={index}>
-                  {drug.name} - {drug.dosage} {drug.frequency} for {drug.duration}
-                </li>
-              ))}
-            </ul>
+            <div>
+              <h4 className="font-semibold">Medications on Discharge:</h4>
+              <ul className="list-disc list-inside mb-2">
+                {prescriptions
+                  // Assumption: The backend flags discharge medicines.
+                  // If not, this filter needs to be adjusted based on the actual data structure.
+                  .filter(p => p.isDischargeMedicine)
+                  .flatMap(p => p.drugs)
+                  .map((drug, index) => (
+                    <li key={`discharge-${index}`}>
+                      {drug.name} - {drug.dosage} {drug.frequency} for {drug.duration}
+                    </li>
+                  ))}
+              </ul>
+              <h4 className="font-semibold">Other Medications:</h4>
+              <ul className="list-disc list-inside">
+                {prescriptions
+                  .filter(p => !p.isDischargeMedicine)
+                  .flatMap(p => p.drugs)
+                  .map((drug, index) => (
+                    <li key={`other-${index}`}>
+                      {drug.name} - {drug.dosage} {drug.frequency} for {drug.duration}
+                    </li>
+                  ))}
+              </ul>
+            </div>
           ) : <p>No medications found.</p>}
         </section>
 
         <section className="mb-6">
           <h3 className="font-bold border-b border-black mb-2">ADVICE ON DISCHARGE / FOLLOW UP</h3>
-          <p>Please follow up at the surgical outpatient clinic (SOPC) in 2 weeks.</p>
+          <p>{summary?.dischargeAdvice || 'Please follow up at the surgical outpatient clinic (SOPC) in 2 weeks.'}</p>
         </section>
 
         {/* Footer */}
@@ -136,8 +166,12 @@ const DetailedDischargeSummary = () => {
       <style jsx global>{`
         @media print {
           .no-print { display: none; }
+          .print-only { display: block !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           #printable-area { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
+        }
+        .print-only {
+          display: none;
         }
       `}</style>
     </div>
@@ -145,3 +179,4 @@ const DetailedDischargeSummary = () => {
 };
 
 export default DetailedDischargeSummary;
+
