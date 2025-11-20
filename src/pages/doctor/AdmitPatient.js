@@ -27,7 +27,7 @@ export default function AdmitPatient(){
     const t = setTimeout(()=>{
       const q = patientQuery && patientQuery.trim().toLowerCase();
       if (!q) { setPatientResults([]); return; }
-      axiosInstance.get(`/patients/search?q=${encodeURIComponent(q)}`).then(r=>{
+      axiosInstance.get(`/patients/search?query=${encodeURIComponent(q)}`).then(r=>{
         setPatientResults(r.data.patients || []);
       }).catch(()=>{});
     }, 400);

@@ -43,14 +43,30 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       // Laboratory links for admins
-      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
-      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
-      { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', icon: <FaFileInvoiceDollar />, perm: 'lab' },
-      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
-      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
-      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
+      {
+      id: 'lab',
+      title: 'Laboratory',
+      defaultCheck: ['admin','doctor','lab_technician','nurse','finance'].includes(user?.role),
+      items: [
+        { to: '/dashboard/lab/queue', label: 'Lab Queue', perm: 'labQueue' },
+        { to: '/dashboard/lab/requests', label: 'Lab Requests', perm: 'labRequests' },
+        { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', perm: 'lab' },
+        { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', perm: 'lab' },
+        { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', perm: 'lab' },
+        { to: '/dashboard/lab/templates', label: 'Register Lab Templates', perm: 'lab' },
+        { to: '/patients', label: 'Inpatient Requests', perm: 'patients' },
+      ],
+    },
+    {
+      id: 'pharmacy',
+      title: 'Pharmacy',
+      defaultCheck: ['admin', 'pharmacist', 'nurse'].includes(user?.role),
+      items: [
+        { to: '/dashboard/pharmacy/dispense', label: 'Dispense Drugs', perm: 'dispenseDrugs' },
+        { to: '/pharmacy', label: 'Pharmacy Home', perm: 'pharmacy' },
+        { to: '/pharmacy/pos', label: 'POS', perm: 'pharmacy' },
+      ],
+    },
     ],
     doctor: [
       { to: '/dashboard/doctor/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
