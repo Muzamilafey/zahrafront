@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -12,7 +12,6 @@ const FACILITY_INFO = {
 export default function DischargeSummaryPage() {
   const { id: patientId } = useParams();
   const { axiosInstance } = useContext(AuthContext);
-  const navigate = useNavigate();
 
   const [discharge, setDischarge] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -161,35 +160,6 @@ export default function DischargeSummaryPage() {
           }
         } catch (e) {
           console.warn('Could not load from discharge summary endpoint:', e?.message || e);
-        }
-
-        // Fetch charges/invoices
-        let charges = [];
-        try {
-          const billingRes = await axiosInstance.get(`/billing`);
-          if (billingRes.data.invoices && Array.isArray(billingRes.data.invoices)) {
-            charges = billingRes.data.invoices
-              .filter(inv => (inv.patient?._id === patientData._id || inv.patientId === patientId) && inv.items)
-              .flatMap(inv => (Array.isArray(inv.items) ? inv.items : []));
-          }
-        } catch (e) {
-          console.warn('Could not load billing:', e.message);
-        }
-
-        // Also fetch management charges if available
-        try {
-          const chargesRes = await axiosInstance.get(`/charges`);
-          if (chargesRes.data && Array.isArray(chargesRes.data)) {
-            const patientCharges = chargesRes.data.filter(c => c.patient?._id === patientData._id || c.patientId === patientId);
-            const chargeItems = patientCharges.map(c => ({
-              description: c.description || c.name || 'Service Charge',
-              qty: c.quantity || 1,
-              amount: c.amount || c.price || 0
-            }));
-            charges = [...charges, ...chargeItems];
-          }
-        } catch (e) {
-          console.warn('Could not load management charges:', e.message);
         }
 
         // Fetch lab tests for this patient (robust matching and safe date handling)

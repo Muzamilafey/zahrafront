@@ -34,7 +34,7 @@ export default function ReceptionAppointments(){
       }catch(e){ console.error(e); }
     };
     load();
-  },[]);
+  },[axiosInstance]);
 
   return (
     <div className="p-6">
@@ -53,6 +53,7 @@ export default function ReceptionAppointments(){
           <div className="relative bg-white rounded p-4 w-full max-w-md mx-4" onClick={(e)=>e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-2">Send appointment PDF to (email)</h3>
             <input type="email" className="w-full border rounded p-2 mb-3" placeholder="recipient@example.com" value={exportRecipient} onChange={e=>setExportRecipient(e.target.value)} />
+            {exportError && <div className="text-red-500 text-sm mb-2">{exportError}</div>}
             <div className="flex justify-end space-x-2">
               <button className="btn-outline" onClick={closeExportModal} disabled={exportLoading}>Cancel</button>
               <button className="btn-primary" onClick={sendExportEmail} disabled={exportLoading}>{exportLoading? 'Sending...' : 'Send & Save'}</button>

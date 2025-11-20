@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
@@ -34,46 +34,7 @@ export default function NewVisit() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Set doctor ID after form initialization if user is a doctor
-  // Load data when component mounts
-  const location = useLocation();
-  useEffect(() => {
-    // Only load data if user has permission — allow receptionists to book visits too
-    if (user && ['doctor', 'admin', 'receptionist', 'nurse'].includes(user.role)) {
-      loadPatients();
-      loadDoctors();
-    }
-
-    // Pre-fill patientId if provided via query string (e.g., /patients/visits/new?patientId=...)
-    try {
-      const params = new URLSearchParams(location.search);
-      const qPatient = params.get('patientId');
-      if (qPatient) setForm(f => ({ ...f, patientId: qPatient }));
-    } catch (e) {
-      // ignore
-    }
-  }, [user, location.search]);
-
-  // Set doctor ID for doctor users
-  useEffect(() => {
-    if (user?.role === 'doctor' && user?.doctorId) {
-      setForm(prev => ({ ...prev, doctorId: user.doctorId }));
-    }
-  }, [user]);
-
-  // Only certain roles can create visits
-  if (!user || !['doctor', 'admin', 'receptionist', 'nurse'].includes(user.role)) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 p-4 rounded shadow">
-          <h3 className="text-red-800 font-medium">Access Denied</h3>
-          <p className="text-red-600">Only doctors, receptionists, nurses and administrators can create patient visits.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     try {
       setPatientsLoading(true);
       const res = await axiosInstance.get('/patients');
@@ -84,9 +45,9 @@ export default function NewVisit() {
     } finally {
       setPatientsLoading(false);
     }
-  };
+  }, [axiosInstance]);
 
-  const loadDoctors = async () => {
+  const loadDoctors = useCallback(async () => {
     try {
       setDoctorsLoading(true);
       // Try /doctors/list first, fallback to /doctors if needed
@@ -113,7 +74,46 @@ export default function NewVisit() {
     } finally {
       setDoctorsLoading(false);
     }
-  };
+  }, [axiosInstance]);
+
+  // Set doctor ID after form initialization if user is a doctor
+  // Load data when component mounts
+  const location = useLocation();
+  useEffect(() => {
+    // Only load data if user has permission — allow receptionists to book visits too
+    if (user && ['doctor', 'admin', 'receptionist', 'nurse'].includes(user.role)) {
+      loadPatients();
+      loadDoctors();
+    }
+
+    // Pre-fill patientId if provided via query string (e.g., /patients/visits/new?patientId=...)
+    try {
+      const params = new URLSearchParams(location.search);
+      const qPatient = params.get('patientId');
+      if (qPatient) setForm(f => ({ ...f, patientId: qPatient }));
+    } catch (e) {
+      // ignore
+    }
+  }, [user, location.search, loadPatients, loadDoctors]);
+
+  // Set doctor ID for doctor users
+  useEffect(() => {
+    if (user?.role === 'doctor' && user?.doctorId) {
+      setForm(prev => ({ ...prev, doctorId: user.doctorId }));
+    }
+  }, [user]);
+
+  // Only certain roles can create visits
+  if (!user || !['doctor', 'admin', 'receptionist', 'nurse'].includes(user.role)) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 p-4 rounded shadow">
+          <h3 className="text-red-800 font-medium">Access Denied</h3>
+          <p className="text-red-600">Only doctors, receptionists, nurses and administrators can create patient visits.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

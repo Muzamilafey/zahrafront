@@ -37,6 +37,7 @@ export async function createOrMergeInvoice(axiosInstance, payload) {
   }
 }
 
-export default {
+const billingUtils = {
   createOrMergeInvoice,
 };
+export default billingUtils;

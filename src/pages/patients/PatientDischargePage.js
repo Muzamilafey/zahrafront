@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -11,11 +11,7 @@ export default function PatientDischargePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadPatient();
-  }, [patientId]);
-
-  const loadPatient = async () => {
+  const loadPatient = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -27,7 +23,11 @@ export default function PatientDischargePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, patientId]);
+
+  useEffect(() => {
+    loadPatient();
+  }, [loadPatient]);
 
   const goToDischargeSummary = () => navigate(`/patients/${patientId}/discharge-summary`);
   const goToBillingForPatient = () => navigate(`/billing?patientId=${encodeURIComponent(patientId)}`);

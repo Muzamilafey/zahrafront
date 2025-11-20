@@ -14,7 +14,7 @@ export default function PrescriptionsPage(){
       }catch(e){ console.error(e); }
     };
     load();
-  },[]);
+  },[axiosInstance]);
 
   const data = prescriptions.map(p=>({
     num: p.prescriptionNumber || '-',

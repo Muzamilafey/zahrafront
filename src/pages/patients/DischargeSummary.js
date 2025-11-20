@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import html2canvas from 'html2canvas';
@@ -7,35 +7,7 @@ import { jsPDF } from 'jspdf';
 // This page shows a richer Discharge Summary + Invoice editor + print/export
 // Converted from TSX to plain JS and adapted to the frontend.
 
-const mockPatientData = {
-  patientName: 'Jane Doe',
-  patientId: 'P-12345',
-  age: 42,
-  gender: 'Female',
-  diagnosis: 'Acute Myocardial Infarction',
-  ward: 'Coronary Care Unit (CCU)',
-  dateAdmitted: '2024-07-15',
-  dateDischarged: '2024-07-22',
-  treatingDoctor: 'Dr. John Smith',
-  treatmentSummary: 'Patient admitted with severe chest pain. ECG confirmed STEMI. Emergent coronary angiography was performed with stent placement in the left anterior descending artery. Post-procedure recovery was uneventful. Monitored in CCU for 3 days before transfer to a general ward.',
-  dischargeMedication: '1. Aspirin 81mg daily\n2. Clopidogrel 75mg daily\n3. Atorvastatin 40mg at night\n4. Metoprolol 25mg twice daily',
-  additionalNotes: 'Follow-up with cardiology in 2 weeks. Advised to maintain a low-sodium, low-fat diet and engage in light physical activity as tolerated.'
-};
 
-const mockInvoiceData = {
-  dailyBedCharge: 15000,
-  labTests: [
-    { id: 1, name: 'Troponin I Test', cost: 5500 },
-    { id: 2, name: 'Complete Blood Count (CBC)', cost: 1200 },
-    { id: 3, name: 'Lipid Profile', cost: 2500 }
-  ],
-  drugs: [
-    { id: 1, name: 'Stent (Drug-eluting)', cost: 120000 },
-    { id: 2, name: 'IV Medications (Initial)', cost: 15000 },
-  ],
-  doctorFee: 25000,
-  nursingFee: 10000
-};
 
 const InfoField = ({ label, value }) => (
   <div>
@@ -65,8 +37,6 @@ export default function DischargeSummary() {
   const [invoice, setInvoice] = useState({ dailyBedCharge: 0, labTests: [], drugs: [], doctorFee: 0, nursingFee: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [totalCost, setTotalCost] = useState(0);
-  const [numberOfDays, setNumberOfDays] = useState(0);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -181,21 +151,7 @@ export default function DischargeSummary() {
     }
   };
 
-  // Print invoice PDF fetched from billing endpoint (if invoice has id)
-  const handlePrintInvoice = async () => {
-    if (!invoice || !invoice.invoiceId) {
-      alert('No invoice available to print');
-      return;
-    }
-    try {
-      // The consolidated invoice doesn't have a single ID, so we can't use this.
-      // We can print the current view instead.
-      handlePrint();
-    } catch (e) {
-      console.error('Failed to fetch invoice PDF for printing', e);
-      alert(e?.response?.data?.message || 'Failed to load invoice for printing');
-    }
-  };
+
 
   if (loading) return <div className="flex items-center justify-center h-screen"><p className="text-xl">Loading Patient Record...</p></div>;
   if (error) return <div className="flex items-center justify-center h-screen"><p className="text-xl text-red-500">{error}</p></div>;

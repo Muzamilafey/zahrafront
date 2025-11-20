@@ -5,7 +5,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 const NewDischargeSummary = () => {
   const { id } = useParams(); // Patient ID from URL
   const navigate = useNavigate();
-  const { axiosInstance, user } = useContext(AuthContext);
+  const { axiosInstance } = useContext(AuthContext);
   
   const [patient, setPatient] = useState(null);
   const [summary, setSummary] = useState('');
@@ -35,7 +35,7 @@ const NewDischargeSummary = () => {
 
     try {
       // This endpoint in patientRoutes.js handles setting discharge date, notes, and finalizing the invoice.
-      const response = await axiosInstance.post(`/patients/${id}/discharge`, {
+      await axiosInstance.post(`/patients/${id}/discharge`, {
         dischargeNotes: summary,
       });
       

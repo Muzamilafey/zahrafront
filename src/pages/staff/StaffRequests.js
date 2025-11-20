@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function StaffRequests(){
@@ -7,16 +7,16 @@ export default function StaffRequests(){
   const [loading, setLoading] = useState(false);
   const [updatingIds, setUpdatingIds] = useState(new Set());
 
-  const load = async ()=>{
+  const load = useCallback(async ()=>{
     setLoading(true);
     try{
       const res = await axiosInstance.get('/requests/assigned/me');
       setRequests(res.data.requests || []);
     }catch(e){ console.error('Failed to load assigned requests', e); }
     setLoading(false);
-  };
+  }, [axiosInstance]);
 
-  useEffect(()=>{ load(); }, []);
+  useEffect(()=>{ load(); }, [load]);
 
   const updateStatus = async (id, status) => {
     // guard: don't update if already completed

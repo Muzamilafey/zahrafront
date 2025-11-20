@@ -17,7 +17,7 @@ export default function NurseAdmissionHistory(){
       }
     };
     load();
-  }, []);
+  }, [axiosInstance]);
 
   return (
     <div className="p-6">

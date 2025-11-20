@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
@@ -11,11 +11,7 @@ export default function DischargedPatientsList() {
   const [toast, setToast] = useState(null);
   const [query, setQuery] = useState('');
 
-  useEffect(() => {
-    loadDischargedPatients();
-  }, []);
-
-  const loadDischargedPatients = async () => {
+  const loadDischargedPatients = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get('/patients/discharged');
@@ -43,7 +39,11 @@ export default function DischargedPatientsList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, query]);
+
+  useEffect(() => {
+    loadDischargedPatients();
+  }, [loadDischargedPatients]);
 
   const handleViewDischargeSummary = (patientId) => {
     navigate(`/patients/${patientId}/discharge-summary`);

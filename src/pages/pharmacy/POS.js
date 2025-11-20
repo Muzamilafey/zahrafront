@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
 
@@ -17,21 +17,21 @@ export default function POS(){
     setLoading(true);
     try{ const res = await axiosInstance.get('/pharmacy/inventory'); setInventory(res.data.drugs || []); }catch(e){ console.error(e); showToast({ message: 'Failed to load inventory', type: 'error' }); }
     setLoading(false);
-  })(); }, []);
+  })(); }, [axiosInstance, showToast]);
 
-  const doSearch = async (q) => {
+  const doSearch = useCallback(async (q) => {
     try{ const res = await axiosInstance.get(`/pharmacy/inventory?q=${encodeURIComponent(q || '')}`); setInventory(res.data.drugs || []); }catch(e){ showToast({ message: 'Search failed', type: 'error' }); }
-  };
+  }, [axiosInstance, showToast]);
 
   // debounced search: when searchQ changes, wait 350ms before performing search
   useEffect(()=>{
     const t = setTimeout(()=>{ doSearch(searchQ); }, 350);
     return ()=> clearTimeout(t);
-  }, [searchQ]);
+  }, [searchQ, doSearch]);
 
   useEffect(()=>{ (async ()=>{
     try{ const res = await axiosInstance.get('/pharmacy/sales'); setRecentSales(res.data.sales || []); }catch(e){ /* ignore */ }
-  })(); }, []);
+  })(); }, [axiosInstance]);
 
   const addToCart = (drug, qty=1) => {
     setCart(c => {

@@ -41,7 +41,7 @@ export const recordLabRequest = async ({ patientId, doctorId, testType }) => {
   return res.data;
 };
 
-export default {
+const inpatientApi = {
   registerAdmitAndBill,
   recordAllergy,
   recordProcedure,
@@ -49,3 +49,4 @@ export default {
   recordRadiologyRequest,
   recordLabRequest,
 };
+export default inpatientApi;

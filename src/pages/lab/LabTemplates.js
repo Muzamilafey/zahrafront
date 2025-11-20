@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function LabTemplates(){
@@ -7,13 +7,14 @@ export default function LabTemplates(){
   const [name, setName] = useState('');
   const [testsCsv, setTestsCsv] = useState('');
 
-  useEffect(()=>{ load(); },[]);
-  async function load(){
+  const load = useCallback(async () => {
     try{
       const res = await axiosInstance.get('/labs/templates');
       setTemplates(res.data.templates || []);
     }catch(e){ console.error(e); }
-  }
+  }, [axiosInstance]);
+
+  useEffect(()=>{ load(); },[load]);
 
   async function add(){
     const tests = testsCsv.split(',').map(s=>s.trim()).filter(Boolean);

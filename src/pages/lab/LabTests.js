@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function LabTests() {
@@ -15,25 +15,25 @@ export default function LabTests() {
     category: '',
   });
 
-  useEffect(() => {
-    fetchTests();
-  }, [axiosInstance]);
-
-  const fetchTests = async () => {
+  const fetchTests = useCallback(async () => {
     try {
-  const response = await axiosInstance.get('/labs/catalog');
+      const response = await axiosInstance.get('/labs/catalog');
       setTests(response.data.tests || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching tests:', error);
       setLoading(false);
     }
-  };
+  }, [axiosInstance]);
+
+  useEffect(() => {
+    fetchTests();
+  }, [fetchTests]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-  const resp = await axiosInstance.post('/labs/catalog', newTest);
+      await axiosInstance.post('/labs/catalog', newTest);
       setNewTest({
         name: '',
         description: '',

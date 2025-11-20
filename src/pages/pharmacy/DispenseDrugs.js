@@ -1,5 +1,5 @@
 // zahrafront/src/pages/pharmacy/DispenseDrugs.js
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
 
@@ -10,11 +10,7 @@ export default function DispenseDrugs() {
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchPendingRequests();
-  }, []);
-
-  const fetchPendingRequests = async () => {
+  const fetchPendingRequests = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -26,7 +22,11 @@ export default function DispenseDrugs() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance]);
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, [fetchPendingRequests]);
 
   const handleDispense = async (requestId, requestType) => {
     if (!window.confirm('Are you sure you want to mark this request as dispensed?')) {

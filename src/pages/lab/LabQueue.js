@@ -13,7 +13,7 @@ export default function LabQueue() {
   const [showAttachResultsModal, setShowAttachResultsModal] = useState(false);
   const [selectedLabTestId, setSelectedLabTestId] = useState(null);
 
-  const fetchQueue = async () => {
+  const fetchQueue = useCallback(async () => {
     try {
       const response = await axiosInstance.get('/lab/orders');
       setQueue(response.data.orders || []);
@@ -22,13 +22,13 @@ export default function LabQueue() {
       console.error('Error fetching lab queue:', error);
       setLoading(false);
     }
-  };
+  }, [axiosInstance]);
 
   useEffect(() => {
     fetchQueue();
     const interval = setInterval(fetchQueue, 60 * 1000);
     return () => clearInterval(interval);
-  }, [axiosInstance]);
+  }, [fetchQueue]);
 
   const updateStatus = async (requestId, status) => {
     try {
@@ -46,11 +46,6 @@ export default function LabQueue() {
     } catch (error) {
       console.error('Error updating sample status:', error);
     }
-  };
-
-  const handleAttachResultsClick = (labTestId) => {
-    setSelectedLabTestId(labTestId);
-    setShowAttachResultsModal(true);
   };
 
   const handleResultsAttached = () => {

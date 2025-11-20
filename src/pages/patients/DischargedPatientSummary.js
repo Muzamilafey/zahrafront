@@ -23,44 +23,12 @@ export default function DischargedPatientSummary() {
   const [diagSaving, setDiagSaving] = useState(false);
   const [diagMessage, setDiagMessage] = useState(null);
   const [diagSuggestions, setDiagSuggestions] = useState([]);
-  const [diagLoadingSuggestions, setDiagLoadingSuggestions] = useState(false);
   const [diagSugForIndex, setDiagSugForIndex] = useState(null); // null = none, -1 = final diagnosis, >=0 = secondary index
   const diagSugTimer = React.useRef(null);
   const [dischargeLoading, setDischargeLoading] = useState(false);
   const [dischargeMessage, setDischargeMessage] = useState(null);
 
-  useEffect(() => {
-    loadPatientData();
-  }, [patientId]);
-
-  // when admission changes, initialize drafts
-  useEffect(() => {
-    if (admission) {
-      setDraftFinalDiagnosis(admission.finalDiagnosis || admission.dischargeDiagnosis || '');
-      const secs = (admission.secondaryDiagnoses && admission.secondaryDiagnoses.length) ? admission.secondaryDiagnoses.slice() : [];
-      setDraftSecondaryDiagnoses(secs);
-    }
-  }, [admission]);
-
-  // ICD-10 / diagnosis autocomplete
-  const fetchDiagSuggestions = async (q, forIndex = -1) => {
-    if (!q || q.trim().length < 2) { setDiagSuggestions([]); setDiagLoadingSuggestions(false); return; }
-    setDiagLoadingSuggestions(true);
-    try {
-      const resp = await axiosInstance.get(`/diagnoses?q=${encodeURIComponent(q)}`);
-      setDiagSuggestions(resp.data.results || []);
-      setDiagSugForIndex(forIndex);
-    } catch (e) {
-      setDiagSuggestions([]);
-    } finally { setDiagLoadingSuggestions(false); }
-  };
-
-  const scheduleFetchDiag = (q, forIndex = -1) => {
-    if (diagSugTimer.current) clearTimeout(diagSugTimer.current);
-    diagSugTimer.current = setTimeout(()=>fetchDiagSuggestions(q, forIndex), 300);
-  };
-
-  const loadPatientData = async () => {
+  const loadPatientData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -197,7 +165,11 @@ export default function DischargedPatientSummary() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, patientId]);
+
+  useEffect(() => {
+    loadPatientData();
+  }, [loadPatientData]);
 
   const calculateLOS = () => {
     if (!bedSummary?.admittedAt || !bedSummary?.dischargedAt) return null;

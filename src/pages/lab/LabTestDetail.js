@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
@@ -6,29 +6,30 @@ import Toast from '../../components/ui/Toast';
 export default function LabTestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { axiosInstance, user } = useContext(AuthContext);
+  const { axiosInstance } = useContext(AuthContext);
 
   const [labTest, setLabTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchLabTestDetail();
-  }, [id]);
-
-  const fetchLabTestDetail = async () => {
+  const fetchLabTestDetail = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/lab/${id}`);
       setLabTest(response.data.labTest);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to fetch lab test details');
-      setToast({ type: 'error', message: error });
+      const errorMessage = err?.response?.data?.message || 'Failed to fetch lab test details';
+      setError(errorMessage);
+      setToast({ type: 'error', message: errorMessage });
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, id]);
+
+  useEffect(() => {
+    fetchLabTestDetail();
+  }, [fetchLabTestDetail]);
 
   const handleDownloadReport = async () => {
     try {
