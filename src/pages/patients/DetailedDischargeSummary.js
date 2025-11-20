@@ -38,7 +38,7 @@ const PatientInfoGrid = ({ data }) => {
     { label: 'Patient Name', value: patient?.user?.name || `${patient?.firstName || ''} ${patient?.lastName || ''}` },
     { label: 'MRN', value: patient?.mrn },
     { label: 'Age / Gender', value: `${patient?.age || patient?.calculateAge?.() || 'N/A'} / ${patient?.gender || 'N/A'}` },
-    { label: 'Consultant', value: admission?.admittingDoctor?.name },
+    // { label: 'Consultant', value: admission?.admittingDoctor?.name },
     { label: 'Admission Date', value: formatDate(admission?.admittedAt) },
     { label: 'Discharge Date', value: formatDate(admission?.dischargedAt) },
   ];
