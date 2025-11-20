@@ -3,7 +3,7 @@ import { AuthContext } from '../contexts/AuthContext';
 
 const useHospitalDetails = () => {
   const { axiosInstance } = useContext(AuthContext);
-  const [hospitalDetails, setHospitalDetails] = useState({ name: 'Genz Community Hospital', location: 'Medtown, Kajiado', contacts: 'Ph: +254 722 651 888' });
+  const [hospitalDetails, setHospitalDetails] = useState({ name: 'CoreCare', location: '', contacts: 'Ph: +254 722 651 888' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
