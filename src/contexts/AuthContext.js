@@ -186,6 +186,28 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('accessToken');
   };
 
+  const requestPasswordReset = async (email) => {
+    try {
+      await axios.post(`${API_BASE}/auth/request-password-reset`, { email });
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        throw new Error(err.response.data.message);
+      }
+      throw new Error(err.message || 'Failed to request password reset');
+    }
+  };
+
+  const resetPassword = async (token, password) => {
+    try {
+      await axios.post(`${API_BASE}/auth/reset-password`, { token, password });
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        throw new Error(err.response.data.message);
+      }
+      throw new Error(err.message || 'Failed to reset password');
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -195,6 +217,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading, // ✅ pass this down
+        requestPasswordReset,
+        resetPassword,
       }}
     >
       {children}

@@ -21,7 +21,7 @@ const DetailedDischargeSummary = () => {
         // The backend should provide a comprehensive summary endpoint.
         // This might include patient details, admission info, diagnosis,
         // clinical summary, investigations, and medications.
-        const response = await axiosInstance.get(`/admission/${id}/summary`);
+        const response = await axiosInstance.get(`/patients/${id}`);
         setData(response.data);
         setLoading(false);
       } catch (err) {
