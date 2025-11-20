@@ -25,7 +25,7 @@ export default function AdmitPatient() {
   // Debounced search function
   const searchPatients = useCallback(
     debounce(async (query) => {
-      if (query.length > 2) { // Only search if query is at least 3 characters
+      if (query.length >= 1) { // Only search if query is at least 1 character
         try {
           const res = await axiosInstance.get(`/patients/search?query=${query}`);
           setSearchResults(res.data.patients || []);
