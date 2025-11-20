@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import Toast from '../components/ui/Toast';
+import debounce from '../utils/debounce'; // Import the debounce utility
 
 export default function AdmitPatient() {
   const { axiosInstance } = useContext(AuthContext);
@@ -8,15 +9,48 @@ export default function AdmitPatient() {
   const [rooms, setRooms] = useState([]);
   const [beds, setBeds] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [patients, setPatients] = useState([]);
   const [form, setForm] = useState({ patientId: '', wardId: '', roomId: '', bedId: '', doctorId: '' });
   const [toast, setToast] = useState(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedPatientDetails, setSelectedPatientDetails] = useState(null);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     loadWards();
     loadDoctors();
-    loadPatients();
   }, []);
+
+  // Debounced search function
+  const searchPatients = useCallback(
+    debounce(async (query) => {
+      if (query.length > 2) { // Only search if query is at least 3 characters
+        try {
+          const res = await axiosInstance.get(`/patients/search?query=${query}`);
+          setSearchResults(res.data.patients || []);
+          setShowSearchResults(true);
+        } catch (e) {
+          console.error('Patient search error:', e);
+          setSearchResults([]);
+        }
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300), // 300ms debounce delay
+    [axiosInstance]
+  );
+
+  useEffect(() => {
+    if (searchQuery) {
+      searchPatients(searchQuery);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [searchQuery, searchPatients]);
+
 
   const loadWards = async () => {
     try {
@@ -28,12 +62,6 @@ export default function AdmitPatient() {
     try {
       const res = await axiosInstance.get('/doctors/list');
       setDoctors(res.data.doctors || []);
-    } catch (e) { console.error(e); }
-  };
-  const loadPatients = async () => {
-    try {
-      const res = await axiosInstance.get('/patients');
-      setPatients(res.data.patients || []);
     } catch (e) { console.error(e); }
   };
   const loadRooms = async (wardId) => {
@@ -68,8 +96,19 @@ export default function AdmitPatient() {
   const handleDoctorChange = e => {
     setForm(f => ({ ...f, doctorId: e.target.value }));
   };
-  const handlePatientChange = e => {
-    setForm(f => ({ ...f, patientId: e.target.value }));
+
+  const handleSearchInputChange = e => {
+    setSearchQuery(e.target.value);
+    setForm(f => ({ ...f, patientId: '' })); // Clear patientId when search query changes
+    setSelectedPatientDetails(null);
+  };
+
+  const handlePatientSelect = (patient) => {
+    setForm(f => ({ ...f, patientId: patient._id }));
+    setSearchQuery(patient.user?.name || patient.firstName + ' ' + patient.lastName);
+    setSelectedPatientDetails(patient);
+    setSearchResults([]);
+    setShowSearchResults(false);
   };
 
   const handleSubmit = async e => {
@@ -85,6 +124,8 @@ export default function AdmitPatient() {
       await axiosInstance.put(`/patients/${form.patientId}/assign`, { doctorId: form.doctorId });
       setToast({ message: 'Patient admitted successfully', type: 'success' });
       setForm({ patientId: '', wardId: '', roomId: '', bedId: '', doctorId: '' });
+      setSearchQuery('');
+      setSelectedPatientDetails(null);
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to admit patient', type: 'error' });
     }
@@ -94,14 +135,34 @@ export default function AdmitPatient() {
     <div className="p-6 max-w-xl mx-auto">
       <h2 className="text-xl font-semibold mb-4">Admit Patient</h2>
       <form className="bg-white p-4 rounded shadow flex flex-col gap-4" onSubmit={handleSubmit}>
-        <div>
-          <label className="block mb-1">Patient</label>
-          <select className="input w-full" value={form.patientId} onChange={handlePatientChange} required>
-            <option value="">-- select patient --</option>
-            {patients.map(p => (
-              <option key={p._id} value={p._id}>{p.user?.name} ({p.user?.email})</option>
-            ))}
-          </select>
+        <div className="relative">
+          <label className="block mb-1">Search Patient</label>
+          <input
+            type="text"
+            className="input w-full"
+            placeholder="Search by name, phone, or ID"
+            value={searchQuery}
+            onChange={handleSearchInputChange}
+            onFocus={() => setShowSearchResults(searchQuery.length > 2 && searchResults.length > 0)}
+            onBlur={() => setTimeout(() => setShowSearchResults(false), 100)} // Hide results after a short delay
+            required
+          />
+          {showSearchResults && searchResults.length > 0 && (
+            <ul className="absolute z-10 bg-white border border-gray-300 w-full mt-1 rounded shadow-lg max-h-60 overflow-y-auto">
+              {searchResults.map(patient => (
+                <li
+                  key={patient._id}
+                  className="p-2 cursor-pointer hover:bg-gray-100"
+                  onMouseDown={() => handlePatientSelect(patient)} // Use onMouseDown to prevent onBlur from firing first
+                >
+                  {patient.user?.name || `${patient.firstName} ${patient.lastName}`} ({patient.user?.phone || patient.nationalId || patient.mrn})
+                </li>
+              ))}
+            </ul>
+          )}
+          {selectedPatientDetails && (
+            <p className="mt-2 text-sm text-gray-600">Selected Patient: {selectedPatientDetails.user?.name} (ID: {selectedPatientDetails.nationalId || selectedPatientDetails.mrn})</p>
+          )}
         </div>
         <div>
           <label className="block mb-1">Ward</label>
@@ -139,9 +200,10 @@ export default function AdmitPatient() {
             ))}
           </select>
         </div>
-        <button className="btn-brand w-full" type="submit">Admit Patient</button>
+        <button className="btn-brand w-full" type="submit" disabled={!form.patientId}>Admit Patient</button>
       </form>
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
+

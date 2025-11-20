@@ -73,7 +73,7 @@ export default function InvoiceDetail() {
   const handleDownloadPDF = async () => {
     try {
       setGeneratePDFLoading(true);
-      const res = await axiosInstance.get(`/billing/${invoiceId}/print`, { responseType: 'blob' });
+      const res = await axiosInstance.get(`/billing/${invoiceId}/pdf`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;

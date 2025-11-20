@@ -10,9 +10,11 @@ const DetailedDischargeSummary = () => {
   const { axiosInstance } = useContext(AuthContext);
   const { hospitalDetails, loading: hospitalDetailsLoading } = useHospitalDetails();
 
-  const [data, setData] = useState(null);
+  const [dischargeSummaryData, setDischargeSummaryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [generatePDFLoading, setGeneratePDFLoading] = useState(false);
+  const [generatePDFError, setGeneratePDFError] = useState(null);
 
   useEffect(() => {
     if (!id || !axiosInstance) return;
@@ -21,8 +23,8 @@ const DetailedDischargeSummary = () => {
         // The backend should provide a comprehensive summary endpoint.
         // This might include patient details, admission info, diagnosis,
         // clinical summary, investigations, and medications.
-        const response = await axiosInstance.get(`/patients/${id}`);
-        setData(response.data);
+        const response = await axiosInstance.get(`/discharge/${id}`); // Assuming /discharge/:id returns the detailed summary
+        setDischargeSummaryData(response.data);
         setLoading(false);
       } catch (err) {
         console.error('Failed to load patient comprehensive data:', err);
@@ -37,12 +39,55 @@ const DetailedDischargeSummary = () => {
     window.print();
   };
 
+  const handleGeneratePdf = async () => {
+    try {
+      setGeneratePDFLoading(true);
+      setGeneratePDFError(null);
+      const res = await axiosInstance.get(`/discharge/generate-pdf/${id}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `discharge-summary-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (e) {
+      console.error('Failed to generate discharge summary PDF:', e);
+      setGeneratePDFError('Failed to generate PDF. Please try again.');
+    } finally {
+      setGeneratePDFLoading(false);
+    }
+  };
+
   if (loading || hospitalDetailsLoading) return <div className="text-center p-8">Loading Discharge Summary...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
-  if (!data) return <div className="text-center p-8">No data found for this patient.</div>;
+  if (!dischargeSummaryData) return <div className="text-center p-8">No discharge summary found.</div>;
 
-  // Assuming the API returns a structure like { patient, admission, summary, labTests, prescriptions }
-  const { patient, admission, summary, labTests, prescriptions } = data;
+  // Destructure the discharge summary data
+  const { 
+    patient, 
+    admission, 
+    primaryDiagnosis, 
+    secondaryDiagnoses, 
+    treatmentSummary, 
+    dischargeMedications, 
+    procedures, 
+    followUpAdvice, 
+    notes,
+    createdBy 
+  } = dischargeSummaryData;
+
+  const patientName = patient?.user?.name || `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim();
+  const patientAge = patient?.calculateAge ? patient.calculateAge() : 'N/A'; // Assuming calculateAge is available on patient object
+  const patientGender = patient?.gender || 'N/A';
+  const mrn = patient?.mrn || 'N/A';
+
+  // Format dates
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen py-8">
@@ -73,6 +118,13 @@ const DetailedDischargeSummary = () => {
               <FaPrint className="mr-2" />
               Print
             </button>
+            <button 
+              onClick={handleGeneratePdf}
+              disabled={generatePDFLoading}
+              className="bg-blue-600 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-blue-700 transition duration-300 flex items-center disabled:opacity-50"
+            >
+              {generatePDFLoading ? 'Generating...' : '📄 Generate PDF'}
+            </button>
           </div>
         </div>
 
@@ -89,81 +141,73 @@ const DetailedDischargeSummary = () => {
 
         {/* Patient and Admission Details */}
         <section className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-6 border-t-2 border-b-2 border-black py-4">
-          <div><strong>PATIENT NAME:</strong> {patient?.user?.name || patient?.name}</div>
-          <div><strong>ADMISSION DATE:</strong> {admission?.admittedAt ? new Date(admission.admittedAt).toLocaleDateString() : 'N/A'}</div>
-          <div><strong>AGE/SEX:</strong> {patient?.age} / {patient?.gender}</div>
-          <div><strong>DISCHARGE DATE:</strong> {admission?.dischargedAt ? new Date(admission.dischargedAt).toLocaleDateString() : 'N/A'}</div>
-          <div><strong>MRN NO.:</strong> {patient?.mrn || patient?.hospitalId}</div>
-          <div><strong>CONSULTANT:</strong> {admission?.consultant?.name || 'N/A'}</div>
+          <div><strong>PATIENT NAME:</strong> {patientName}</div>
+          <div><strong>ADMISSION DATE:</strong> {formatDate(admission?.admittedAt)}</div>
+          <div><strong>AGE/SEX:</strong> {patientAge} / {patientGender}</div>
+          <div><strong>DISCHARGE DATE:</strong> {formatDate(admission?.dischargedAt)}</div>
+          <div><strong>MRN NO.:</strong> {mrn}</div>
+          <div><strong>CONSULTANT:</strong> {admission?.admittingDoctor?.name || 'N/A'}</div>
         </section>
 
         {/* Clinical Details */}
         <section className="mb-6">
           <h3 className="font-bold border-b border-black mb-2">ADMISSION DIAGNOSIS</h3>
-          <p>{summary?.admissionDiagnosis || 'N/A'}</p>
+          <p>{primaryDiagnosis || 'N/A'}</p>
         </section>
 
         <section className="mb-6">
-          <h3 className="font-bold border-b border-black mb-2">COURSE IN WARD / CLINICAL SUMMARY</h3>
-          <p className="whitespace-pre-wrap">{summary?.clinicalSummary || 'No summary available.'}</p>
-        </section>
-
-        <section className="mb-6">
-          <h3 className="font-bold border-b border-black mb-2">INVESTIGATIONS</h3>
-          {labTests && labTests.length > 0 ? (
+          <h3 className="font-bold border-b border-black mb-2">SECONDARY DIAGNOSES</h3>
+          {secondaryDiagnoses && secondaryDiagnoses.length > 0 ? (
             <ul className="list-disc list-inside">
-              {labTests.map(test => (
-                <li key={test._id}><strong>{test.testType}:</strong> {test.results || 'Pending'}</li>
+              {secondaryDiagnoses.map((diag, index) => (
+                <li key={index}>{diag}</li>
               ))}
             </ul>
-          ) : <p>No investigations found.</p>}
+          ) : <p>No secondary diagnoses found.</p>}
         </section>
 
         <section className="mb-6">
-          <h3 className="font-bold border-b border-black mb-2">MEDICATIONS</h3>
-          {prescriptions && prescriptions.length > 0 ? (
-            <div>
-              <h4 className="font-semibold">Medications on Discharge:</h4>
-              <ul className="list-disc list-inside mb-2">
-                {prescriptions
-                  // Assumption: The backend flags discharge medicines.
-                  // If not, this filter needs to be adjusted based on the actual data structure.
-                  .filter(p => p.isDischargeMedicine)
-                  .flatMap(p => p.drugs)
-                  .map((drug, index) => (
-                    <li key={`discharge-${index}`}>
-                      {drug.name} - {drug.dosage} {drug.frequency} for {drug.duration}
-                    </li>
-                  ))}
-              </ul>
-              <h4 className="font-semibold">Other Medications:</h4>
-              <ul className="list-disc list-inside">
-                {prescriptions
-                  .filter(p => !p.isDischargeMedicine)
-                  .flatMap(p => p.drugs)
-                  .map((drug, index) => (
-                    <li key={`other-${index}`}>
-                      {drug.name} - {drug.dosage} {drug.frequency} for {drug.duration}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          ) : <p>No medications found.</p>}
+          <h3 className="font-bold border-b border-black mb-2">TREATMENT SUMMARY</h3>
+          <p className="whitespace-pre-wrap">{treatmentSummary || 'No summary available.'}</p>
         </section>
 
         <section className="mb-6">
-          <h3 className="font-bold border-b border-black mb-2">ADVICE ON DISCHARGE / FOLLOW UP</h3>
-          <p>{summary?.dischargeAdvice || 'Please follow up at the surgical outpatient clinic (SOPC) in 2 weeks.'}</p>
+          <h3 className="font-bold border-b border-black mb-2">DISCHARGE MEDICATIONS</h3>
+          {dischargeMedications && dischargeMedications.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {dischargeMedications.map((med, index) => (
+                <li key={index}>{med.name} - {med.dose} {med.frequency}</li>
+              ))}
+            </ul>
+          ) : <p>No discharge medications found.</p>}
+        </section>
+
+        <section className="mb-6">
+          <h3 className="font-bold border-b border-black mb-2">PROCEDURES PERFORMED</h3>
+          {procedures && procedures.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {procedures.map((proc, index) => (
+                <li key={index}>{proc.name} ({formatDate(proc.date)}) - {proc.notes}</li>
+              ))}
+            </ul>
+          ) : <p>No procedures found.</p>}
+        </section>
+
+        <section className="mb-6">
+          <h3 className="font-bold border-b border-black mb-2">FOLLOW-UP ADVICE</h3>
+          <p>{followUpAdvice || 'N/A'}</p>
+        </section>
+
+        <section className="mb-6">
+          <h3 className="font-bold border-b border-black mb-2">ADDITIONAL NOTES</h3>
+          <p>{notes || 'N/A'}</p>
         </section>
 
         {/* Footer */}
         <footer className="mt-12 pt-4 border-t-2 border-black text-sm">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p><strong>Doctor's Name:</strong> _________________________</p>
-            </div>
-            <div>
-              <p><strong>Signature:</strong> _________________________</p>
+              <p><strong>Prepared By:</strong> {createdBy?.name || 'N/A'}</p>
             </div>
           </div>
           <p className="text-center mt-4 text-xs">This is a computer-generated summary and is not valid for any court of law.</p>
