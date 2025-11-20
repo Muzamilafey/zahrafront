@@ -90,14 +90,14 @@ const DetailedDischargeSummary = () => {
   const { hospitalDetails, loading: hospitalLoading } = useHospitalDetails();
 
   // State
-  const [data, setData] = useState(null); // The discharge summary object
-  const [prescriptions, setPrescriptions] = useState([]); // Extra medication history
+  const [data, setData] = useState(null);
+  const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({}); // Stores the edits
+  const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -112,7 +112,7 @@ const DetailedDischargeSummary = () => {
         axiosInstance.get(`/patients/${id}/prescriptions`)
       ]);
       setData(dischargeRes.data);
-      setFormData(dischargeRes.data); // Initialize edit form
+      setFormData(dischargeRes.data);
       setPrescriptions(prescriptionsRes.data.prescriptions || []);
     } catch (err) {
       console.error(err);
@@ -129,43 +129,37 @@ const DetailedDischargeSummary = () => {
   // ---------------------------
   // Handlers
   // ---------------------------
-  
-  // Handle text changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Helper to convert Array -> String (for Editing) and String -> Array (for Saving)
-  // We assume simple comma or newline separation for lists
   const handleArrayInputChange = (e) => {
     const { name, value } = e.target;
-    // We store it as a string in formData temporarily
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Prepare payload. We need to ensure arrays are actually arrays if the backend expects them.
       const processArray = (val) => {
-        if (Array.isArray(val)) return val; // Already array (didn't touch it)
+        if (Array.isArray(val)) return val;
         if (!val) return [];
-        return val.split(/[\n,]+/).map(s => s.trim()).filter(s => s); // Split by newline or comma
+        return val.split(/[\n,]+/).map(s => s.trim()).filter(s => s);
       };
 
       const payload = {
         ...formData,
         secondaryDiagnoses: processArray(formData.secondaryDiagnoses),
         dischargeMedications: typeof formData.dischargeMedications === 'string' 
-            ? processArray(formData.dischargeMedications).map(item => ({ name: item, dose: '', frequency: '' })) // simplified for string edit
-            : formData.dischargeMedications, // If complex object wasn't touched
+            ? processArray(formData.dischargeMedications).map(item => ({ name: item, dose: '', frequency: '' }))
+            : formData.dischargeMedications,
         procedures: processArray(formData.procedures),
       };
 
       const response = await axiosInstance.put(`/discharge/update/${data._id}`, payload);
       setData(response.data.summary);
-      setFormData(response.data.summary); // Reset form to new data
+      setFormData(response.data.summary);
       setIsEditing(false);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save');
@@ -197,11 +191,8 @@ const DetailedDischargeSummary = () => {
   // ---------------------------
   // Render Helpers
   // ---------------------------
-  
-  // Displays list as bullets (View Mode) or returns string (Edit Mode helper)
   const renderList = (arr) => {
     if (!arr || arr.length === 0) return null;
-    // If array of objects (like medications with dose), try to format string
     if (typeof arr[0] === 'object') {
       return (
         <ul className="list-disc pl-5">
@@ -214,7 +205,6 @@ const DetailedDischargeSummary = () => {
         </ul>
       );
     }
-    // Simple string array
     return (
       <ul className="list-disc pl-5">
         {arr.map((item, i) => <li key={i}>{item}</li>)}
@@ -222,10 +212,9 @@ const DetailedDischargeSummary = () => {
     );
   };
 
-  // Converts array to string for the Textarea initial value
   const getArrayString = (arr) => {
      if (!arr) return '';
-     if (typeof arr === 'string') return arr; // Already editing
+     if (typeof arr === 'string') return arr;
      if (arr.length > 0 && typeof arr[0] === 'object') {
         return arr.map(item => item.name || item.description).join(', ');
      }
@@ -242,13 +231,12 @@ const DetailedDischargeSummary = () => {
     <div className="min-h-screen bg-gray-100 py-8 print:bg-white print:py-0">
       
       {/* GLOBAL STYLES FOR PRINT */}
-      <style jsx global>{`
+      <style>{`
         @media print {
           @page { size: A4; margin: 1cm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
           .no-print, button { display: none !important; }
           .print-only { display: block !important; }
-          /* Prevent breaking inside sections */
           .break-inside-avoid { page-break-inside: avoid; }
           .break-before { page-break-before: always; }
         }
