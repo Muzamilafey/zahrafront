@@ -162,6 +162,7 @@ export default function AdminUser(){
                 { key: 'lab', label: 'Laboratory' },
                 { key: 'labQueue', label: 'Lab Queue' },
                 { key: 'labRequests', label: 'Lab Requests' },
+                { key: 'dispenseDrugs', label: 'Dispense Drugs' },
               ];
 
               return sidebarOptions.map(opt => (

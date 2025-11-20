@@ -271,6 +271,7 @@ function App() {
           <Route path="/pharmacy" element={<PrivateRoute><Layout><Pharmacy /></Layout></PrivateRoute>} />
           <Route path="/pharmacy/pos" element={<PrivateRoute><Layout><POS /></Layout></PrivateRoute>} />
           <Route path="/dashboard/pharmacy/dispense" element={<PrivateRoute><Layout><DispenseDrugs /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/pharmacy/dispense" element={<PrivateRoute><Layout><DispenseDrugs /></Layout></PrivateRoute>} />
           <Route path="/billing" element={<PrivateRoute><Layout><Billing /></Layout></PrivateRoute>} />
           <Route path="/billing/:invoiceId" element={<PrivateRoute><Layout><InvoiceDetail /></Layout></PrivateRoute>} />
           <Route path="/finance/invoices/:id" element={<PrivateRoute><Layout><InvoicePage /></Layout></PrivateRoute>} />
