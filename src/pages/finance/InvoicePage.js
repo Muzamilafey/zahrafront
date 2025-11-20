@@ -57,9 +57,9 @@ const InvoicePage = () => {
         <div className="bg-white shadow-2xl rounded-xl" id="printable-area">
           <div className="p-8 sm:p-12">
             <header className="flex justify-between items-start pb-8 border-b border-gray-200">
-              <div className="hospital-info">
-                <h1 className="text-3xl font-bold text-teal-600">{hospitalDetails.name || 'Genz Community Hospital'}</h1>
-                <p className="text-gray-600">{hospitalDetails.location || '123 Health St, Medtown, Kajiado'}</p>
+              <div className="hospital-info bg-gray-100 p-4 rounded-lg border border-gray-200">
+                <h1 className="text-3xl font-bold text-teal-600">{hospitalDetails.name || 'CoreCare HMIS'}</h1>
+                <p className="text-gray-600">{hospitalDetails.location || ' '}</p>
                 <p className="text-gray-600">{hospitalDetails.contacts || 'Ph: +254 722 651 888'}</p>
               </div>
               <div className="invoice-meta text-right">
