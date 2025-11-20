@@ -51,9 +51,12 @@ const DetailedDischargeSummary = () => {
         {/* Hospital Information and Action Buttons */}
         <div className="flex justify-between items-start mb-8 no-print">
           <div className="text-left">
-            <h1 className="text-2xl font-bold text-black">{hospitalDetails.name || 'Zahra Maternity Hospital'}</h1>
-            <p className="text-md">{hospitalDetails.location || 'P.O. Box 20723, Nairobi'}</p>
-            <p className="text-md">{hospitalDetails.contacts || ''}</p>
+            {hospitalDetails.hospitalLogoUrl && (
+              <img src={hospitalDetails.hospitalLogoUrl} alt="Hospital Logo" className="h-16 mb-2 object-contain" />
+            )}
+            <h1 className="text-2xl font-bold text-black">{hospitalDetails.hospitalName || 'Zahra Maternity Hospital'}</h1>
+            <p className="text-md">{hospitalDetails.hospitalAddress || 'P.O. Box 20723, Nairobi'}</p>
+            <p className="text-md">{hospitalDetails.hospitalContact || ''}</p>
           </div>
           <div className="flex flex-col items-end space-y-2">
             <button 
@@ -75,9 +78,12 @@ const DetailedDischargeSummary = () => {
 
         {/* Header for the printable summary */}
         <header className="text-center mb-8 p-4 border-b-4 border-black print-only">
-          <h1 className="text-3xl font-bold text-black">{hospitalDetails.name || 'Zahra Maternity Hospital'}</h1>
-          <p className="text-lg">{hospitalDetails.location || 'P.O. Box 20723, Nairobi'}</p>
-          <p className="text-lg">{hospitalDetails.contacts || ''}</p>
+          {hospitalDetails.hospitalLogoUrl && (
+            <img src={hospitalDetails.hospitalLogoUrl} alt="Hospital Logo" className="h-20 mx-auto mb-4 object-contain" />
+          )}
+          <h1 className="text-3xl font-bold text-black">{hospitalDetails.hospitalName || 'Zahra Maternity Hospital'}</h1>
+          <p className="text-lg">{hospitalDetails.hospitalAddress || 'P.O. Box 20723, Nairobi'}</p>
+          <p className="text-lg">{hospitalDetails.hospitalContact || ''}</p>
           <h2 className="text-2xl font-semibold mt-4 bg-black text-white py-1">DISCHARGE SUMMARY</h2>
         </header>
 

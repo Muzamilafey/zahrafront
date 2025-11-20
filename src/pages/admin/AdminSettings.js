@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
+import Toast from '../../components/ui/Toast'; // Assuming you have a Toast component
 
 export default function AdminSettings(){
   const { axiosInstance } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [details, setDetails] = useState({ name: '', location: '', contacts: '' });
+  const [details, setDetails] = useState({
+    hospitalName: '',
+    hospitalAddress: '',
+    hospitalContact: '',
+    hospitalLogoUrl: ''
+  });
   const [selectedLogo, setSelectedLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [toast, setToast] = useState(null);
 
   useEffect(()=>{
     let mounted = true;
@@ -17,16 +23,15 @@ export default function AdminSettings(){
         const res = await axiosInstance.get('/setting/hospital-details');
         if(!mounted) return;
         setDetails({
-          name: res.data.name || '',
-          location: res.data.location || '',
-          contacts: Array.isArray(res.data.contacts) ? res.data.contacts.join('\n') : (res.data.contacts || '')
+          hospitalName: res.data.hospitalName || '',
+          hospitalAddress: res.data.hospitalAddress || '',
+          hospitalContact: res.data.hospitalContact || '',
+          hospitalLogoUrl: res.data.hospitalLogoUrl || ''
         });
-        // if backend returns a logo url, set preview
-        if (res.data.logo || res.data.logoUrl) {
-          setLogoPreview(res.data.logo || res.data.logoUrl);
-        }
+        setLogoPreview(res.data.hospitalLogoUrl || null);
       }catch(e){
-        // ignore
+        console.error('Failed to load hospital details:', e);
+        setToast({ message: e?.response?.data?.message || 'Failed to load hospital details', type: 'error' });
       }finally{ if(mounted) setLoading(false); }
     })();
     return ()=>{ mounted = false; };
@@ -35,38 +40,71 @@ export default function AdminSettings(){
   const onChange = (e) => setDetails(d => ({ ...d, [e.target.name]: e.target.value }));
 
   const onLogoChange = (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    setSelectedLogo(f);
-    const url = URL.createObjectURL(f);
-    setLogoPreview(url);
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // Frontend validation
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      setToast({ message: 'Invalid file type. Only PNG, JPG, and SVG are allowed.', type: 'error' });
+      e.target.value = null; // Clear the input
+      setSelectedLogo(null);
+      setLogoPreview(details.hospitalLogoUrl); // Revert to current saved logo
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setToast({ message: 'File size exceeds 5MB limit.', type: 'error' });
+      e.target.value = null; // Clear the input
+      setSelectedLogo(null);
+      setLogoPreview(details.hospitalLogoUrl); // Revert to current saved logo
+      return;
+    }
+
+    setSelectedLogo(file);
+    setLogoPreview(URL.createObjectURL(file));
   };
 
   const save = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setMessage(null);
+    setToast(null);
+
     try{
-      // If a logo was selected, upload it first as multipart/form-data
+      let currentLogoUrl = details.hospitalLogoUrl;
+
+      // If a new logo was selected, upload it first
       if (selectedLogo) {
+        const fd = new FormData();
+        fd.append('logo', selectedLogo);
         try {
-          const fd = new FormData();
-          fd.append('logo', selectedLogo);
-          // backend should handle this route - if not present, this will fail silently and we'll continue
-          await axiosInstance.post('/setting/hospital-details/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+          const res = await axiosInstance.post('/setting/upload-logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+          currentLogoUrl = res.data.logoUrl;
+          setDetails(prev => ({ ...prev, hospitalLogoUrl: currentLogoUrl }));
+          setLogoPreview(currentLogoUrl);
+          setToast({ message: 'Logo uploaded successfully', type: 'success' });
         } catch (e) {
-          console.warn('Logo upload failed:', e?.response?.data || e.message || e);
-          // continue to save other settings even if logo upload failed
+          console.error('Logo upload failed:', e?.response?.data || e.message || e);
+          setToast({ message: e?.response?.data?.message || 'Failed to upload logo', type: 'error' });
+          // Continue to save other settings even if logo upload failed
         }
       }
 
-      const payload = { ...details, contacts: details.contacts.split(/\r?\n/).map(s=>s.trim()).filter(Boolean) };
-      const res = await axiosInstance.post('/setting/hospital-details', payload);
-      setMessage({ type: 'success', text: res.data.message || 'Saved' });
-      // if save successful, try refresh to pick up new logo url
-      try{ const r = await axiosInstance.get('/setting/hospital-details'); if (r.data.logo || r.data.logoUrl) setLogoPreview(r.data.logo || r.data.logoUrl); }catch(e){}
+      // Save other hospital details
+      const payload = {
+        hospitalName: details.hospitalName,
+        hospitalAddress: details.hospitalAddress,
+        hospitalContact: details.hospitalContact,
+        hospitalLogoUrl: currentLogoUrl // Ensure the latest logo URL is sent
+      };
+      const res = await axiosInstance.put('/setting/hospital-details', payload);
+      setToast({ message: res.data.message || 'Hospital details saved successfully', type: 'success' });
+      setSelectedLogo(null); // Clear selected file after successful save
     }catch(err){
-      setMessage({ type: 'error', text: err?.response?.data?.message || err.message || 'Failed to save' });
+      console.error('Failed to save hospital details:', err);
+      setToast({ message: err?.response?.data?.message || err.message || 'Failed to save hospital details', type: 'error' });
     }finally{ setSaving(false); }
   };
 
@@ -78,20 +116,20 @@ export default function AdminSettings(){
           <div>Loading…</div>
         ) : (
           <form onSubmit={save}>
-            {message && <div className={`mb-4 p-3 rounded ${message.type==='error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{message.text}</div>}
+            <Toast toast={toast} onClose={() => setToast(null)} />
 
             <label className="block mb-2 text-sm font-medium">Hospital Name</label>
-            <input name="name" value={details.name} onChange={onChange} className="w-full p-2 border rounded mb-4" />
+            <input name="hospitalName" value={details.hospitalName} onChange={onChange} className="w-full p-2 border rounded mb-4" />
 
-            <label className="block mb-2 text-sm font-medium">Location / Address</label>
-            <textarea name="location" value={details.location} onChange={onChange} className="w-full p-2 border rounded mb-4" rows={3} />
+            <label className="block mb-2 text-sm font-medium">Hospital Address</label>
+            <textarea name="hospitalAddress" value={details.hospitalAddress} onChange={onChange} className="w-full p-2 border rounded mb-4" rows={3} />
 
-            <label className="block mb-2 text-sm font-medium">Contacts (one per line)</label>
-            <textarea name="contacts" value={details.contacts} onChange={onChange} className="w-full p-2 border rounded mb-4" rows={3} />
+            <label className="block mb-2 text-sm font-medium">Hospital Contact</label>
+            <textarea name="hospitalContact" value={details.hospitalContact} onChange={onChange} className="w-full p-2 border rounded mb-4" rows={3} />
 
             <label className="block mb-2 text-sm font-medium">Hospital Logo (optional)</label>
             <div className="mb-3 flex items-center gap-4">
-              <input type="file" accept="image/*" onChange={onLogoChange} />
+              <input type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={onLogoChange} />
               {logoPreview ? (
                 <div className="w-24 h-24 border rounded overflow-hidden flex items-center justify-center bg-white">
                   <img src={logoPreview} alt="logo preview" className="object-contain w-full h-full" />
@@ -102,7 +140,7 @@ export default function AdminSettings(){
             </div>
 
             <div className="flex gap-2">
-              <button className="btn-brand" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+              <button className="btn-brand" disabled={saving}>{saving ? 'Saving…' : 'Save Settings'}</button>
               <button type="button" className="btn-outline" onClick={()=>window.location.reload()}>Reload</button>
             </div>
           </form>
