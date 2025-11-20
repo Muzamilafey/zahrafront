@@ -50,6 +50,39 @@ export default function DischargeSummary({ summary = {}, summaryDetails = null, 
         </div>
       </div>
 
+      {s?.investigations && s.investigations.length > 0 && (
+        <div className="mb-4">
+          <div className="text-gray-600">Investigations (Lab Results)</div>
+          <ul className="list-disc ml-5">
+            {s.investigations.map((inv, index) => (
+              <li key={index} className="mb-2">
+                <div className="font-medium">{inv.name} ({new Date(inv.date).toLocaleDateString()})</div>
+                {inv.resultsText && <div className="text-gray-700 whitespace-pre-wrap">{inv.resultsText}</div>}
+                {inv.resultsFiles && inv.resultsFiles.length > 0 && (
+                  <div className="text-sm text-gray-600">
+                    Attached Files:
+                    <ul className="list-disc ml-5">
+                      {inv.resultsFiles.map((file, fileIndex) => (
+                        <li key={fileIndex}>
+                          <a
+                            href={`/uploads/lab/${file.filename}`} // Assuming files are served from /uploads/lab
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            {file.filename}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {summary?.dischargeNotes && (
         <div className="mb-4">
           <div className="text-gray-600">Discharge Notes / Instructions</div>

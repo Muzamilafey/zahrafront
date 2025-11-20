@@ -103,6 +103,8 @@ import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InvoicePage from './pages/finance/InvoicePage';
 import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmacyRequests';
 import RegisterUser from './pages/admin/RegisterUser';
+import CreateLabRequest from './pages/lab/CreateLabRequest';
+import LabTestDetail from './pages/lab/LabTestDetail';
 
 function App() {
   return (
@@ -142,6 +144,8 @@ function App() {
           <Route path="/patients/:id" element={<PrivateRoute><Layout><ErrorBoundary><PatientDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/payments" element={<PrivateRoute><Layout><PatientPayments /></Layout></PrivateRoute>} />
           <Route path="/patients/:id/invoice" element={<PrivateRoute><Layout><ErrorBoundary><InvoicePage /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/lab-request/new" element={<PrivateRoute><Layout><ErrorBoundary><CreateLabRequest /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/labtests/:id" element={<PrivateRoute><Layout><ErrorBoundary><LabTestDetail /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Admission patient-specific pages (history, bed mgmt, visits, meal bills) */}
           <Route path="/patients/:id/outpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><OutpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/inpatient-history" element={<PrivateRoute><Layout><ErrorBoundary><InpatientHistory /></ErrorBoundary></Layout></PrivateRoute>} />

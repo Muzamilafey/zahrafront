@@ -80,12 +80,12 @@ export default function PatientDetail(){
         const [vRes, prRes, lRes] = await Promise.all([
           axiosInstance.get('/visits', { params: { patientId: id } }).catch(()=>({ data: { visits: [] } })),
           axiosInstance.get('/prescriptions', { params: { patientId: id } }).catch(()=>({ data: { prescriptions: [] } })),
-          axiosInstance.get('/labtests', { params: { patientId: id } }).catch(()=>({ data: { labtests: [] } })),
+          axiosInstance.get('/lab/orders', { params: { patient: id } }).catch(()=>({ data: { orders: [] } })),
         ]);
         const safeArray = (val) => Array.isArray(val) ? val : (val && typeof val === 'object' && Array.isArray(val.items) ? val.items : []);
         const visitsArr = Array.isArray(vRes.data.visits) ? vRes.data.visits : (Array.isArray(vRes.data) ? vRes.data : []);
         const presArr = Array.isArray(prRes.data.prescriptions) ? prRes.data.prescriptions : (Array.isArray(prRes.data) ? prRes.data : []);
-        const labsArr = Array.isArray(lRes.data.labtests) ? lRes.data.labtests : (Array.isArray(lRes.data) ? lRes.data : []);
+        const labsArr = Array.isArray(lRes.data.orders) ? lRes.data.orders : (Array.isArray(lRes.data) ? lRes.data : []);
         setRecords({ visits: visitsArr, prescriptions: presArr, labs: labsArr });
         // payments - try /payments?patientId= or /patients/:id/payments
         try{
@@ -165,6 +165,9 @@ export default function PatientDetail(){
         </div>
         <div className="flex items-center gap-2">
             <button onClick={() => navigate(`/patients/${id}/payments`)} className="btn-outline">View Payments</button>
+            {(user && (user.role === 'doctor' || user.role === 'admin')) && (
+              <button onClick={() => navigate(`/patients/${id}/lab-request/new`)} className="btn-brand">Add Lab Request</button>
+            )}
             <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="btn-brand">New Visit</button>
             {user && user.role === 'admin' && (
               <>
@@ -503,8 +506,17 @@ export default function PatientDetail(){
                 <ul className="divide-y">
                   {records.labs.slice(0,10).map(l => (
                     <li key={l._id || l.id} className="py-2">
-                      <div className="text-sm font-medium">{l.testName || l.name}</div>
-                      <div className="text-xs text-gray-500">Result: {l.result || 'Pending'} • {new Date(l.createdAt || l.date).toLocaleString()}</div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium">{l.testType}</div>
+                          <div className="text-xs text-gray-500">
+                            Priority: <span className={`font-medium ${l.priority === 'stat' ? 'text-red-600' : l.priority === 'urgent' ? 'text-orange-500' : 'text-green-600'}`}>{l.priority}</span> • Status: {l.status}
+                          </div>
+                          {l.resultsText && <div className="text-xs text-gray-500">Result: {l.resultsText.substring(0, 50)}{l.resultsText.length > 50 ? '...' : ''}</div>}
+                          <div className="text-xs text-gray-500">Requested: {new Date(l.createdAt).toLocaleString()}</div>
+                        </div>
+                        <button className="btn-muted text-xs" onClick={() => navigate(`/labtests/${l._id}`)}>View Details</button>
+                      </div>
                     </li>
                   ))}
                 </ul>
