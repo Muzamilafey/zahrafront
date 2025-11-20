@@ -132,7 +132,7 @@ export default function Sidebar() {
     {
       id: 'pharmacy',
       title: 'Pharmacy',
-      defaultCheck: ['admin', 'pharmacist'].includes(user?.role),
+      defaultCheck: ['admin', 'pharmacist', 'nurse'].includes(user?.role),
       items: [
         { to: '/dashboard/pharmacy/dispense', label: 'Dispense Drugs', perm: 'dispenseDrugs' },
         { to: '/pharmacy', label: 'Pharmacy Home', perm: 'pharmacy' },
