@@ -21,16 +21,20 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   const hasAccess = (key, defaultCheck = true) => {
+    // special cases for default checks based on role
+    if (key === 'dispenseDrugs' && (user?.role === 'pharmacist' || user?.role === 'admin' || user?.role === 'nurse')) {
+        return true; // Pharmacists, Admin, and Nurses should see Dispense Drugs by default
+    }
     // if permissions are defined on the user, prefer them
     if (user?.permissions && typeof user.permissions === 'object') {
       const sb = user.permissions.sidebar || {};
       if (typeof sb[key] !== 'undefined') {
         const allowed = !!sb[key];
-        console.debug(`[Sidebar] hasAccess("${key}") =`, allowed, 'for user', user?._id);
+        // console.debug(`[Sidebar] hasAccess("${key}") =`, allowed, 'for user', user?._id); // removed debug
         return allowed;
       }
     }
-    return defaultCheck;
+    return defaultCheck; 
   };
   const MenuItem = ({ to, children }) => (
     <Link
