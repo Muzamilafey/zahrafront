@@ -24,7 +24,9 @@ export default function InternalPharmacyRequests() {
       try {
         const res = await axiosInstance.get(`/patients/${patientId}`);
         setPatient(res.data.patient || null);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.error('Failed to load patient details:', e);
+      }
     };
     if (patientId) load();
   }, [patientId, axiosInstance]);
@@ -36,7 +38,10 @@ export default function InternalPharmacyRequests() {
       try {
         const r = await axiosInstance.get(`/pharmacy/inventory?q=${encodeURIComponent(q)}`);
         setResults(r.data.drugs || []);
-      } catch (e) { setResults([]); }
+      } catch (e) {
+        console.error('Failed to search inventory:', e);
+        setResults([]);
+      }
     }, 300);
     return () => clearTimeout(t);
   }, [search, axiosInstance]);
@@ -65,7 +70,8 @@ export default function InternalPharmacyRequests() {
     };
 
     // Optimistically add to UI
-    setAdded(prev => [...prev, { ...item, date: new Date().toISOString() }]);
+    const optimisticId = `optimistic-${Date.now()}`;
+    setAdded(prev => [...prev, { ...item, date: new Date().toISOString(), optimisticId }]);
 
     // send to backend to bill and deduct stock
     try {
@@ -82,6 +88,8 @@ export default function InternalPharmacyRequests() {
     } catch (e) {
       console.error('Failed to create internal pharmacy request', e);
       alert(e.response?.data?.message || 'Failed to add medication to inpatient bill');
+      // Rollback optimistic update
+      setAdded(prev => prev.filter(i => i.optimisticId !== optimisticId));
     }
 
     // reset fields

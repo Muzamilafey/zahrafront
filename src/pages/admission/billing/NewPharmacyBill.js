@@ -11,6 +11,7 @@ export default function NewPharmacyBill() {
   const [patient, setPatient] = useState(null);
   const [toast, setToast] = useState(null);
   const [drugs, setDrugs] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -29,6 +30,7 @@ export default function NewPharmacyBill() {
       const res = await axiosInstance.get(`/patients/${patientId}`);
       setPatient(res.data.patient);
     } catch (error) {
+      console.error('Failed to load patient details:', error);
       setToast({ message: 'Failed to load patient details', type: 'error' });
     }
   };
@@ -38,6 +40,7 @@ export default function NewPharmacyBill() {
       const res = await axiosInstance.get('/drugs');
       setDrugs(res.data.drugs);
     } catch (error) {
+      console.error('Failed to load available drugs:', error);
       setToast({ message: 'Failed to load available drugs', type: 'error' });
     }
   };
@@ -97,6 +100,7 @@ export default function NewPharmacyBill() {
       setToast({ message: 'Pharmacy bill recorded successfully', type: 'success' });
       navigate(`/admission/${patientId}/summary`);
     } catch (error) {
+      console.error('Failed to record pharmacy bill:', error);
       setToast({
         message: error?.response?.data?.message || 'Failed to record pharmacy bill',
         type: 'error'
@@ -105,6 +109,10 @@ export default function NewPharmacyBill() {
       setLoading(false);
     }
   };
+
+  const filteredDrugs = drugs.filter(drug =>
+    drug.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!patient) {
     return <div className="p-4">Loading patient details...</div>;
@@ -145,8 +153,15 @@ export default function NewPharmacyBill() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-2">Available Drugs</h4>
+                  <input
+                    type="text"
+                    placeholder="Search drugs..."
+                    className="input w-full mb-2"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {drugs.map(drug => (
+                    {filteredDrugs.map(drug => (
                       <div key={drug._id} className="flex justify-between items-center text-sm p-2 hover:bg-gray-50">
                         <div>
                           <span>{drug.name}</span>

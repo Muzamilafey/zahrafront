@@ -44,6 +44,7 @@ export default function BedReallocation() {
       const res = await axiosInstance.get(`/patients/${patientId}`);
       setPatient(res.data.patient);
     } catch (error) {
+      console.error('Failed to load patient details:', error);
       setToast({ message: 'Failed to load patient details', type: 'error' });
     }
   };
@@ -53,6 +54,7 @@ export default function BedReallocation() {
       const res = await axiosInstance.get('/wards');
       setWards(res.data.wards || []);
     } catch (error) {
+      console.error('Failed to load wards:', error);
       setToast({ message: 'Failed to load wards', type: 'error' });
     }
   };
@@ -63,6 +65,7 @@ export default function BedReallocation() {
       setRooms(res.data.rooms || []);
       setForm(prev => ({ ...prev, roomId: '', bedId: '' }));
     } catch (error) {
+      console.error('Failed to load rooms:', error);
       setToast({ message: 'Failed to load rooms', type: 'error' });
     }
   };
@@ -73,6 +76,7 @@ export default function BedReallocation() {
       setBeds(res.data.beds?.filter(bed => !bed.isOccupied) || []);
       setForm(prev => ({ ...prev, bedId: '' }));
     } catch (error) {
+      console.error('Failed to load beds:', error);
       setToast({ message: 'Failed to load beds', type: 'error' });
     }
   };
@@ -95,6 +99,7 @@ export default function BedReallocation() {
       setToast({ message: 'Patient bed reallocated successfully', type: 'success' });
       navigate(`/admission/${patientId}/summary`);
     } catch (error) {
+      console.error('Failed to reallocate bed:', error);
       setToast({
         message: error?.response?.data?.message || 'Failed to reallocate bed',
         type: 'error'

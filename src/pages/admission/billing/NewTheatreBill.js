@@ -35,6 +35,7 @@ export default function NewTheatreBill() {
       const res = await axiosInstance.get(`/patients/${patientId}`);
       setPatient(res.data.patient);
     } catch (error) {
+      console.error('Failed to load patient details:', error);
       setToast({ message: 'Failed to load patient details', type: 'error' });
     }
   };
@@ -76,6 +77,7 @@ export default function NewTheatreBill() {
       setToast({ message: 'Theatre bill recorded successfully', type: 'success' });
       navigate(`/admission/${patientId}/summary`);
     } catch (error) {
+      console.error('Failed to record theatre bill:', error);
       setToast({
         message: error?.response?.data?.message || 'Failed to record theatre bill',
         type: 'error'

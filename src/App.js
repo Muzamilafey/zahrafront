@@ -54,6 +54,7 @@ import LabTests from './pages/lab/LabTests';
 import LabPrices from './pages/lab/LabPrices';
 import LabTemplates from './pages/lab/LabTemplates';
 import LabPatientReport from './pages/lab/LabPatientReport';
+import LabResult from './pages/lab/LabResult';
 import AdminPatient from './pages/admin/AdminPatient';
 import AdminAssignDoctor from './pages/admin/AdminAssignDoctor';
 import AdminUser from './pages/admin/AdminUser';
@@ -288,6 +289,7 @@ function App() {
           <Route path="/dashboard/lab/prices" element={<PrivateRoute><Layout><LabPrices /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/patient-report" element={<PrivateRoute><Layout><LabPatientReport /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
+          <Route path="/lab/results/:requestId" element={<PrivateRoute><Layout><LabResult /></Layout></PrivateRoute>} />
         </Routes>
         </Router>
       </UIProvider>

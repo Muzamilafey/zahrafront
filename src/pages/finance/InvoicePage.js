@@ -59,8 +59,8 @@ const InvoicePage = () => {
             <header className="flex justify-between items-start pb-8 border-b border-gray-200">
               <div className="hospital-info bg-gray-100 p-4 rounded-lg border border-gray-200">
                 <h1 className="text-3xl font-bold text-teal-600">{hospitalDetails.name || 'CoreCare HMIS'}</h1>
-                <p className="text-gray-600">{hospitalDetails.location || ' '}</p>
-                <p className="text-gray-600">{hospitalDetails.contacts || 'Ph: +254 722 651 888'}</p>
+                <p className="text-gray-600">Address:{hospitalDetails.location || ' '}</p>
+                <p className="text-gray-600">Contact:{hospitalDetails.contacts || 'Ph: +254 722 651 888'}</p>
               </div>
               <div className="invoice-meta text-right">
                 <h2 className="text-4xl font-bold text-gray-700">INVOICE</h2>

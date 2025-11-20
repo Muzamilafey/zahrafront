@@ -25,14 +25,10 @@ export default function TheatreBills() {
       setPatient(patientRes.data.patient);
 
       // Load invoices for this patient and filter for theatre bills
-      const invoiceRes = await axiosInstance.get('/billing');
-      const allInvoices = invoiceRes.data.invoices || [];
-      const theatreInvoices = allInvoices.filter(inv => 
-        String(inv.patient?._id || inv.patient) === String(patientId) && 
-        (inv.type === 'theatre' || inv.description?.toLowerCase().includes('theatre') || inv.description?.toLowerCase().includes('surgery'))
-      );
-      setInvoices(theatreInvoices);
+      const invoiceRes = await axiosInstance.get(`/patients/${patientId}/theatre-bills`);
+      setInvoices(invoiceRes.data.invoices || []);
     } catch (err) {
+      console.error('Failed to load theatre bills:', err);
       setError(err?.response?.data?.message || 'Failed to load theatre bills');
     } finally {
       setLoading(false);

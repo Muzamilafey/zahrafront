@@ -25,14 +25,10 @@ export default function MealBills() {
       setPatient(patientRes.data.patient);
 
       // Load invoices for this patient and filter for meal bills
-      const invoiceRes = await axiosInstance.get('/billing');
-      const allInvoices = invoiceRes.data.invoices || [];
-      const mealInvoices = allInvoices.filter(inv => 
-        String(inv.patient?._id || inv.patient) === String(patientId) && 
-        (inv.type === 'meal' || inv.description?.toLowerCase().includes('meal'))
-      );
-      setInvoices(mealInvoices);
+      const invoiceRes = await axiosInstance.get(`/patients/${patientId}/meal-bills`);
+      setInvoices(invoiceRes.data.invoices || []);
     } catch (err) {
+      console.error('Failed to load meal bills:', err);
       setError(err?.response?.data?.message || 'Failed to load meal bills');
     } finally {
       setLoading(false);

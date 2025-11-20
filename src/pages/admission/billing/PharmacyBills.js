@@ -25,14 +25,10 @@ export default function PharmacyBills() {
       setPatient(patientRes.data.patient);
 
       // Load invoices for this patient and filter for pharmacy bills
-      const invoiceRes = await axiosInstance.get('/billing');
-      const allInvoices = invoiceRes.data.invoices || [];
-      const pharmacyInvoices = allInvoices.filter(inv => 
-        String(inv.patient?._id || inv.patient) === String(patientId) && 
-        (inv.type === 'pharmacy' || inv.type === 'prescription' || inv.description?.toLowerCase().includes('pharmacy') || inv.description?.toLowerCase().includes('drug'))
-      );
-      setInvoices(pharmacyInvoices);
+      const invoiceRes = await axiosInstance.get(`/patients/${patientId}/pharmacy-bills`);
+      setInvoices(invoiceRes.data.invoices || []);
     } catch (err) {
+      console.error('Failed to load pharmacy bills:', err);
       setError(err?.response?.data?.message || 'Failed to load pharmacy bills');
     } finally {
       setLoading(false);

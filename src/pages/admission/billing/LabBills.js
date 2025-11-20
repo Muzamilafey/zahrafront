@@ -25,14 +25,10 @@ export default function LabBills() {
       setPatient(patientRes.data.patient);
 
       // Load invoices for this patient and filter for lab bills
-      const invoiceRes = await axiosInstance.get('/billing');
-      const allInvoices = invoiceRes.data.invoices || [];
-      const labInvoices = allInvoices.filter(inv => 
-        String(inv.patient?._id || inv.patient) === String(patientId) && 
-        (inv.type === 'lab' || inv.type === 'test' || inv.description?.toLowerCase().includes('lab'))
-      );
-      setInvoices(labInvoices);
+      const invoiceRes = await axiosInstance.get(`/patients/${patientId}/lab-bills`);
+      setInvoices(invoiceRes.data.invoices || []);
     } catch (err) {
+      console.error('Failed to load lab bills:', err);
       setError(err?.response?.data?.message || 'Failed to load lab bills');
     } finally {
       setLoading(false);

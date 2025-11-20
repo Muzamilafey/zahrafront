@@ -21,6 +21,7 @@ export default function AdmissionSummary() {
       const res = await axiosInstance.get(`/patients/${patientId}`);
       setPatient(res.data.patient);
     } catch (error) {
+      console.error('Failed to load patient details:', error);
       setToast({ message: 'Failed to load patient details', type: 'error' });
     } finally {
       setLoading(false);

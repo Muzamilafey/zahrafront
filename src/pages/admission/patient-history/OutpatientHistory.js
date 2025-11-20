@@ -20,6 +20,7 @@ export default function OutpatientHistory() {
       const res = await axiosInstance.get(`/patients/${patientId}/outpatient-history`);
       setVisits(res.data.visits || []);
     } catch (error) {
+      console.error('Failed to load outpatient history:', error);
       setToast({ message: error?.response?.data?.message || 'Failed to load outpatient history', type: 'error' });
     } finally {
       setLoading(false);

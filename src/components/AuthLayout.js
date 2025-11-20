@@ -6,7 +6,7 @@ export const AuthLayout = ({ title, description, children }) => {
     <div className="min-h-screen bg-brand-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md transition-transform duration-500 ease-out">
         <CoreCareLogo className="mx-auto h-16 w-auto" />
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-brand-900">CoreCare Hospital Management System</h2>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-brand-900">CoreCare HMIS</h2>
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md transition-opacity duration-500 delay-100">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">

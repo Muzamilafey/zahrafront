@@ -11,6 +11,7 @@ export default function NewLabBill() {
   const [patient, setPatient] = useState(null);
   const [toast, setToast] = useState(null);
   const [tests, setTests] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -29,6 +30,7 @@ export default function NewLabBill() {
       const res = await axiosInstance.get(`/patients/${patientId}`);
       setPatient(res.data.patient);
     } catch (error) {
+      console.error('Failed to load patient details:', error);
       setToast({ message: 'Failed to load patient details', type: 'error' });
     }
   };
@@ -38,6 +40,7 @@ export default function NewLabBill() {
       const res = await axiosInstance.get('/lab-tests');
       setTests(res.data.tests);
     } catch (error) {
+      console.error('Failed to load available tests:', error);
       setToast({ message: 'Failed to load available tests', type: 'error' });
     }
   };
@@ -78,6 +81,7 @@ export default function NewLabBill() {
       setToast({ message: 'Lab bill recorded successfully', type: 'success' });
       navigate(`/admission/${patientId}/summary`);
     } catch (error) {
+      console.error('Failed to record lab bill:', error);
       setToast({
         message: error?.response?.data?.message || 'Failed to record lab bill',
         type: 'error'
@@ -86,6 +90,10 @@ export default function NewLabBill() {
       setLoading(false);
     }
   };
+
+  const filteredTests = tests.filter(test =>
+    test.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!patient) {
     return <div className="p-4">Loading patient details...</div>;
@@ -126,8 +134,15 @@ export default function NewLabBill() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-2">Available Tests</h4>
+                  <input
+                    type="text"
+                    placeholder="Search tests..."
+                    className="input w-full mb-2"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {tests.map(test => (
+                    {filteredTests.map(test => (
                       <div key={test._id} className="flex justify-between items-center text-sm p-2 hover:bg-gray-50">
                         <span>{test.name}</span>
                         <button

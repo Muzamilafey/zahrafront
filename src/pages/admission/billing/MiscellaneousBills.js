@@ -25,15 +25,10 @@ export default function MiscellaneousBills() {
       setPatient(patientRes.data.patient);
 
       // Load invoices for this patient and filter for miscellaneous bills
-      const invoiceRes = await axiosInstance.get('/billing');
-      const allInvoices = invoiceRes.data.invoices || [];
-      const miscInvoices = allInvoices.filter(inv => 
-        String(inv.patient?._id || inv.patient) === String(patientId) && 
-        (inv.type === 'misc' || inv.type === 'miscellaneous' || inv.type === 'transport' || 
-         inv.description?.toLowerCase().includes('misc') || inv.description?.toLowerCase().includes('transport'))
-      );
-      setInvoices(miscInvoices);
+      const invoiceRes = await axiosInstance.get(`/patients/${patientId}/misc-bills`);
+      setInvoices(invoiceRes.data.invoices || []);
     } catch (err) {
+      console.error('Failed to load miscellaneous bills:', err);
       setError(err?.response?.data?.message || 'Failed to load miscellaneous bills');
     } finally {
       setLoading(false);

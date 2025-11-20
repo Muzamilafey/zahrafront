@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../../contexts/AuthContext';
 import Toast from '../../../components/ui/Toast';
 
 export default function LabRequests() {
   const { id: patientId } = useParams();
+  const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [testName, setTestName] = useState('');
@@ -36,6 +37,7 @@ export default function LabRequests() {
           else if (Array.isArray(data.data)) setCatalog(data.data);
         }
       } catch (err) {
+        console.error('Failed to load lab catalog:', err);
         // non-fatal
       }
     })();
@@ -44,7 +46,9 @@ export default function LabRequests() {
       try {
         const res = await axiosInstance.get(`/patients/${patientId}`);
         setPatient(res.data.patient || res.data);
-      } catch (err) { /* ignore */ }
+      } catch (err) {
+        console.error('Failed to load patient details:', err);
+      }
     })();
     // load doctors list for admin so they can select which doctor the request is for
     (async () => {
@@ -57,7 +61,9 @@ export default function LabRequests() {
           else if (Array.isArray(dd.doctors)) setDoctors(dd.doctors);
           else if (Array.isArray(dd.data)) setDoctors(dd.data);
         }
-      } catch (err) { /* ignore */ }
+      } catch (err) {
+        console.error('Failed to load doctors:', err);
+      }
     })();
     // eslint-disable-next-line
   }, [patientId]);
@@ -68,6 +74,7 @@ export default function LabRequests() {
       const res = await axiosInstance.get(`/patients/${patientId}/lab-requests`);
       setRequests(res.data.requests || []);
     } catch (error) {
+      console.error('Failed to load lab requests:', error);
       setToast({ message: error?.response?.data?.message || 'Failed to load lab requests', type: 'error' });
     } finally {
       setLoading(false);
@@ -92,8 +99,13 @@ export default function LabRequests() {
         await loadLabRequests();
       }
     } catch (error) {
+      console.error('Failed to add lab request:', error);
       setToast({ message: error?.response?.data?.message || 'Failed to add lab request', type: 'error' });
     } finally { setLoading(false); }
+  };
+
+  const handleViewResults = (requestId) => {
+    navigate(`/lab/results/${requestId}`);
   };
 
   const grandTotal = requests.reduce((s, it) => s + ((it.amount || 0) * (it.qty || 1)), 0);
@@ -180,7 +192,7 @@ export default function LabRequests() {
                     <td className="border px-3 py-2 text-sm text-right">{(Number(r.amount || 0)).toFixed(2)}</td>
                     <td className="border px-3 py-2 text-center">{r.qty || 1}</td>
                     <td className="border px-3 py-2 text-right">{((Number(r.amount || 0) * (r.qty || 1)) || 0).toFixed(2)}</td>
-                    <td className="border px-3 py-2 text-center"><button className="btn-secondary">View Results</button></td>
+                    <td className="border px-3 py-2 text-center"><button onClick={() => handleViewResults(r._id)} className="btn-secondary">View Results</button></td>
                   </tr>
                 ))}
                 <tr>

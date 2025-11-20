@@ -52,6 +52,7 @@ export default function DischargeSummary() {
         }));
       }
     } catch (error) {
+      console.error('Failed to load patient details:', error);
       setToast({ message: 'Failed to load patient details', type: 'error' });
     }
   };
@@ -70,6 +71,7 @@ export default function DischargeSummary() {
       setToast({ message: 'Discharge summary created successfully', type: 'success' });
       navigate(`/admission/${patientId}/summary`);
     } catch (error) {
+      console.error('Failed to create discharge summary:', error);
       setToast({
         message: error?.response?.data?.message || 'Failed to create discharge summary',
         type: 'error'

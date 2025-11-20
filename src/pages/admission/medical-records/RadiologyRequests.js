@@ -9,6 +9,11 @@ export default function RadiologyRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [newRequest, setNewRequest] = useState({
+    testName: '',
+    notes: ''
+  });
 
   useEffect(() => {
     loadRadiologyRequests();
@@ -21,15 +26,76 @@ export default function RadiologyRequests() {
       const res = await axiosInstance.get(`/patients/${patientId}/radiology-requests`);
       setRequests(res.data.requests || []);
     } catch (error) {
+      console.error('Failed to load radiology requests:', error);
       setToast({ message: error?.response?.data?.message || 'Failed to load radiology requests', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleNewRequestChange = (e) => {
+    const { name, value } = e.target;
+    setNewRequest(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddNewRequest = async (e) => {
+    e.preventDefault();
+    if (!newRequest.testName) {
+      setToast({ message: 'Test name is a required field.', type: 'error' });
+      return;
+    }
+    try {
+      await axiosInstance.post(`/patients/${patientId}/radiology-requests`, newRequest);
+      setToast({ message: 'Radiology request added successfully', type: 'success' });
+      setShowForm(false);
+      setNewRequest({ testName: '', notes: '' });
+      loadRadiologyRequests();
+    } catch (error) {
+      console.error('Failed to add radiology request:', error);
+      setToast({ message: error?.response?.data?.message || 'Failed to add radiology request', type: 'error' });
+    }
+  };
+
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Radiology Requests</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold">Radiology Requests</h2>
+        <button onClick={() => setShowForm(!showForm)} className="btn-brand">
+          {showForm ? 'Cancel' : 'Add New Request'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <form onSubmit={handleAddNewRequest} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Test Name</label>
+              <input
+                type="text"
+                name="testName"
+                value={newRequest.testName}
+                onChange={handleNewRequestChange}
+                className="input w-full"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea
+                name="notes"
+                value={newRequest.notes}
+                onChange={handleNewRequestChange}
+                rows="3"
+                className="input w-full"
+              ></textarea>
+            </div>
+            <div className="text-right">
+              <button type="submit" className="btn-brand">Save Request</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {loading ? (
         <div>Loading...</div>
       ) : requests.length === 0 ? (

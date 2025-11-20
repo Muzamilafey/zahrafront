@@ -20,6 +20,7 @@ export default function InpatientHistory() {
       const res = await axiosInstance.get(`/patients/${patientId}/admission-history`);
       setAdmissions(res.data.admissions || []);
     } catch (error) {
+      console.error('Failed to load admission history:', error);
       setToast({ 
         message: error?.response?.data?.message || 'Failed to load admission history', 
         type: 'error' 
