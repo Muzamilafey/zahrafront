@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { FaArrowLeft, FaPrint, FaDownload } from 'react-icons/fa';
@@ -27,6 +27,22 @@ export default function DischargedPatientSummary() {
   const diagSugTimer = React.useRef(null);
   const [dischargeLoading, setDischargeLoading] = useState(false);
   const [dischargeMessage, setDischargeMessage] = useState(null);
+
+  const fetchDiagSuggestions = useCallback(async (q, forIndex = -1) => {
+    if (!q || q.trim().length < 2) { setDiagSuggestions([]); return; }
+    try {
+      const resp = await axiosInstance.get(`/diagnoses?q=${encodeURIComponent(q)}`);
+      setDiagSuggestions(resp.data.results || []);
+      setDiagSugForIndex(forIndex);
+    } catch (e) {
+      setDiagSuggestions([]);
+    }
+  }, [axiosInstance]);
+
+  const scheduleFetchDiag = useCallback((q, forIndex = -1) => {
+    if (diagSugTimer.current) clearTimeout(diagSugTimer.current);
+    diagSugTimer.current = setTimeout(()=>fetchDiagSuggestions(q, forIndex), 300);
+  }, [fetchDiagSuggestions]);
 
   const loadPatientData = useCallback(async () => {
     setLoading(true);
