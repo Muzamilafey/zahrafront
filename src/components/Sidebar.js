@@ -88,6 +88,7 @@ export default function Sidebar() {
       defaultCheck: user?.role === 'admin',
       items: [
         { to: '/dashboard/admin', label: 'Dashboard', perm: 'manageUsers' },
+        { to: '/dashboard/pharmacy/dispense', label: 'Dispense Drugs', perm: 'dispenseDrugs' },
         { to: '/dashboard/admin/users', label: 'Users', perm: 'manageUsers' },
         { to: '/dashboard/admin/doctors', label: 'Doctors', perm: 'doctors' },
         { to: '/dashboard/admin/settings', label: 'Settings', perm: 'settings' },

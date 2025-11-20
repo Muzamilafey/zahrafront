@@ -9,6 +9,7 @@ const InvoicePage = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -31,6 +32,26 @@ const InvoicePage = () => {
     window.print();
   };
 
+  const handleGeneratePdf = async () => {
+    if (!invoiceData?.invoiceId) return;
+    setPdfLoading(true);
+    try {
+      const res = await axiosInstance.get(`/billing/${invoiceData.invoiceId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${invoiceData.invoiceId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (e) {
+      setError('Failed to generate PDF. Please try again.');
+      console.error(e);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   if (loading) return <div className="text-center p-8">Generating Invoice...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!invoiceData) return <div className="text-center p-8">No invoice found.</div>;
@@ -40,6 +61,16 @@ const InvoicePage = () => {
   return (
     <div className="bg-gray-100 min-h-screen p-4 sm:p-8">
       <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-lg">
+        {/* --- ACTIONS BAR --- */}
+        <div className="p-4 border-b border-gray-200 flex justify-end items-center gap-2 no-print">
+            <button onClick={handleGeneratePdf} disabled={pdfLoading} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 inline-flex items-center">
+                {pdfLoading ? 'Generating...' : 'Download PDF'}
+            </button>
+            <button onClick={handlePrint} className="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 inline-flex items-center">
+                <Icons.Print className="w-5 h-5 mr-2" />
+                Print Invoice
+            </button>
+        </div>
         <div className="p-8 sm:p-12">
           <header className="flex justify-between items-start pb-8 border-b border-gray-200">
             <div className="hospital-info">
@@ -99,14 +130,6 @@ const InvoicePage = () => {
             </div>
           </div>
         </div>
-        <footer className="p-8 bg-gray-50 rounded-b-lg no-print">
-          <div className="text-center">
-            <button onClick={handlePrint} className="bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 inline-flex items-center">
-              <Icons.Print className="w-5 h-5 mr-2" />
-              Print Invoice
-            </button>
-          </div>
-        </footer>
       </div>
       <style jsx global>{`
         @media print {
