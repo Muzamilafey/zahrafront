@@ -25,7 +25,7 @@ export default function ResetPassword() {
       await axiosInstance.post('/auth/reset-password', { token, password });
       setToast({ message: 'Password reset successfully', type: 'success' });
       navigate('/login');
-    } catch (error)_ {
+    } catch (error) {
       console.error('Failed to reset password:', error);
       setToast({ message: error?.response?.data?.message || 'Failed to reset password', type: 'error' });
     } finally {

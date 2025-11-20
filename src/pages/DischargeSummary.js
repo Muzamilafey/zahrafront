@@ -22,7 +22,7 @@ const DischargeSummary = () => {
         setLoading(false);
       } catch (err) {
         console.error('Failed to load patient data:', err);
-        setError('Failed to fetch patient data. You may not have permission to view this patient.');
+        setError('Failed to fetch patient data. You may not have permission to view this patient. Try refreshing or login again');
         setLoading(false);
       }
     };
