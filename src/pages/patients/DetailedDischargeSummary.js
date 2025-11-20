@@ -102,6 +102,7 @@ const DetailedDischargeSummary = () => {
   const { hospitalDetails, loading: hospitalDetailsLoading } = useHospitalDetails();
 
   const [dischargeSummaryData, setDischargeSummaryData] = useState(null);
+  const [patientPrescriptions, setPatientPrescriptions] = useState([]); // New state for all patient prescriptions
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [generatePDFLoading, setGeneratePDFLoading] = useState(false);
@@ -114,10 +115,16 @@ const DetailedDischargeSummary = () => {
   useEffect(() => {
     if (!id || !axiosInstance) return;
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await axiosInstance.get(`/discharge/patient/${id}/latest`); // Fetch latest discharge summary for a patient
-        setDischargeSummaryData(response.data);
-        setEditedSummary(response.data); // Initialize edited data
+        const [dischargeRes, prescriptionsRes] = await Promise.all([
+          axiosInstance.get(`/discharge/patient/${id}/latest`), // Fetch latest discharge summary for a patient
+          axiosInstance.get(`/patients/${id}/prescriptions`) // Fetch all prescriptions for the patient
+        ]);
+        setDischargeSummaryData(dischargeRes.data);
+        setEditedSummary(dischargeRes.data); // Initialize edited data
+        setPatientPrescriptions(prescriptionsRes.data.prescriptions || []);
         setLoading(false);
       } catch (err) {
         console.error('Failed to load discharge summary data:', err);
@@ -463,6 +470,44 @@ const DetailedDischargeSummary = () => {
             />
           ) : (
             <p>{notes || 'N/A'}</p>
+          )}
+        </section>
+
+        {/* All Patient Medications */}
+        <section className="mb-6">
+          <h3 className="font-bold border-b border-black mb-2">ALL PATIENT MEDICATIONS</h3>
+          {patientPrescriptions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 border-b">Prescription No.</th>
+                    <th className="py-2 px-4 border-b">Drug Name</th>
+                    <th className="py-2 px-4 border-b">Quantity</th>
+                    <th className="py-2 px-4 border-b">Instructions</th>
+                    <th className="py-2 px-4 border-b">Status</th>
+                    <th className="py-2 px-4 border-b">Prescribed On</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patientPrescriptions.map((pres, pIdx) => (
+                    // Check if pres.drugs is an array before mapping
+                    Array.isArray(pres.drugs) && pres.drugs.map((drug, dIdx) => (
+                      <tr key={`${pIdx}-${dIdx}`} className="border-b">
+                        <td className="py-2 px-4">{pres.prescriptionNumber || 'N/A'}</td>
+                        <td className="py-2 px-4">{drug.drug?.name || 'N/A'}</td>
+                        <td className="py-2 px-4">{drug.quantity || 'N/A'}</td>
+                        <td className="py-2 px-4">{drug.instructions || 'N/A'}</td>
+                        <td className="py-2 px-4 capitalize">{pres.status || 'N/A'}</td>
+                        <td className="py-2 px-4">{formatDate(pres.createdAt)}</td>
+                      </tr>
+                    ))
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No other medications found for this patient.</p>
           )}
         </section>
 
