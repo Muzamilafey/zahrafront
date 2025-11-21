@@ -319,8 +319,7 @@ function App() {
             <Route path="templates/order" element={<LabTemplatesOrder />} />
           </Route>
 
-          {/* Old Laboratory Routes - Commented out as requested */}
-          {/*
+          {/* Old Laboratory Routes */}
           <Route path="/dashboard/lab" element={<PrivateRoute><Layout><LabDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/queue" element={<PrivateRoute><Layout><LabQueue /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/requests" element={<PrivateRoute><Layout><LabRequests /></Layout></PrivateRoute>} />
@@ -330,7 +329,6 @@ function App() {
           <Route path="/dashboard/lab/patient-report" element={<PrivateRoute><Layout><LabPatientReport /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
           <Route path="/lab/results/:requestId" element={<PrivateRoute><Layout><LabResult /></Layout></PrivateRoute>} />
-          */}
         </Routes>
         </Router>
       </UIProvider>
