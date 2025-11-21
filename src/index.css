@@ -151,3 +151,18 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
   .dark .text-green-600 { color: #34D399 !important; }
   .dark .text-red-600 { color: #FB7185 !important; }
 }
+
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:bg-white {
+    background-color: white !important;
+  }
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  .print\:border-none {
+    border: none !important;
+  }
+}
