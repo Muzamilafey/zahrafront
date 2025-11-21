@@ -109,9 +109,10 @@ const DetailedDischargeSummary = () => {
 
         <div className="bg-white p-6 border-2 border-black print:shadow-none print:border-none">
           <header className="text-center mb-4">
-            <h1 className="text-xl font-bold">ZAHRA MATERNITY HOSPITAL</h1>
-            <p className="text-xs">P.O. Box 20723, Nairobi, Kenya</p>
-            <p className="text-xs">Tel: 020-2726300 | Web: www.zahramaternity.co.ke</p>
+            <img src={summary.hospitalInfo?.hospitalLogoUrl || '/logo1.png'} alt="Hospital Logo" className="h-20 w-auto mx-auto mb-4" />
+            <h1 className="text-xl font-bold">{summary.hospitalInfo?.hospitalName || 'ZAHRA MATERNITY HOSPITAL'}</h1>
+            <p className="text-xs">{summary.hospitalInfo?.hospitalAddress || 'P.O. Box 20723, Nairobi, Kenya'}</p>
+            <p className="text-xs">{summary.hospitalInfo?.hospitalContact || 'Tel: 020-2726300 | Web: www.zahramaternity.co.ke'}</p>
             <h2 className="text-base font-bold mt-4 border-y-2 border-black py-1">
               PROVISIONAL DISCHARGE SUMMARY
             </h2>
