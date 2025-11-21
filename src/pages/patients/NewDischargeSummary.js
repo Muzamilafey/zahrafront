@@ -3,22 +3,50 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const NewDischargeSummary = () => {
-  const { id } = useParams(); // Patient ID from URL
+  const { id } = useParams();
   const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
-  
+
   const [patient, setPatient] = useState(null);
-  const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch Patient Data on Load
+  // Discharge form fields
+  const [dischargeDate, setDischargeDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dischargeTime, setDischargeTime] = useState('01:00');
+  const [dischargeType, setDischargeType] = useState('RECOVERED');
+  const [inPatientCaseType, setInPatientCaseType] = useState('GENERAL PATIENTS');
+  const [summary, setSummary] = useState('');
+
+  // Charges
+  const [procedureCharges, setProcedureCharges] = useState([]);
+  const [medicationCharges, setMedicationCharges] = useState([]);
+  const [wardCharges, setWardCharges] = useState([]);
+
   useEffect(() => {
     if (!id || !axiosInstance) return;
     const fetchPatient = async () => {
       try {
         const response = await axiosInstance.get(`/patients/${id}`);
-        setPatient(response.data.patient);
+        const p = response.data.patient;
+        setPatient(p);
+
+        // Setup ward charges defaults based on admission length if possible
+        const admittedAt = p?.admission?.admittedAt ? new Date(p.admission.admittedAt) : new Date();
+        const today = new Date();
+        const days = Math.max(1, Math.ceil((today - admittedAt) / (1000 * 60 * 60 * 24)));
+
+        setWardCharges([
+          { id: 'admission', description: 'ADMISSION CHARGE', amount: 1000.0, quantity: 1, checked: true },
+          { id: 'ward', description: 'WARD CHARGES', amount: 3000.0, quantity: days, checked: true },
+          { id: 'nursing', description: 'NURSING CHARGES', amount: 100.0, quantity: days, checked: true },
+          { id: 'doctor', description: 'DOCTOR WARD ROUND CHARGES', amount: 2000.0, quantity: days, checked: true },
+        ]);
+
+        // procedures & medications are left empty by default (matching image)
+        setProcedureCharges([]);
+        setMedicationCharges([]);
+
         setLoading(false);
       } catch (err) {
         console.error('Failed to load patient data:', err);
@@ -29,21 +57,48 @@ const NewDischargeSummary = () => {
     fetchPatient();
   }, [id, axiosInstance]);
 
+  const formatCurrency = (amt) => {
+    if (!amt && amt !== 0) return '-';
+    return amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const toggleWardCharge = (index) => {
+    setWardCharges((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], checked: !copy[index].checked };
+      return copy;
+    });
+  };
+
+  const totalWard = () => {
+    return wardCharges.reduce((sum, row) => {
+      if (!row.checked) return sum;
+      return sum + (Number(row.amount) || 0) * (Number(row.quantity) || 0);
+    }, 0);
+  };
+
   const handleDischarge = async (e) => {
     e.preventDefault();
     if (!window.confirm('Are you sure you want to discharge this patient? This will finalize their admission and generate an invoice.')) return;
 
     try {
-      // This endpoint in patientRoutes.js handles setting discharge date, notes, and finalizing the invoice.
-      await axiosInstance.post(`/patients/${id}/discharge`, {
-        dischargeNotes: summary,
-      });
-      
-      alert('Patient Discharged Successfully');
-      
-      // The user is likely a doctor or admin, so redirect to the patient's main page or the discharged list
-      navigate(`/patients/${id}`);
+      const selectedCharges = {
+        procedures: procedureCharges.filter((c) => c.checked),
+        medications: medicationCharges.filter((c) => c.checked),
+        ward: wardCharges.filter((c) => c.checked),
+      };
 
+      await axiosInstance.post(`/patients/${id}/discharge`, {
+        dischargeDate,
+        dischargeTime,
+        dischargeType,
+        inPatientCaseType,
+        dischargeNotes: summary,
+        charges: selectedCharges,
+      });
+
+      alert('Patient Discharged Successfully');
+      navigate(`/patients/${id}`);
     } catch (err) {
       console.error('Error discharging patient:', err);
       alert(err.response?.data?.message || 'Error discharging patient');
@@ -55,44 +110,131 @@ const NewDischargeSummary = () => {
   if (!patient) return <div className="text-center p-8">No patient data found.</div>;
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800">Hospital Discharge Form</h2>
-        <Link to={`/patients/${id}/detailed-discharge-summary`} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
-            Open Detailed Summary
-        </Link>
+    <div className="container mx-auto p-6 max-w-6xl bg-gray-50">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Confirm any new In-Patient Charges before Discharge</h1>
       </div>
-      
-      <div className="bg-white shadow-lg rounded-xl p-8 mb-6 border border-gray-200">
-        <h3 className="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">Patient Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p><strong>Name:</strong> {patient.user?.name || `${patient.firstName} ${patient.lastName}`}</p>
-          <p><strong>Age/Sex:</strong> {patient.age ? `${patient.age} / ${patient.gender}` : 'N/A'}</p>
-          <p><strong>Admission Date:</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</p>
-          <p><strong>Room Number:</strong> {patient.admission?.room?.number || 'N/A'}</p>
-          <p className="md:col-span-2"><strong>Primary Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
+
+      <div className="bg-white border border-gray-200 rounded-lg shadow p-6 mb-6">
+        <div className="text-sm text-gray-700 font-semibold text-center mb-4">
+          INPATIENT'S FILE NO : {patient.fileNo || patient.fileNumber || id}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+          <div><strong>PATIENT'S NAME :</strong> {patient.user?.name || `${patient.firstName || ''} ${patient.lastName || ''}`}</div>
+          <div><strong>PATIENT'S AGE :</strong> {patient.age ? `${patient.age} YRS` : 'N/A'}</div>
+          <div><strong>ADMISSION DATE :</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</div>
+          <div><strong>ADMISSION TIME :</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleTimeString() : 'N/A'}</div>
         </div>
       </div>
 
-      <form onSubmit={handleDischarge} className="bg-white shadow-lg rounded-xl p-8 border border-gray-200">
-        <h3 className="text-2xl font-semibold mb-4 text-gray-700">Medical Discharge Summary</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Enter the final discharge summary below. This will include medication instructions, follow-up details, and other clinical notes. 
-          This action is final and will lock the patient's admission record.
-        </p>
-        <textarea
-          rows="8"
-          placeholder="Enter medication instructions, follow-up details, and any other clinical notes for the discharge summary..."
-          value={summary}
-          onChange={(e) => setSummary(e.target.value)}
-          required
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
-        />
-        
-        <div className="mt-6 text-right">
-          <button type="submit" className="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-300">
-            Finalize Discharge
-          </button>
+      <form onSubmit={handleDischarge} className="bg-white border border-gray-200 rounded-lg shadow p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Discharge Date & Time</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Discharge Date</label>
+            <input type="date" value={dischargeDate} onChange={(e) => setDischargeDate(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded px-2 py-1" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Discharge Time</label>
+            <input type="time" value={dischargeTime} onChange={(e) => setDischargeTime(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded px-2 py-1" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Discharge Type</label>
+            <select value={dischargeType} onChange={(e) => setDischargeType(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded px-2 py-1">
+              <option value="RECOVERED">RECOVERED</option>
+              <option value="TRANSFERRED">TRANSFERRED</option>
+              <option value="DECEASED">DECEASED</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">InPatient Case Type</label>
+            <select value={inPatientCaseType} onChange={(e) => setInPatientCaseType(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded px-2 py-1">
+              <option>GENERAL PATIENTS</option>
+              <option>PRIVATE</option>
+              <option>CHARITY</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 className="font-semibold text-lg mb-2">Consultation, Procedures, Lab & Radiology Charges</h3>
+        {procedureCharges.length === 0 ? (
+          <div className="text-sm text-gray-600 mb-4">No new procedure/service has been charged for this admission</div>
+        ) : (
+          <table className="w-full table-auto mb-4 border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 border-b"><th className="px-2 py-1">SERVICE</th><th className="px-2 py-1">AMOUNT</th></tr>
+            </thead>
+            <tbody>
+              {procedureCharges.map((p, idx) => (
+                <tr key={idx} className="border-b"><td className="px-2 py-1">{p.description}</td><td className="px-2 py-1">{formatCurrency(p.amount)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <h3 className="font-semibold text-lg mb-2">Medication Charges</h3>
+        {medicationCharges.length === 0 ? (
+          <div className="text-sm text-gray-600 mb-4">No new medication has been charged for this admission</div>
+        ) : (
+          <table className="w-full table-auto mb-4 border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 border-b"><th className="px-2 py-1">MEDICATION</th><th className="px-2 py-1">COST</th><th className="px-2 py-1">QUANTITY</th><th className="px-2 py-1">TOTAL</th></tr>
+            </thead>
+            <tbody>
+              {medicationCharges.map((m, idx) => (
+                <tr key={idx} className="border-b"><td className="px-2 py-1">{m.description}</td><td className="px-2 py-1">{formatCurrency(m.amount)}</td><td className="px-2 py-1">{m.quantity}</td><td className="px-2 py-1">{formatCurrency((m.amount||0)* (m.quantity||0))}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <h3 className="font-semibold text-lg mb-2">Admission, Ward Charges & Daily Doctor & Nursing Service Charges</h3>
+        <div className="overflow-x-auto mb-4">
+          <table className="min-w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 border-b">
+                <th className="px-2 py-2">&nbsp;</th>
+                <th className="px-2 py-2">DESCRIPTION</th>
+                <th className="px-2 py-2 text-right">AMOUNT</th>
+                <th className="px-2 py-2 text-right">QUANTITY</th>
+                <th className="px-2 py-2 text-right">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {wardCharges.map((row, idx) => (
+                <tr key={row.id} className="border-b">
+                  <td className="px-2 py-2 text-center">
+                    <input type="checkbox" checked={row.checked} onChange={() => toggleWardCharge(idx)} />
+                  </td>
+                  <td className="px-2 py-2">{row.description}</td>
+                  <td className="px-2 py-2 text-right">{formatCurrency(row.amount)}</td>
+                  <td className="px-2 py-2 text-right">{row.quantity}</td>
+                  <td className="px-2 py-2 text-right">{formatCurrency((row.amount||0) * (row.quantity||0))}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50">
+                <td colSpan={4} className="text-right px-2 py-2 font-semibold">TOTAL</td>
+                <td className="text-right px-2 py-2 font-semibold">{formatCurrency(totalWard())}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Discharge Notes / Summary</label>
+            <textarea rows={6} value={summary} onChange={(e) => setSummary(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded px-2 py-2" placeholder="Enter final summary, medication instructions and follow up..." />
+          </div>
+
+          <div className="text-right">
+            <div className="mb-4">
+              <Link to={`/patients/${id}/detailed-discharge-summary`} className="inline-block mb-2 text-sm text-blue-600 underline">Open Detailed Summary</Link>
+            </div>
+            <button type="submit" className="bg-blue-700 text-white font-bold py-3 px-6 rounded shadow hover:bg-blue-800">Discharge Patient</button>
+          </div>
         </div>
       </form>
     </div>

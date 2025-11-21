@@ -3,6 +3,7 @@ import LabQueue from '../pages/lab/LabQueue';
 import LabRequests from '../pages/lab/LabRequests';
 import LabTestReview from '../pages/lab/LabTestReview';
 import LabTests from '../pages/lab/LabTests';
+import LabTestDetail from '../pages/lab/LabTestDetail'; // Import the new component
 
 const labRoutes = [
   {
@@ -25,6 +26,10 @@ const labRoutes = [
   {
     path: '/dashboard/lab/tests',
     component: LabTests,
+  },
+  {
+    path: '/labtests/:id', // Add the new route for LabTestDetail
+    component: LabTestDetail,
   },
 ];
 
