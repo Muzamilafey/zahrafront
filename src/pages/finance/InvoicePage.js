@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { Icons } from '../../components/Icons';
+import { FaPrint, FaDownload } from 'react-icons/fa';
 import useHospitalDetails from '../../hooks/useHospitalDetails';
 
 const InvoicePage = () => {
-  const { id } = useParams(); // This is the patient ID from the route /patients/:id/invoice
+  const { id } = useParams(); // This is the patient ID
   const { axiosInstance } = useContext(AuthContext);
   const { hospitalDetails, loading: hospitalDetailsLoading } = useHospitalDetails();
   
@@ -18,22 +18,19 @@ const InvoicePage = () => {
     const fetchInvoice = async () => {
       if (!id || !axiosInstance) return;
       try {
-        // This endpoint returns a consolidated invoice for a patient, including all charges.
         const response = await axiosInstance.get(`/billing/patient/${id}`);
         setInvoiceData(response.data);
-        setLoading(false);
       } catch (err) {
         console.error("Failed to fetch invoice:", err);
         setError(err.response?.data?.message || 'Failed to load invoice data.');
+      } finally {
         setLoading(false);
       }
     };
     fetchInvoice();
   }, [id, axiosInstance]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const handleGeneratePdf = async () => {
     if (!invoiceData?.invoiceId) return;
@@ -60,118 +57,111 @@ const InvoicePage = () => {
   if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
   const { patientName, patientId, address, items, subtotal, tax, total, invoiceId } = invoiceData;
-
-  const groupedItems = items.reduce((acc, item) => {
-    const category = item.category || 'Miscellaneous';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {});
-
   const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
 
   return (
-    <div className="bg-gray-50 min-h-screen" id="invoice-page">
-      <div className="max-w-5xl mx-auto p-4 sm:p-8">
+    <div className="bg-gray-100 font-sans" id="invoice-page">
+      <div className="max-w-4xl mx-auto p-4">
         <div className="flex justify-end items-center gap-2 mb-4 no-print">
-            <button onClick={handleGeneratePdf} disabled={pdfLoading} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 inline-flex items-center">
-                {pdfLoading ? 'Generating...' : 'Download PDF'}
-            </button>
-            <button onClick={handlePrint} className="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 inline-flex items-center">
-              <Icons.PrintIcon className="w-5 h-5 mr-2" />
-              Print Invoice
-            </button>
+          <button onClick={handleGeneratePdf} disabled={pdfLoading} className="btn-modern-outline text-sm">
+            <FaDownload className="mr-2" />
+            {pdfLoading ? 'Generating...' : 'Download'}
+          </button>
+          <button onClick={handlePrint} className="btn-modern-outline text-sm">
+            <FaPrint className="mr-2" />
+            Print
+          </button>
         </div>
-        <div className="bg-white shadow-2xl rounded-xl" id="printable-area">
-          <div className="p-8 sm:p-12">
-            <header className="flex justify-between items-start pb-8 border-b border-gray-200">
-              <div className="hospital-info bg-gray-100 p-4 rounded-lg border border-gray-200">
-                {hospitalDetails.hospitalLogoUrl && (
-                  <img src={hospitalDetails.hospitalLogoUrl} alt="Hospital Logo" className="h-16 mb-2 object-contain" />
-                )}
-                <h1 className="text-3xl font-bold text-teal-600">{hospitalDetails.hospitalName || 'CoreCare HMIS'}</h1>
-                <p className="text-gray-600">Address:{hospitalDetails.hospitalAddress || ' '}</p>
-                <p className="text-gray-600">Contact:{hospitalDetails.hospitalContact || 'Ph: +254 722 651 888'}</p>
-              </div>
-              <div className="invoice-meta text-right">
-                <h2 className="text-4xl font-bold text-gray-700">INVOICE</h2>
-                <p className="text-gray-500"><strong className="text-gray-600">Date:</strong> {new Date().toLocaleDateString()}</p>
-                <p className="text-gray-500"><strong className="text-gray-600">Invoice #:</strong> {invoiceId || `N/A`}</p>
-              </div>
-            </header>
 
-            <section className="patient-info mt-8">
-              <strong className="text-gray-600 font-semibold">Bill To:</strong>
-              <p className="text-xl font-bold text-gray-800">{patientName || 'N/A'}</p>
-              <p className="text-gray-600">Patient ID: {patientId || id}</p>
-              <p className="text-gray-600">{address || 'Address not available'}</p>
-            </section>
-
-            <div className="mt-10 overflow-x-auto">
-              {Object.entries(groupedItems).map(([category, items]) => (
-                <div key={category} className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2 pl-6 bg-gray-100 py-2">{category}</h3>
-                  <table className="w-full invoice-table">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service / Description</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {items.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{item.description}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{item.quantity}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{currencyFormatter.format(item.price)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-right">{currencyFormatter.format(item.quantity * item.price)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end mt-8">
-              <div className="w-full max-w-sm">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="text-gray-800 font-semibold">{currencyFormatter.format(subtotal)}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Tax (10%):</span>
-                  <span className="text-gray-800 font-semibold">{currencyFormatter.format(tax)}</span>
-                </div>
-                <div className="flex justify-between py-4 text-teal-600">
-                  <span className="text-xl font-bold">Total Amount:</span>
-                  <span className="text-xl font-bold">{currencyFormatter.format(total)}</span>
-                </div>
+        <div className="bg-white shadow-lg rounded-lg p-8" id="printable-area">
+          <header className="flex justify-between items-start pb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800">INVOICE</h1>
+              <div className="mt-4 text-sm text-gray-600">
+                <p><span className="font-bold">INVOICE NUMBER:</span> {invoiceId || 'N/A'}</p>
+                <p><span className="font-bold">DATE OF ISSUE:</span> {new Date().toLocaleDateString()}</p>
+                <p><span className="font-bold">PATIENT ID:</span> {patientId || id}</p>
               </div>
             </div>
-          </div>
+            <div className="text-right">
+              {hospitalDetails.hospitalLogoUrl && (
+                <img src={hospitalDetails.hospitalLogoUrl} alt="Hospital Logo" className="h-16 w-auto ml-auto mb-2" />
+              )}
+              <h2 className="text-lg font-bold">{hospitalDetails.hospitalName}</h2>
+              <p className="text-xs text-gray-500">{hospitalDetails.hospitalAddress}</p>
+              <p className="text-xs text-gray-500">{hospitalDetails.hospitalContact}</p>
+            </div>
+          </header>
+
+          <section className="grid grid-cols-2 gap-8 mt-8 border-t pt-6">
+            <div>
+              <h3 className="text-sm font-bold text-gray-600 uppercase">BILLED TO</h3>
+              <p className="text-lg font-semibold text-gray-800">{patientName || 'N/A'}</p>
+              <p className="text-sm text-gray-500">{address || 'Address not available'}</p>
+            </div>
+          </section>
+
+          <main className="mt-8">
+            <table className="w-full">
+              <thead className="bg-blue-600 text-white">
+                <tr>
+                  <th className="p-3 text-left text-sm font-semibold uppercase">Description</th>
+                  <th className="p-3 text-right text-sm font-semibold uppercase">Quantity</th>
+                  <th className="p-3 text-right text-sm font-semibold uppercase">Unit Price</th>
+                  <th className="p-3 text-right text-sm font-semibold uppercase">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-3 text-sm">{item.description}</td>
+                    <td className="p-3 text-sm text-right">{item.quantity}</td>
+                    <td className="p-3 text-sm text-right">{currencyFormatter.format(item.price)}</td>
+                    <td className="p-3 text-sm text-right font-semibold">{currencyFormatter.format(item.quantity * item.price)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </main>
+
+          <section className="flex justify-end mt-6">
+            <div className="w-full max-w-xs text-sm">
+              <div className="flex justify-between p-2">
+                <span className="font-semibold text-gray-600">Subtotal</span>
+                <span>{currencyFormatter.format(subtotal)}</span>
+              </div>
+              <div className="flex justify-between p-2">
+                <span className="font-semibold text-gray-600">Tax</span>
+                <span>{currencyFormatter.format(tax)}</span>
+              </div>
+              <div className="flex justify-between p-2 bg-gray-100 rounded-md mt-2">
+                <span className="font-bold text-base">TOTAL</span>
+                <span className="font-bold text-base">{currencyFormatter.format(total)}</span>
+              </div>
+            </div>
+          </section>
+
+          <footer className="border-t mt-12 pt-6 text-xs text-gray-500">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-bold text-gray-600 mb-1">NOTES</h4>
+                <p>Please make all payments to the hospital's finance office.</p>
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-600 mb-1">TERMS & CONDITIONS</h4>
+                <p>Payment is due within 30 days. A late fee will be charged on overdue balances.</p>
+              </div>
+            </div>
+            <p className="text-center mt-8">Thank you for your business!</p>
+          </footer>
         </div>
       </div>
       <style jsx global>{`
         @media print {
           .no-print { display: none; }
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          #invoice-page {
-            padding: 0;
-          }
-          #printable-area {
-            box-shadow: none;
-            margin: 0;
-            max-width: 100%;
-            border-radius: 0;
-          }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          #invoice-page { padding: 0; }
+          #printable-area { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
         }
       `}</style>
     </div>
