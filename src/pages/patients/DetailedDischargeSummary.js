@@ -57,11 +57,7 @@ const DetailedDischargeSummary = () => {
   };
 
   const handleOpenInvoice = () => {
-    if (summary?.invoice?._id) {
-      navigate(`/finance/invoices/${summary.invoice._id}`);
-    } else {
-      alert('No invoice found for this discharge summary.');
-    }
+    navigate(`/patients/${id}/invoice`);
   };
 
   const handleEdit = () => {
