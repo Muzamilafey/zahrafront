@@ -91,6 +91,29 @@ const DetailedDischargeSummary = () => {
 
   return (
     <div className="bg-gray-100 p-4 print:bg-white font-serif">
+      <style jsx global>{`
+        @media print {
+          aside, 
+          div[class*="sticky"] {
+            display: none !important;
+          }
+        
+          main {
+            padding: 0 !important;
+          }
+        
+          /* Ensure the printable area takes up the full page */
+          body > #root > div > div:nth-child(2) > div:nth-child(2) {
+            width: 100%;
+            overflow: visible;
+            display: block;
+          }
+        
+          body > #root > div > div:nth-child(2) {
+            display: block;
+          }
+        }
+      `}</style>
       <div className="max-w-4xl mx-auto">
         <div className="mb-4 flex justify-end gap-2 print:hidden">
           <button onClick={handleEdit} className="btn-modern-outline text-xs">

@@ -178,6 +178,34 @@ const InvoicePage = () => {
           #invoice-page { padding: 0; }
           #printable-area { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
         }
+        @media print {
+          aside, 
+          div[class*="sticky"] {
+            display: none !important;
+          }
+        
+          main {
+            padding: 0 !important;
+          }
+        
+          #printable-area {
+            margin: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+          }
+        
+          /* Ensure the printable area takes up the full page */
+          body > #root > div > div:nth-child(2) > div:nth-child(2) {
+            width: 100%;
+            overflow: visible;
+            display: block;
+          }
+        
+          body > #root > div > div:nth-child(2) {
+            display: block;
+          }
+        }
       `}</style>
     </div>
   );
