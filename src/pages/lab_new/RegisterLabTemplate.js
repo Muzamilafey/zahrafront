@@ -1,81 +1,101 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const RegisterLabTemplate = () => {
   const { axiosInstance } = useContext(AuthContext);
   const navigate = useNavigate();
-  
-  const [name, setName] = useState('');
-  const [tests, setTests] = useState('');
+
+  const [labTests, setLabTests] = useState([]);
+  const [selectedTest, setSelectedTest] = useState('');
+  const [description, setDescription] = useState('');
+  const [normalValue, setNormalValue] = useState('');
+  const [startValue, setStartValue] = useState('');
+  const [endValue, setEndValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (!axiosInstance) return;
+    const loadTests = async () => {
+      try {
+        const res = await axiosInstance.get('/lab/catalog');
+        const list = res.data.catalog || res.data.tests || res.data || [];
+        setLabTests(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.warn('Failed to load lab tests for dropdown', err);
+      }
+    };
+    loadTests();
+  }, [axiosInstance]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !tests) {
-      setError('Both name and tests are required.');
-      return;
-    }
+    setError('');
+    if (!selectedTest) return setError('Please select a lab test');
+    if (!description) return setError('Enter sub-test description');
 
     setIsSaving(true);
-    setError('');
-
     try {
-      const testsArray = tests.split(',').map(t => t.trim()).filter(Boolean);
-      await axiosInstance.post('/lab/templates', { name, tests: testsArray });
-      alert('Lab template registered successfully!');
+      // POST to sub-tests endpoint. Backend may vary; adjust as needed.
+      await axiosInstance.post('/lab/subtests', {
+        parentTestId: selectedTest,
+        description,
+        normalValue,
+        startValue,
+        endValue,
+      });
+      alert('Sub-test registered successfully');
       navigate('/lab/templates');
     } catch (err) {
-      console.error('Failed to register lab template:', err);
-      setError(err.response?.data?.message || 'Failed to save template. Please try again.');
+      console.error('Failed to register sub-test', err);
+      setError(err.response?.data?.message || 'Failed to register sub-test');
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Register New Lab Template</h1>
-      <div className="max-w-lg mx-auto bg-white p-8 shadow-md rounded-lg">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Template Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="tests" className="block text-sm font-medium text-gray-700">
-              Included Tests (comma-separated)
-            </label>
-            <textarea
-              id="tests"
-              value={tests}
-              onChange={(e) => setTests(e.target.value)}
-              rows="3"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              placeholder="e.g., Complete Blood Count, Urinalysis, Lipid Profile"
-              required
-            />
+    <div className="max-w-3xl mx-auto p-6">
+      <div className="border rounded p-6 bg-white">
+        <h2 className="text-xl font-semibold mb-4">Register Lab Sub-Test Details</h2>
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          <div className="flex items-center gap-4">
+            <label className="w-40 text-sm">Lab Test</label>
+            <select value={selectedTest} onChange={(e) => setSelectedTest(e.target.value)} className="flex-1 border p-2">
+              <option value="">Select Lab Test</option>
+              {labTests.map((t) => (
+                <option key={t._id || t.id || t.name} value={t._id || t.id || t.name}>{t.name || t.test || t.label}</option>
+              ))}
+            </select>
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="flex items-center gap-4">
+            <label className="w-40 text-sm">Sub-Test Description</label>
+            <input className="flex-1 border p-2" value={description} onChange={e => setDescription(e.target.value)} />
+          </div>
 
-          <div className="text-right">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-            >
-              {isSaving ? 'Saving...' : 'Save Template'}
+          <div className="flex items-center gap-4">
+            <label className="w-40 text-sm">Normal Values</label>
+            <input className="flex-1 border p-2" value={normalValue} onChange={e => setNormalValue(e.target.value)} />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="w-40 text-sm">Normal Values (Start Value)</label>
+            <input className="flex-1 border p-2" value={startValue} onChange={e => setStartValue(e.target.value)} />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="w-40 text-sm">Normal Values (End Value)</label>
+            <input className="flex-1 border p-2" value={endValue} onChange={e => setEndValue(e.target.value)} />
+          </div>
+
+          {error && <div className="text-sm text-red-600">{error}</div>}
+
+          <div className="text-center">
+            <button type="submit" disabled={isSaving} className="px-4 py-2 bg-gray-100 border rounded">
+              {isSaving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

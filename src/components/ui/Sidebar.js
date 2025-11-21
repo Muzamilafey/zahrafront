@@ -43,14 +43,14 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       // Laboratory links for admins
-      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
-      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
-      { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', icon: <FaFileInvoiceDollar />, perm: 'lab' },
-      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
-      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
-      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/requests-inpatient', label: 'Inpatient Requests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/requests-outpatient', label: 'Outpatient Requests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/internal-visits', label: 'Internal Visits', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/external-visits', label: 'External Visits', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/visits-report', label: 'Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
+      { to: '/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
+      { to: '/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
     ],
     doctor: [
       { to: '/dashboard/doctor/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
@@ -63,9 +63,9 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/slots', label: 'Available Slots', icon: <FaClock />, perm: 'availableSlots' },
       { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
       { to: '/billing', label: 'Payments / Invoices', icon: <FaFileInvoiceDollar />, perm: 'billing' },
-      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
-      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
+      { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/requests-inpatient', label: 'Inpatient Requests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/requests-outpatient', label: 'Outpatient Requests', icon: <FaFolder />, perm: 'lab' },
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
       { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers />, perm: 'manageUsers' },
@@ -115,16 +115,17 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
       { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
       { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
-      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
     ],
     lab: [
-      { to: '/dashboard/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/queue', label: 'Lab Queue', icon: <FaFolder />, perm: 'labQueue' },
-      { to: '/dashboard/lab/requests', label: 'View Lab Requests', icon: <FaFolder />, perm: 'labRequests' },
-      { to: '/dashboard/lab/review', label: 'Review Lab Tests', icon: <FaFolder />, perm: 'lab' },
-      { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
-      { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
-      { to: '/dashboard/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/requests-inpatient', label: 'Inpatient Requests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/requests-outpatient', label: 'Outpatient Requests', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/internal-visits', label: 'Internal Visits', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/external-visits', label: 'External Visits', icon: <FaFolder />, perm: 'lab' },
+      { to: '/lab/visits-report', label: 'Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
+      { to: '/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
+      { to: '/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
       { to: '/patients', label: 'Inpatient Requests', icon: <FaUsers />, perm: 'patients' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       // admin-grantable permissions
@@ -210,7 +211,7 @@ export default function Sidebar({ role, onCollapse }) {
   const [admittedCount, setAdmittedCount] = useState(0);
 
   // collect lab-related links (those under /dashboard/lab) and filter by permissions
-  const labItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/dashboard/lab'));
+  const labItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/dashboard/lab') || i.to.startsWith('/lab')));
 
   useEffect(()=>{
     if(role === 'doctor'){
