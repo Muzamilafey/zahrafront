@@ -1,404 +1,109 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import useHospitalDetails from '../../hooks/useHospitalDetails';
-import { FaFileInvoice, FaPrint, FaEdit, FaSave, FaTimes, FaFilePdf } from 'react-icons/fa';
-
-// ==========================================
-// 1. HELPER COMPONENTS (Internal)
-// ==========================================
-
-const DischargeHeader = ({ hospitalDetails }) => (
-  <header className="text-center border-b-4 border-gray-800 pb-4 mb-6 print:border-black">
-    {hospitalDetails.hospitalLogoUrl && (
-      <img 
-        src={hospitalDetails.hospitalLogoUrl} 
-        alt="Logo" 
-        className="h-20 mx-auto mb-2 object-contain" 
-      />
-    )}
-    <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900 print:text-black">
-      {hospitalDetails.hospitalName || 'Hospital Name'}
-    </h1>
-    <div className="text-sm text-gray-600 mt-1 print:text-black">
-      <p>{hospitalDetails.hospitalAddress}</p>
-      <p>{hospitalDetails.hospitalContact}</p>
-    </div>
-    <div className="mt-4 bg-gray-900 text-white py-1 px-6 inline-block rounded-full text-sm font-bold tracking-wider uppercase print:bg-transparent print:text-black print:border-2 print:border-black">
-      Discharge Summary
-    </div>
-  </header>
-);
-
-const PatientInfoGrid = ({ data }) => {
-  const { patient, admission } = data;
-  const formatDate = (d) => d ? new Date(d).toLocaleDateString() : 'N/A';
-
-  const fields = [
-    { label: 'Patient Name', value: patient?.user?.name || `${patient?.firstName || ''} ${patient?.lastName || ''}` },
-    { label: 'MRN', value: patient?.mrn },
-    { label: 'Age / Gender', value: `${patient?.age || patient?.calculateAge?.() || 'N/A'} / ${patient?.gender || 'N/A'}` },
-    { label: 'Consultant', value: admission?.admittingDoctor?.name },
-    { label: 'Admission Date', value: formatDate(admission?.admittedAt) },
-    { label: 'Discharge Date', value: formatDate(admission?.dischargedAt) },
-  ];
-
-  return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 grid grid-cols-2 gap-4 text-sm print:bg-transparent print:border-black">
-      {fields.map((field, idx) => (
-        <div key={idx} className="flex flex-col">
-          <span className="text-xs font-bold text-gray-500 uppercase print:text-black">{field.label}</span>
-          <span className="font-semibold text-gray-900 print:text-black">{field.value || 'N/A'}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const Section = ({ title, children, isEditing, name, value, onChange, placeholder }) => {
-  return (
-    <section className="mb-6 break-inside-avoid">
-      <h3 className="text-sm font-bold text-gray-800 border-b border-gray-300 mb-2 uppercase tracking-wide print:text-black print:border-black">
-        {title}
-      </h3>
-      {isEditing ? (
-        <textarea
-          name={name}
-          value={value || ''}
-          onChange={onChange}
-          placeholder={placeholder}
-          rows={Math.max(3, (value || '').split('\n').length)}
-          className="w-full p-2 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50 text-sm"
-        />
-      ) : (
-        <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap print:text-black">
-          {children || <span className="text-gray-400 italic">N/A</span>}
-        </div>
-      )}
-    </section>
-  );
-};
-
-// ==========================================
-// 2. MAIN COMPONENT
-// ==========================================
 
 const DetailedDischargeSummary = () => {
-  const { id } = useParams(); // Patient ID
-  const navigate = useNavigate();
-  const { axiosInstance, user } = useContext(AuthContext);
-  const { hospitalDetails, loading: hospitalLoading } = useHospitalDetails();
-
-  // State
-  const [data, setData] = useState(null);
-  const [prescriptions, setPrescriptions] = useState([]);
+  const { id } = useParams(); // This is patientId
+  const { axiosInstance } = useContext(AuthContext);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Edit State
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
-
-  // ---------------------------
-  // Data Fetching
-  // ---------------------------
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [dischargeRes, prescriptionsRes] = await Promise.all([
-        axiosInstance.get(`/discharge/patient/${id}/latest`),
-        axiosInstance.get(`/patients/${id}/prescriptions`)
-      ]);
-      setData(dischargeRes.data);
-      setFormData(dischargeRes.data);
-      setPrescriptions(prescriptionsRes.data.prescriptions || []);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Failed to fetch discharge data');
-    } finally {
-      setLoading(false);
-    }
-  }, [axiosInstance, id]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (id && axiosInstance) fetchData();
-  }, [fetchData, id, axiosInstance]);
+    const fetchSummary = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(`/discharge/patient/${id}/latest`);
+        setSummary(response.data);
+        setError('');
+      } catch (err) {
+        console.error('Failed to fetch discharge summary:', err);
+        setError('Failed to load discharge summary. No summary may be available for this patient, or there was a server error.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // ---------------------------
-  // Handlers
-  // ---------------------------
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleArrayInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const processArray = (val) => {
-        if (Array.isArray(val)) return val;
-        if (!val) return [];
-        return val.split(/[\n,]+/).map(s => s.trim()).filter(s => s);
-      };
-
-      const payload = {
-        ...formData,
-        secondaryDiagnoses: processArray(formData.secondaryDiagnoses),
-        dischargeMedications: typeof formData.dischargeMedications === 'string' 
-            ? processArray(formData.dischargeMedications).map(item => ({ name: item, dose: '', frequency: '' }))
-            : formData.dischargeMedications,
-        procedures: processArray(formData.procedures),
-      };
-
-      const response = await axiosInstance.put(`/discharge/update/${data._id}`, payload);
-      setData(response.data.summary);
-      setFormData(response.data.summary);
-      setIsEditing(false);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to save');
-    } finally {
-      setSaving(false);
+    if (id) {
+      fetchSummary();
     }
-  };
+  }, [id, axiosInstance]);
 
-  const handlePrint = () => window.print();
+  if (loading) {
+    return <div className="text-center p-8">Loading discharge summary...</div>;
+  }
 
-  const handleGeneratePdf = async () => {
-    setPdfLoading(true);
-    try {
-      const res = await axiosInstance.get(`/discharge/generate-pdf/${data._id}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Summary-${data.patient.mrn}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (e) {
-      alert('Failed to generate PDF');
-    } finally {
-      setPdfLoading(false);
-    }
-  };
+  if (error) {
+    return <div className="text-center p-8 text-red-500">{error}</div>;
+  }
 
-  // ---------------------------
-  // Render Helpers
-  // ---------------------------
-  const renderList = (arr) => {
-    if (!arr || arr.length === 0) return null;
-    if (typeof arr[0] === 'object') {
-      return (
-        <ul className="list-disc pl-5">
-          {arr.map((item, i) => (
-             <li key={i}>
-               {item.name} {item.dose ? `- ${item.dose}` : ''} {item.frequency ? `(${item.frequency})` : ''}
-               {item.date ? ` - ${new Date(item.date).toLocaleDateString()}` : ''}
-             </li>
+  if (!summary) {
+    return <div className="text-center p-8">No discharge summary found for this patient.</div>;
+  }
+
+  const renderField = (label, value) => (
+    <div className="mb-4">
+      <h4 className="text-lg font-semibold text-gray-700">{label}</h4>
+      <p className="text-gray-800 whitespace-pre-wrap">{value || 'N/A'}</p>
+    </div>
+  );
+
+  const renderList = (label, items) => (
+    <div className="mb-4">
+      <h4 className="text-lg font-semibold text-gray-700">{label}</h4>
+      {items && items.length > 0 ? (
+        <ul className="list-disc list-inside pl-4 text-gray-800">
+          {items.map((item, index) => (
+            <li key={index}>{typeof item === 'object' ? `${item.name} - ${item.dose} ${item.frequency}` : item}</li>
           ))}
         </ul>
-      );
-    }
-    return (
-      <ul className="list-disc pl-5">
-        {arr.map((item, i) => <li key={i}>{item}</li>)}
-      </ul>
-    );
-  };
-
-  const getArrayString = (arr) => {
-     if (!arr) return '';
-     if (typeof arr === 'string') return arr;
-     if (arr.length > 0 && typeof arr[0] === 'object') {
-        return arr.map(item => item.name || item.description).join(', ');
-     }
-     return arr.join(', ');
-  };
-
-  const canEdit = user?.role === 'admin' || user?.role === 'doctor';
-
-  if (loading || hospitalLoading) return <div className="p-12 text-center font-bold text-gray-500 animate-pulse">Loading Patient Summary...</div>;
-  if (error) return <div className="p-12 text-center text-red-600 font-bold border border-red-200 bg-red-50 m-4 rounded">{error}</div>;
-  if (!data) return <div className="p-12 text-center">No discharge summary found.</div>;
+      ) : (
+        <p className="text-gray-800">N/A</p>
+      )}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 print:bg-white print:py-0">
-      
-      {/* GLOBAL STYLES FOR PRINT */}
-      <style>{`
-        @media print {
-          @page { size: A4; margin: 1cm; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
-          .no-print, button { display: none !important; }
-          .print-only { display: block !important; }
-          .break-inside-avoid { page-break-inside: avoid; }
-          .break-before { page-break-before: always; }
-        }
-      `}</style>
+    <div className="container mx-auto p-6 bg-gray-50">
+      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+        <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 border-b pb-4">Detailed Discharge Summary</h2>
 
-      {/* --- TOOLBAR (Hidden on print) --- */}
-      <div className="max-w-4xl mx-auto mb-6 px-4 flex flex-col sm:flex-row justify-between items-center gap-4 no-print">
-        <h2 className="text-xl font-bold text-gray-700">Discharge Management</h2>
-        <div className="flex gap-2 flex-wrap justify-center">
-           <button onClick={() => navigate(`/patients/${id}/invoice`)} className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded shadow flex items-center font-medium">
-             <FaFileInvoice className="mr-2" /> Invoice
-           </button>
-           <button onClick={handleGeneratePdf} disabled={pdfLoading} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow flex items-center font-medium">
-             {pdfLoading ? '...' : <><FaFilePdf className="mr-2" /> PDF</>}
-           </button>
-           <button onClick={handlePrint} className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded shadow flex items-center font-medium">
-             <FaPrint className="mr-2" /> Print
-           </button>
-           
-           {canEdit && (
-             isEditing ? (
-               <>
-                 <button onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow flex items-center font-medium">
-                   {saving ? '...' : <><FaSave className="mr-2" /> Save Changes</>}
-                 </button>
-                 <button onClick={() => { setIsEditing(false); setFormData(data); }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow flex items-center font-medium">
-                   <FaTimes className="mr-2" /> Cancel
-                 </button>
-               </>
-             ) : (
-               <button onClick={() => setIsEditing(true)} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow flex items-center font-medium">
-                 <FaEdit className="mr-2" /> Edit Summary
-               </button>
-             )
-           )}
-        </div>
-      </div>
-
-      {/* --- DOCUMENT PAPER --- */}
-      <div className="max-w-4xl mx-auto bg-white shadow-xl p-12 print:shadow-none print:p-0 print:w-full print:max-w-none">
-        
-        <DischargeHeader hospitalDetails={hospitalDetails} />
-        <PatientInfoGrid data={data} />
-
-        {/* --- CLINICAL SECTIONS --- */}
-        <div className="space-y-1">
-          
-          <Section 
-            title="Admission Diagnosis" 
-            isEditing={isEditing} 
-            name="primaryDiagnosis" 
-            value={formData.primaryDiagnosis} 
-            onChange={handleInputChange}
-          >
-            {data.primaryDiagnosis}
-          </Section>
-
-          <Section 
-            title="Secondary Diagnoses" 
-            isEditing={isEditing} 
-            name="secondaryDiagnoses" 
-            value={getArrayString(formData.secondaryDiagnoses)} 
-            onChange={handleArrayInputChange}
-            placeholder="Separate by comma"
-          >
-            {renderList(data.secondaryDiagnoses)}
-          </Section>
-
-          <Section 
-            title="Treatment Summary" 
-            isEditing={isEditing} 
-            name="treatmentSummary" 
-            value={formData.treatmentSummary} 
-            onChange={handleInputChange}
-          >
-            {data.treatmentSummary}
-          </Section>
-
-          <Section 
-            title="Discharge Medications" 
-            isEditing={isEditing} 
-            name="dischargeMedications" 
-            value={getArrayString(formData.dischargeMedications)} 
-            onChange={handleArrayInputChange}
-            placeholder="e.g., Paracetamol 1g TDS, Amoxicillin 500mg BD"
-          >
-            {renderList(data.dischargeMedications)}
-          </Section>
-
-          <Section 
-            title="Procedures Performed" 
-            isEditing={isEditing} 
-            name="procedures" 
-            value={getArrayString(formData.procedures)} 
-            onChange={handleArrayInputChange}
-          >
-            {renderList(data.procedures)}
-          </Section>
-
-          <Section 
-            title="Follow Up Advice" 
-            isEditing={isEditing} 
-            name="followUpAdvice" 
-            value={formData.followUpAdvice} 
-            onChange={handleInputChange}
-          >
-            {data.followUpAdvice}
-          </Section>
-
-          <Section 
-            title="Additional Notes" 
-            isEditing={isEditing} 
-            name="notes" 
-            value={formData.notes} 
-            onChange={handleInputChange}
-          >
-            {data.notes}
-          </Section>
-        </div>
-
-        {/* --- SIGNATURE FOOTER --- */}
-        <div className="mt-16 pt-8 border-t-2 border-black flex justify-between items-end break-inside-avoid">
+        {/* Patient and Admission Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-gray-100 p-4 rounded-lg">
           <div>
-            <p className="font-bold text-sm uppercase text-gray-600 print:text-black">Prepared By:</p>
-            <p className="text-lg font-semibold mt-2">{data.createdBy?.name || 'Doctor Signature'}</p>
-            <p className="text-xs text-gray-500 print:text-black">Valid without seal if generated electronically.</p>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">Patient Information</h3>
+            {renderField('Name', summary.patientInfo?.name)}
+            {renderField('MRN', summary.patientInfo?.mrn)}
+            {renderField('Age/Sex', `${summary.patientInfo?.age || 'N/A'} / ${summary.patientInfo?.gender || 'N/A'}`)}
           </div>
-          <div className="text-right text-xs text-gray-500 print:text-black">
-             Generated on: {new Date().toLocaleString()}
+          <div>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">Admission Details</h3>
+            {renderField('Admission Date', summary.admissionInfo?.admittedAt ? new Date(summary.admissionInfo.admittedAt).toLocaleDateString() : 'N/A')}
+            {renderField('Discharge Date', summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleDateString() : 'N/A')}
+            {renderField('Ward', summary.admissionInfo?.ward)}
           </div>
+        </div>
+
+        {/* Clinical Information */}
+        <div className="space-y-6">
+          {renderField('Admission Diagnosis', summary.primaryDiagnosis)}
+          {renderList('Secondary Diagnoses', summary.secondaryDiagnoses)}
+          {renderField('Treatment Summary', summary.treatmentSummary || summary.hospitalStaySummary)}
+          {renderList('Procedures Performed', summary.procedures?.map(p => p.name))}
+          {renderList('Discharge Medications', summary.dischargeMedications)}
+          {renderField('Follow Up Advice', summary.followUpAdvice)}
+          {renderField('Additional Notes', summary.notes)}
+        </div>
+
+        {/* Discharging Doctor */}
+        <div className="mt-8 pt-6 border-t text-center">
+          <h3 className="text-lg font-semibold text-gray-700">Discharged By</h3>
+          <p className="text-gray-800 mt-2">{summary.dischargingDoctorName || 'N/A'}</p>
+          {summary.finalizationInfo?.finalizedAt && (
+            <p className="text-sm text-gray-500">Finalized on {new Date(summary.finalizationInfo.finalizedAt).toLocaleString()}</p>
+          )}
         </div>
       </div>
-
-      {/* --- APPENDIX (Prescription History) --- */}
-      {prescriptions.length > 0 && (
-        <div className="max-w-4xl mx-auto mt-8 bg-white shadow-lg p-8 print:break-before print:shadow-none print:p-0">
-          <h3 className="text-lg font-bold border-b-2 border-black mb-4 uppercase">Appendix: Medication History</h3>
-          <table className="w-full text-xs text-left border-collapse">
-            <thead className="bg-gray-100 print:bg-gray-200">
-              <tr>
-                <th className="p-2 border border-gray-300 print:border-black">Date</th>
-                <th className="p-2 border border-gray-300 print:border-black">Drug</th>
-                <th className="p-2 border border-gray-300 print:border-black">Qty</th>
-                <th className="p-2 border border-gray-300 print:border-black">Instructions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prescriptions.map((pres, pIdx) => 
-                Array.isArray(pres.drugs) && pres.drugs.map((drug, dIdx) => (
-                  <tr key={`${pIdx}-${dIdx}`}>
-                    <td className="p-2 border border-gray-300 print:border-black">{new Date(pres.createdAt).toLocaleDateString()}</td>
-                    <td className="p-2 border border-gray-300 print:border-black">{drug.drug?.name}</td>
-                    <td className="p-2 border border-gray-300 print:border-black">{drug.quantity}</td>
-                    <td className="p-2 border border-gray-300 print:border-black">{drug.instructions}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
     </div>
   );
 };
