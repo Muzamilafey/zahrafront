@@ -13,9 +13,11 @@ const InvoicePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
 
-  // Invoice items (read-only here). Charge selection is done on Discharge page.
+  // Local editable invoice state so selected items update totals immediately
   const [itemsState, setItemsState] = useState([]);
+  const [availableCharges, setAvailableCharges] = useState([]);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -23,8 +25,15 @@ const InvoicePage = () => {
       try {
         const response = await axiosInstance.get(`/billing/patient/${id}`);
         setInvoiceData(response.data);
-        // initialize items from server-provided items (read-only)
+        // initialize editable items from server-provided items
         setItemsState(response.data.items || []);
+        // if server returns availableCharges, use them; otherwise provide defaults
+        setAvailableCharges(response.data.availableCharges || [
+          { id: 'admission', description: 'ADMISSION CHARGE', price: 1000, quantity: 1 },
+          { id: 'ward', description: 'WARD CHARGES', price: 3000, quantity: 1 },
+          { id: 'nursing', description: 'NURSING CHARGES', price: 100, quantity: 1 },
+          { id: 'doctor_ward', description: 'DOCTOR WARD ROUND CHARGES', price: 2000, quantity: 1 },
+        ]);
       } catch (err) {
         console.error("Failed to fetch invoice:", err);
         setError(err.response?.data?.message || 'Failed to load invoice data.');
@@ -57,7 +66,37 @@ const InvoicePage = () => {
     }
   };
 
-  // Note: invoice persistence and charge selection are handled from the Discharge page.
+  const handleSaveInvoice = async () => {
+    if (!axiosInstance) return;
+    setSaveLoading(true);
+    setError('');
+    try {
+      const payload = {
+        items: itemsState,
+        subtotal,
+        tax,
+        total,
+      };
+      if (invoiceData?.invoiceId) {
+        await axiosInstance.put(`/billing/${invoiceData.invoiceId}`, payload);
+      } else {
+        await axiosInstance.post(`/billing/patient/${id}`, payload);
+      }
+
+      // refresh invoice data from server
+      const res = await axiosInstance.get(`/billing/patient/${id}`);
+      setInvoiceData(res.data);
+      setItemsState(res.data.items || itemsState);
+      alert('Invoice saved successfully');
+    } catch (err) {
+      console.error('Failed to save invoice', err, err?.response?.data);
+      const serverMessage = err?.response?.data?.message || err?.response?.data || err.message;
+      setError(typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage));
+      alert('Failed to save invoice: ' + (typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage)));
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   if (loading || hospitalDetailsLoading) return <div className="text-center p-8 animate-pulse">Generating Invoice...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
@@ -94,7 +133,9 @@ const InvoicePage = () => {
     <div className="bg-gray-100 font-sans" id="invoice-page">
       <div className="max-w-4xl mx-auto p-4">
         <div className="flex justify-end items-center gap-2 mb-4 no-print">
-          <div className="text-sm text-gray-600 mr-3">Select charges on the Discharge page to update this invoice.</div>
+          <button onClick={handleSaveInvoice} disabled={saveLoading} className="btn-modern-outline text-sm">
+            {saveLoading ? 'Saving...' : 'Save Invoice'}
+          </button>
           <button onClick={handleGeneratePdf} disabled={pdfLoading} className="btn-modern-outline text-sm">
             <FaDownload className="mr-2" />
             {pdfLoading ? 'Generating...' : 'Download'}
