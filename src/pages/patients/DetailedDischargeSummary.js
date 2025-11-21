@@ -154,6 +154,30 @@ const DetailedDischargeSummary = () => {
               </ul>
             ) : <p>N/A</p>}
 
+            <SectionTitle title="Laboratory Investigations" />
+            {summary.investigations && summary.investigations.length > 0 ? (
+              <table className="w-full text-xs mt-1 border-collapse border border-black">
+                <thead>
+                  <tr>
+                    <th className="border border-black p-1 text-left">Test Name</th>
+                    <th className="border border-black p-1 text-left">Date</th>
+                    <th className="border border-black p-1 text-left">Result</th>
+                    <th className="border border-black p-1 text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.investigations.map((inv, i) => (
+                    <tr key={i}>
+                      <td className="border border-black p-1">{inv.name}</td>
+                      <td className="border border-black p-1">{new Date(inv.date).toLocaleDateString()}</td>
+                      <td className="border border-black p-1">{inv.resultsText || 'N/A'}</td>
+                      <td className="border border-black p-1">{inv.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p>N/A</p>}
+
             <SectionTitle title="Discharge Medications" />
             {summary.dischargeMedications && summary.dischargeMedications.length > 0 ? (
               <table className="w-full text-xs mt-1 border-collapse border border-black">

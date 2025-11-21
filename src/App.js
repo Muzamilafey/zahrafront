@@ -107,6 +107,19 @@ import DispenseDrugs from './pages/pharmacy/DispenseDrugs';
 import RegisterUser from './pages/admin/RegisterUser';
 import ManageMeals from './pages/admin/ManageMeals';
 import LabTestDetail from './pages/lab/LabTestDetail';
+import LabLayout from './components/Layout/LabLayout';
+// New Lab Pages
+import LabRequestsInpatient from './pages/lab_new/LabRequestsInpatient';
+import LabRequestsOutpatient from './pages/lab_new/LabRequestsOutpatient';
+import InternalPatientLabVisits from './pages/lab_new/InternalPatientLabVisits';
+import ExternalPatientLabVisits from './pages/lab_new/ExternalPatientLabVisits';
+import LabVisitsReport from './pages/lab_new/LabVisitsReport';
+import LabVisitsReportPerPatient from './pages/lab_new/LabVisitsReportPerPatient';
+import LabReferralsReport from './pages/lab_new/LabReferralsReport';
+import LabTestsPrices from './pages/lab_new/LabTestsPrices';
+import RegisterLabTemplate from './pages/lab_new/RegisterLabTemplate';
+import ViewLabTemplates from './pages/lab_new/ViewLabTemplates';
+import LabTemplatesOrder from './pages/lab_new/LabTemplatesOrder';
 
 function App() {
   return (
@@ -289,7 +302,25 @@ function App() {
           <Route path="/dashboard/messages" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
 
           <Route path="*" element={<NotFound />} />
-          {/* Laboratory Routes */}
+          
+          {/* New Lab Section Routes */}
+          <Route path="/lab" element={<PrivateRoute><LabLayout /></PrivateRoute>}>
+            <Route index element={<Navigate to="requests-inpatient" />} />
+            <Route path="requests-inpatient" element={<LabRequestsInpatient />} />
+            <Route path="requests-outpatient" element={<LabRequestsOutpatient />} />
+            <Route path="internal-visits" element={<InternalPatientLabVisits />} />
+            <Route path="external-visits" element={<ExternalPatientLabVisits />} />
+            <Route path="visits-report" element={<LabVisitsReport />} />
+            <Route path="visits-report-patient" element={<LabVisitsReportPerPatient />} />
+            <Route path="referrals-report" element={<LabReferralsReport />} />
+            <Route path="prices" element={<LabTestsPrices />} />
+            <Route path="templates/register" element={<RegisterLabTemplate />} />
+            <Route path="templates" element={<ViewLabTemplates />} />
+            <Route path="templates/order" element={<LabTemplatesOrder />} />
+          </Route>
+
+          {/* Old Laboratory Routes - Commented out as requested */}
+          {/*
           <Route path="/dashboard/lab" element={<PrivateRoute><Layout><LabDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/queue" element={<PrivateRoute><Layout><LabQueue /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/requests" element={<PrivateRoute><Layout><LabRequests /></Layout></PrivateRoute>} />
@@ -299,6 +330,7 @@ function App() {
           <Route path="/dashboard/lab/patient-report" element={<PrivateRoute><Layout><LabPatientReport /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
           <Route path="/lab/results/:requestId" element={<PrivateRoute><Layout><LabResult /></Layout></PrivateRoute>} />
+          */}
         </Routes>
         </Router>
       </UIProvider>
