@@ -77,9 +77,19 @@ const InvoicePage = () => {
         tax,
         total,
       };
-
       if (invoiceData?.invoiceId) {
-        await axiosInstance.put(`/billing/${invoiceData.invoiceId}`, payload);
+        try {
+          await axiosInstance.put(`/billing/${invoiceData.invoiceId}`, payload);
+        } catch (putErr) {
+          // If the PUT endpoint does not exist (404), fallback to POST to create/replace via patient endpoint
+          const status = putErr?.response?.status;
+          console.warn('[InvoiceSave] PUT failed', status, putErr?.response?.data || putErr.message);
+          if (status === 404) {
+            await axiosInstance.post(`/billing/patient/${id}`, payload);
+          } else {
+            throw putErr;
+          }
+        }
       } else {
         await axiosInstance.post(`/billing/patient/${id}`, payload);
       }
@@ -90,9 +100,10 @@ const InvoicePage = () => {
       setItemsState(res.data.items || itemsState);
       alert('Invoice saved successfully');
     } catch (err) {
-      console.error('Failed to save invoice', err);
-      setError(err.response?.data?.message || 'Failed to save invoice');
-      alert('Failed to save invoice');
+      console.error('Failed to save invoice', err, err?.response?.data);
+      const serverMessage = err?.response?.data?.message || err?.response?.data || err.message;
+      setError(typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage));
+      alert('Failed to save invoice: ' + (typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage)));
     } finally {
       setSaveLoading(false);
     }
