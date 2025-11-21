@@ -69,7 +69,7 @@ const NewDischargeSummary = () => {
           <p><strong>Name:</strong> {patient.user?.name || `${patient.firstName} ${patient.lastName}`}</p>
           <p><strong>Age/Sex:</strong> {patient.age ? `${patient.age} / ${patient.gender}` : 'N/A'}</p>
           <p><strong>Admission Date:</strong> {patient.admission?.admittedAt ? new Date(patient.admission.admittedAt).toLocaleDateString() : 'N/A'}</p>
-          <p><strong>Room Number:</strong> {patient.admission?.room || 'N/A'}</p>
+          <p><strong>Room Number:</strong> {patient.admission?.room?.number || 'N/A'}</p>
           <p className="md:col-span-2"><strong>Primary Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
         </div>
       </div>
