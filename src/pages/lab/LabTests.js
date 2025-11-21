@@ -1,56 +1,3 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
-
-const LabTests = () => {
-  const { axiosInstance } = useContext(AuthContext);
-  const [tests, setTests] = useState([]);
-  const [query, setQuery] = useState('');
-
-  const fetch = async () => {
-    try {
-      const res = await axiosInstance.get('/lab/catalog');
-      setTests(res.data.catalog || res.data.tests || []);
-    } catch (err) { console.error('Failed to load catalog', err); }
-  };
-
-  useEffect(() => { fetch(); }, []);
-
-  const filtered = tests.filter(t => !query || (t.name && t.name.toLowerCase().includes(query.toLowerCase())));
-
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-center text-2xl font-bold mb-4">Services Costing Report - Lab</h1>
-      <div className="border rounded p-4 mb-4 bg-white">
-        <div className="flex gap-3 items-center">
-          <label className="whitespace-nowrap">Service Name</label>
-          <input className="border p-1 flex-1" value={query} onChange={e=>setQuery(e.target.value)} />
-          <button onClick={fetch} className="px-3 py-1 bg-gray-200 rounded">Search</button>
-        </div>
-      </div>
-      <div className="mb-4">
-        <button className="mr-2 px-3 py-1 bg-gray-200 rounded">Print Report</button>
-        <button className="px-3 py-1 bg-gray-200 rounded">Excel (Express)</button>
-      </div>
-
-      <div className="overflow-auto bg-white border rounded">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="bg-gray-100"><th className="px-2 py-1">SERVICE CATEGORY</th><th className="px-2 py-1">SERVICE NAME</th><th className="px-2 py-1">SERVICE COST (CASH)</th><th className="px-2 py-1">SERVICE COST (CORPORATE)</th><th className="px-2 py-1">SERVICE COST (INSURANCE)</th><th className="px-2 py-1">SERVICE COST (FOREIGNER)</th></tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? <tr><td colSpan={6} className="p-4 text-center">No services found</td></tr> : (
-              filtered.map(t => (
-                <tr key={t._id} className="border-t"><td className="px-2 py-1">{t.category || 'LABORATORY'}</td><td className="px-2 py-1">{t.name}</td><td className="px-2 py-1 text-right">{(t.price||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td><td className="px-2 py-1 text-right">{(t.price||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td><td className="px-2 py-1 text-right">{(t.price||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td><td className="px-2 py-1 text-right">{(t.price||0).toLocaleString(undefined,{minimumFractionDigits:2})}</td></tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-export default LabTests;
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -70,8 +17,8 @@ export default function LabTests() {
 
   const fetchTests = useCallback(async () => {
     try {
-      const response = await axiosInstance.get('/labs/catalog');
-      setTests(response.data.tests || []);
+      const response = await axiosInstance.get('/lab/catalog');
+      setTests(response.data.catalog || response.data.tests || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching tests:', error);
@@ -86,7 +33,7 @@ export default function LabTests() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.post('/labs/catalog', newTest);
+      await axiosInstance.post('/lab/catalog', newTest);
       setNewTest({
         name: '',
         description: '',
@@ -96,7 +43,6 @@ export default function LabTests() {
         price: '',
         category: '',
       });
-      // fetch from server response if available
       fetchTests();
     } catch (error) {
       console.error('Error creating test:', error);
@@ -106,7 +52,7 @@ export default function LabTests() {
   const handleDelete = async (testId) => {
     if (window.confirm('Are you sure you want to delete this test?')) {
       try {
-  await axiosInstance.delete(`/labs/catalog/${testId}`);
+        await axiosInstance.delete(`/lab/catalog/${testId}`);
         fetchTests();
       } catch (error) {
         console.error('Error deleting test:', error);
@@ -122,7 +68,6 @@ export default function LabTests() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-6">Lab Tests Catalog</h1>
 
-      {/* Add New Test Form */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Add New Test</h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -213,7 +158,6 @@ export default function LabTests() {
         </form>
       </div>
 
-      {/* Tests Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-50">
@@ -232,23 +176,14 @@ export default function LabTests() {
                   <div className="text-sm font-medium text-gray-900">{test.name}</div>
                   <div className="text-sm text-gray-500">{test.description}</div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {test.category}
-                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">{test.category}</td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">Normal: {test.normalValue}</div>
                   <div className="text-sm text-gray-500">Range: {test.startValue} - {test.endValue}</div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  ${test.price}
-                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">${test.price}</td>
                 <td className="px-6 py-4">
-                  <button
-                    onClick={() => handleDelete(test._id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => handleDelete(test._id)} className="text-red-600 hover:text-red-900">Delete</button>
                 </td>
               </tr>
             ))}

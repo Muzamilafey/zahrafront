@@ -1,37 +1,3 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
-
-const LabTestReview = () => {
-  const { axiosInstance } = useContext(AuthContext);
-  const [orders, setOrders] = useState([]);
-
-  useEffect(()=>{
-    const load = async ()=>{
-      try{
-        const res = await axiosInstance.get('/lab/orders');
-        setOrders(res.data.orders || []);
-      }catch(err){console.error(err);}    };
-    load();
-  },[axiosInstance]);
-
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-center text-2xl font-bold mb-4">Lab : Review</h1>
-      <div className="bg-white border rounded overflow-auto">
-        <table className="min-w-full text-sm">
-          <thead><tr className="bg-gray-100"><th className="px-2 py-1">#</th><th className="px-2 py-1">Patient</th><th className="px-2 py-1">Test</th><th className="px-2 py-1">Status</th><th className="px-2 py-1">Actions</th></tr></thead>
-          <tbody>
-            {orders.length === 0 ? <tr><td colSpan={5} className="p-4 text-center">No orders</td></tr> : orders.map((o,i)=>(
-              <tr key={o._id} className="border-t"><td className="px-2 py-1">{i+1}</td><td className="px-2 py-1">{o.patient?.user?.name}</td><td className="px-2 py-1">{o.testType}</td><td className="px-2 py-1">{o.status}</td><td className="px-2 py-1"><button className="px-2 py-1 bg-gray-200 rounded">Open</button></td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-export default LabTestReview;
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -48,8 +14,7 @@ export default function LabTestReview() {
   useEffect(() => {
     const fetchPendingTests = async () => {
       try {
-        // backend exposes /api/labs/orders; filter by status=pending
-  const response = await axiosInstance.get('/labs/orders?status=pending');
+        const response = await axiosInstance.get('/lab/orders?status=pending');
         setTests(response.data.orders || []);
         setLoading(false);
       } catch (error) {
@@ -71,14 +36,12 @@ export default function LabTestReview() {
 
   const handleSubmitResults = async () => {
     try {
-      // Use PUT /api/labs/:id/results with multipart/form-data
       const form = new FormData();
       form.append('resultsText', `Value: ${resultData.value}\nNotes: ${resultData.notes}`);
-  await axiosInstance.put(`/labs/${selectedTest._id}/results`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      
-      // Refresh the list
-  const response = await axiosInstance.get('/labs/orders?status=pending');
-  setTests(response.data.orders || []);
+      await axiosInstance.put(`/lab/${selectedTest._id}/results`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+      const response = await axiosInstance.get('/lab/orders?status=pending');
+      setTests(response.data.orders || []);
       setSelectedTest(null);
       setResultData({ value: '', notes: '' });
     } catch (error) {
@@ -95,15 +58,13 @@ export default function LabTestReview() {
       <h1 className="text-2xl font-bold mb-6">Review Lab Tests</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Tests List */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-lg font-semibold mb-4">Pending Tests</h2>
           <div className="space-y-4">
             {tests.map((test) => (
               <div 
                 key={test._id}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors
-                  ${selectedTest?._id === test._id ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedTest?._id === test._id ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:bg-gray-50'}`}
                 onClick={() => handleTestSelect(test)}
               >
                 <div className="flex justify-between items-start">
@@ -112,20 +73,16 @@ export default function LabTestReview() {
                     <p className="text-sm text-gray-500">Patient: {test.patient?.name || test.patient?.user?.name || 'N/A'}</p>
                     <p className="text-sm text-gray-500">ID: {test.patient?.hospitalId || test.patient?._id || '—'}</p>
                   </div>
-                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    Pending
-                  </span>
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Result Entry Form */}
         {selectedTest && (
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-4">Enter Test Results</h2>
-            
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-700">Test: {selectedTest.catalog?.name || selectedTest.testType || (selectedTest.test && selectedTest.test.name) || 'N/A'}</p>
