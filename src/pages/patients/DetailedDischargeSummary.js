@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { FaPrint, FaDownload } from 'react-icons/fa';
+import { FaPrint, FaDownload, FaFileInvoice, FaEdit } from 'react-icons/fa';
 
 const DetailedDischargeSummary = () => {
   const { id } = useParams(); // This is patientId
+  const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +56,20 @@ const DetailedDischargeSummary = () => {
     }
   };
 
+  const handleOpenInvoice = () => {
+    if (summary?.invoice?._id) {
+      navigate(`/finance/invoices/${summary.invoice._id}`);
+    } else {
+      alert('No invoice found for this discharge summary.');
+    }
+  };
+
+  const handleEdit = () => {
+    if (summary?._id) {
+      navigate(`/discharge/${summary._id}/edit`);
+    }
+  };
+
   if (loading) {
     return <div className="text-center p-8">Loading discharge summary...</div>;
   }
@@ -67,100 +82,121 @@ const DetailedDischargeSummary = () => {
     return <div className="text-center p-8">No discharge summary found for this patient.</div>;
   }
 
-  const renderField = (label, value, className = '') => (
-    <div className={`mb-4 ${className}`}>
-      <h4 className="text-md font-bold text-gray-600 uppercase tracking-wider">{label}</h4>
-      <p className="text-gray-800 whitespace-pre-wrap pt-1">{value || 'N/A'}</p>
-    </div>
+  const PatientInfoRow = ({ label, value }) => (
+    <>
+      <div className="font-bold text-xs pr-2">{label}</div>
+      <div className="text-xs">: {value || '................................'}</div>
+    </>
   );
 
-  const renderList = (label, items, renderItem) => (
-    <div className="mb-4">
-      <h4 className="text-md font-bold text-gray-600 uppercase tracking-wider">{label}</h4>
-      {items && items.length > 0 ? (
-        <ul className="list-disc list-inside pl-4 text-gray-800 pt-1">
-          {items.map((item, index) => (
-            <li key={index}>{renderItem ? renderItem(item) : item}</li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-800 pt-1">N/A</p>
-      )}
-    </div>
+  const SectionTitle = ({ title }) => (
+    <h3 className="font-bold text-sm underline uppercase mt-3 mb-1">{title}</h3>
   );
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 bg-gray-100 print:bg-white">
-      <div className="max-w-5xl mx-auto">
-        {/* Action Buttons */}
+    <div className="bg-gray-100 p-4 print:bg-white font-serif">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-4 flex justify-end gap-2 print:hidden">
-          <button
-            onClick={() => window.print()}
-            className="btn-modern-outline"
-          >
-            <FaPrint />
-            Print
+          <button onClick={handleEdit} className="btn-modern-outline text-xs">
+            <FaEdit /> Edit
           </button>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={isDownloading}
-            className="btn-modern-primary"
-          >
-            <FaDownload />
-            {isDownloading ? 'Downloading...' : 'Download PDF'}
+          <button onClick={handleOpenInvoice} className="btn-modern-outline text-xs">
+            <FaFileInvoice /> Open Invoice
+          </button>
+          <button onClick={() => window.print()} className="btn-modern-outline text-xs">
+            <FaPrint /> Print
+          </button>
+          <button onClick={handleDownloadPdf} disabled={isDownloading} className="btn-modern-primary text-xs">
+            <FaDownload /> {isDownloading ? 'Downloading...' : 'Download PDF'}
           </button>
         </div>
 
-        {/* Discharge Summary Paper */}
-        <div className="bg-white shadow-lg rounded-lg p-8 sm:p-12 border border-gray-200 print:shadow-none print:border-none">
-          {/* Header */}
-          <header className="flex justify-between items-center border-b-2 border-gray-800 pb-4">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Zahra Maternity Hospital</h1>
-              <p className="text-gray-600">Quality care for you and your baby.</p>
-            </div>
-            <img src="/logo1.png" alt="Hospital Logo" className="h-20 w-auto" />
+        <div className="bg-white p-6 border-2 border-black print:shadow-none print:border-none">
+          <header className="text-center mb-4">
+            <h1 className="text-xl font-bold">ZAHRA MATERNITY HOSPITAL</h1>
+            <p className="text-xs">P.O. Box 20723, Nairobi, Kenya</p>
+            <p className="text-xs">Tel: 020-2726300 | Web: www.zahramaternity.co.ke</p>
+            <h2 className="text-base font-bold mt-4 border-y-2 border-black py-1">
+              PROVISIONAL DISCHARGE SUMMARY
+            </h2>
           </header>
 
-          <h2 className="text-3xl font-bold my-6 text-center text-gray-800">Discharge Summary</h2>
-
-          {/* Patient and Admission Details */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-8 border-t border-b py-4 border-gray-200">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Patient Information</h3>
-              {renderField('Name', summary.patientInfo?.name)}
-              {renderField('MRN', summary.patientInfo?.mrn)}
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Admission Details</h3>
-              {renderField('Admission Date', summary.admissionInfo?.admittedAt ? new Date(summary.admissionInfo.admittedAt).toLocaleString() : 'N/A')}
-              {renderField('Discharge Date', summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : 'N/A')}
-            </div>
-            <div className="md:col-span-2">
-              {renderField('Age / Sex', `${summary.patientInfo?.age || 'N/A'} / ${summary.patientInfo?.gender || 'N/A'}`)}
+          <section className="border-2 border-black p-2">
+            <div className="grid grid-cols-[max-content_1fr_max-content_1fr] gap-x-4 gap-y-1">
+              <PatientInfoRow label="Patient Name" value={summary.patientInfo?.name} />
+              <PatientInfoRow label="Admission Date" value={summary.admissionInfo?.admittedAt ? new Date(summary.admissionInfo.admittedAt).toLocaleString() : null} />
+              <PatientInfoRow label="IP. No" value={summary.admission?.admissionIdLabel} />
+              <PatientInfoRow label="Discharge Date" value={summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : null} />
+              <PatientInfoRow label="UMR. No" value={summary.patientInfo?.mrn} />
+              <PatientInfoRow label="Age / Gender" value={`${summary.patientInfo?.age || ''} / ${summary.patientInfo?.gender || ''}`} />
+              <PatientInfoRow label="Room Type" value={summary.admissionInfo?.ward} />
+              <PatientInfoRow label="Room No" value={summary.admissionInfo?.bed} />
+              <PatientInfoRow label="Consultant" value={summary.dischargingDoctorName} />
+              <PatientInfoRow label="Co-Consultant" value={null} />
             </div>
           </section>
 
-          {/* Clinical Information */}
-          <main className="space-y-6">
-            {renderField('Admission Diagnosis', summary.primaryDiagnosis, 'p-2 bg-gray-50 rounded-md')}
-            {renderList('Secondary Diagnoses', summary.secondaryDiagnoses)}
-            {renderField('Treatment Summary', summary.treatmentSummary || summary.hospitalStaySummary, 'p-2 bg-gray-50 rounded-md')}
-            {renderList('Procedures Performed', summary.procedures, (p) => `${p.name} on ${new Date(p.date).toLocaleDateString()}`)}
-            {renderList('Discharge Medications', summary.dischargeMedications, (med) => `${med.name} - ${med.dose} ${med.frequency}`)}
-            {renderField('Follow Up Advice', summary.followUpAdvice, 'p-2 bg-gray-50 rounded-md')}
-            {renderField('Additional Notes', summary.notes)}
+          <main className="text-xs">
+            <SectionTitle title="Admission Diagnosis" />
+            <p>{summary.primaryDiagnosis || 'N/A'}</p>
+
+            <SectionTitle title="Secondary Diagnoses" />
+            {summary.secondaryDiagnoses && summary.secondaryDiagnoses.length > 0 ? (
+              <ul className="list-decimal list-inside">
+                {summary.secondaryDiagnoses.map((dx, i) => <li key={i}>{dx}</li>)}
+              </ul>
+            ) : <p>N/A</p>}
+
+            <SectionTitle title="Treatment Summary" />
+            <p className="whitespace-pre-wrap">{summary.treatmentSummary || summary.hospitalStaySummary || 'N/A'}</p>
+            
+            <SectionTitle title="Procedures Performed" />
+            {summary.procedures && summary.procedures.length > 0 ? (
+              <ul className="list-decimal list-inside">
+                {summary.procedures.map((p, i) => <li key={i}>{p.name} on {new Date(p.date).toLocaleDateString()}</li>)}
+              </ul>
+            ) : <p>N/A</p>}
+
+            <SectionTitle title="Discharge Medications" />
+            {summary.dischargeMedications && summary.dischargeMedications.length > 0 ? (
+              <table className="w-full text-xs mt-1 border-collapse border border-black">
+                <thead>
+                  <tr>
+                    <th className="border border-black p-1 text-left">Medication</th>
+                    <th className="border border-black p-1 text-left">Dose</th>
+                    <th className="border border-black p-1 text-left">Frequency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.dischargeMedications.map((med, i) => (
+                    <tr key={i}>
+                      <td className="border border-black p-1">{med.name}</td>
+                      <td className="border border-black p-1">{med.dose}</td>
+                      <td className="border border-black p-1">{med.frequency}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p>N/A</p>}
+
+            <SectionTitle title="Follow Up Advice" />
+            <p className="whitespace-pre-wrap">{summary.followUpAdvice || 'N/A'}</p>
+
+            <SectionTitle title="Additional Notes" />
+            <p className="whitespace-pre-wrap">{summary.notes || 'N/A'}</p>
           </main>
 
-          {/* Footer / Signature */}
-          <footer className="mt-12 pt-8 border-t-2 border-gray-800 text-left">
-            <h3 className="text-lg font-semibold text-gray-700">Discharged By:</h3>
-            <p className="text-gray-800 mt-2 text-xl">{summary.dischargingDoctorName || 'N/A'}</p>
-            {summary.finalizationInfo?.finalizedAt && (
-              <p className="text-sm text-gray-500 mt-1">Finalized on {new Date(summary.finalizationInfo.finalizedAt).toLocaleString()}</p>
-            )}
-            <div className="mt-16 border-t-2 border-dotted w-1/2">
-              <p className="text-center text-sm text-gray-500 pt-1">Signature</p>
+          <footer className="mt-16 text-xs">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <div className="border-t border-black w-3/4"></div>
+                <p className="font-bold pt-1">REGISTRAR</p>
+              </div>
+              <div>
+                <div className="border-t border-black w-3/4"></div>
+                <p className="font-bold pt-1">CONSULTANT</p>
+                <p className="mt-2">{summary.dischargingDoctorName || 'N/A'}</p>
+              </div>
             </div>
           </footer>
         </div>

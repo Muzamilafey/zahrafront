@@ -98,6 +98,7 @@ import DischargedPatientsList from './pages/patients/DischargedPatientsList';
 import PatientDischargePage from './pages/patients/PatientDischargePage';
 import NewDischargeSummary from './pages/patients/NewDischargeSummary';
 import DetailedDischargeSummary from './pages/patients/DetailedDischargeSummary';
+import EditDischargeSummary from './pages/patients/EditDischargeSummary';
 import DischargeLauncher from './pages/patients/DischargeLauncher';
 import InvoiceDetail from './pages/finance/InvoiceDetail';
 import InvoicePage from './pages/finance/InvoicePage';
@@ -213,6 +214,7 @@ function App() {
           <Route path="/patients/:id/discharge-template" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/discharge" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/:id" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/discharge/:summaryId/edit" element={<PrivateRoute><Layout><ErrorBoundary><EditDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           {/* Discharge invoice page removed (handled via billing/invoice routes) */}
           <Route path="/discharge/new" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/discharge/summary/:id" element={<PrivateRoute><Layout><ErrorBoundary><NewDischargeSummary /></ErrorBoundary></Layout></PrivateRoute>} />
