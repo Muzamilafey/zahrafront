@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const LabDashboard = () => {
@@ -23,6 +24,23 @@ const LabDashboard = () => {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-center text-2xl font-bold mb-6">Lab : Patient Visits</h1>
+
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold mb-2">Quick Links</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <Link to="/lab/requests-inpatient" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Inpatient Requests</Link>
+          <Link to="/lab/requests-outpatient" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Outpatient Requests</Link>
+          <Link to="/lab/internal-visits" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Internal Patient Visits</Link>
+          <Link to="/lab/external-visits" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">External Patient Visits</Link>
+          <Link to="/lab/visits-report" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Visits Report</Link>
+          <Link to="/lab/visits-report-patient" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Visits Report (Per Patient)</Link>
+          <Link to="/lab/referrals-report" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Referrals Report</Link>
+          <Link to="/lab/prices" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Tests & Prices</Link>
+          <Link to="/lab/templates" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">View Templates</Link>
+          <Link to="/lab/templates/register" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Register Template</Link>
+          <Link to="/lab/templates/order" className="block text-center p-2 bg-blue-50 border rounded hover:bg-blue-100">Template Orders</Link>
+        </div>
+      </div>
 
       <div className="border rounded p-4 mb-4 bg-white">
         <h2 className="text-lg font-semibold mb-3">Search By</h2>

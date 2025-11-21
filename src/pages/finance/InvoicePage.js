@@ -13,6 +13,11 @@ const InvoicePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  // Local editable invoice state so selected items update totals immediately
+  const [itemsState, setItemsState] = useState([]);
+  const [availableCharges, setAvailableCharges] = useState([]);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -20,6 +25,15 @@ const InvoicePage = () => {
       try {
         const response = await axiosInstance.get(`/billing/patient/${id}`);
         setInvoiceData(response.data);
+        // initialize editable items from server-provided items
+        setItemsState(response.data.items || []);
+        // if server returns availableCharges, use them; otherwise provide defaults
+        setAvailableCharges(response.data.availableCharges || [
+          { id: 'admission', description: 'ADMISSION CHARGE', price: 1000, quantity: 1 },
+          { id: 'ward', description: 'WARD CHARGES', price: 3000, quantity: 1 },
+          { id: 'nursing', description: 'NURSING CHARGES', price: 100, quantity: 1 },
+          { id: 'doctor_ward', description: 'DOCTOR WARD ROUND CHARGES', price: 2000, quantity: 1 },
+        ]);
       } catch (err) {
         console.error("Failed to fetch invoice:", err);
         setError(err.response?.data?.message || 'Failed to load invoice data.');
@@ -52,17 +66,76 @@ const InvoicePage = () => {
     }
   };
 
+  const handleSaveInvoice = async () => {
+    if (!axiosInstance) return;
+    setSaveLoading(true);
+    setError('');
+    try {
+      const payload = {
+        items: itemsState,
+        subtotal,
+        tax,
+        total,
+      };
+
+      if (invoiceData?.invoiceId) {
+        await axiosInstance.put(`/billing/${invoiceData.invoiceId}`, payload);
+      } else {
+        await axiosInstance.post(`/billing/patient/${id}`, payload);
+      }
+
+      // refresh invoice data from server
+      const res = await axiosInstance.get(`/billing/patient/${id}`);
+      setInvoiceData(res.data);
+      setItemsState(res.data.items || itemsState);
+      alert('Invoice saved successfully');
+    } catch (err) {
+      console.error('Failed to save invoice', err);
+      setError(err.response?.data?.message || 'Failed to save invoice');
+      alert('Failed to save invoice');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   if (loading || hospitalDetailsLoading) return <div className="text-center p-8 animate-pulse">Generating Invoice...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
-  const { patientName, patientId, address, items, subtotal, tax, total, invoiceId } = invoiceData;
+  const { patientName, patientId, address, invoiceId } = invoiceData;
   const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
+
+  // compute subtotal / tax / total from itemsState and invoiceData settings
+  const subtotal = itemsState.reduce((s, it) => s + ((it.quantity || 1) * (it.price || 0)), 0);
+  const taxRate = invoiceData?.taxRate ?? null; // if server provides taxRate prefer that
+  const tax = taxRate != null ? subtotal * taxRate : (invoiceData?.tax || 0);
+  const total = subtotal + tax;
+
+  // Handlers to toggle/add/remove charges
+  const toggleCharge = (charge) => {
+    const exists = itemsState.find(i => i._id === charge.id || i.id === charge.id);
+    if (exists) {
+      setItemsState(itemsState.filter(i => !(i._id === charge.id || i.id === charge.id)));
+    } else {
+      setItemsState([...itemsState, { description: charge.description, price: charge.price, quantity: charge.quantity || 1, id: charge.id }]);
+    }
+  };
+
+  const updateChargeQuantity = (chargeId, qty) => {
+    const q = Math.max(0, Number(qty) || 0);
+    // Update availableCharges default quantity so when user toggles it uses this value
+    setAvailableCharges(availableCharges.map(c => c.id === chargeId ? { ...c, quantity: q } : c));
+    // If the charge is already in the invoice items, update it there as well
+    setItemsState(itemsState.map(i => (i._id === chargeId || i.id === chargeId) ? { ...i, quantity: q } : i));
+  };
 
   return (
     <div className="bg-gray-100 font-sans" id="invoice-page">
       <div className="max-w-4xl mx-auto p-4">
         <div className="flex justify-end items-center gap-2 mb-4 no-print">
+          <button onClick={handleSaveInvoice} disabled={saveLoading} className="btn-modern-outline text-sm">
+            {saveLoading ? 'Saving...' : 'Save Invoice'}
+          </button>
           <button onClick={handleGeneratePdf} disabled={pdfLoading} className="btn-modern-outline text-sm">
             <FaDownload className="mr-2" />
             {pdfLoading ? 'Generating...' : 'Download'}
@@ -102,6 +175,40 @@ const InvoicePage = () => {
           </section>
 
           <main className="mt-8">
+            {/* Available selectable charges (checkbox + qty) */}
+            <div className="mb-4 bg-gray-50 p-4 rounded">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Admission, Ward & Service Charges</h3>
+              <div className="overflow-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="p-2 text-left text-xs"> </th>
+                      <th className="p-2 text-left text-xs">DESCRIPTION</th>
+                      <th className="p-2 text-right text-xs">AMOUNT</th>
+                      <th className="p-2 text-right text-xs">QUANTITY</th>
+                      <th className="p-2 text-right text-xs">TOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {availableCharges.map((c) => {
+                      const selected = !!itemsState.find(i => i.id === c.id || i._id === c.id);
+                      const qty = (itemsState.find(i => i.id === c.id || i._id === c.id)?.quantity) || c.quantity || 1;
+                      return (
+                        <tr key={c.id} className="border-b">
+                          <td className="p-2"><input type="checkbox" checked={selected} onChange={() => toggleCharge(c)} /></td>
+                          <td className="p-2 text-sm">{c.description}</td>
+                          <td className="p-2 text-right text-sm">{currencyFormatter.format(c.price)}</td>
+                          <td className="p-2 text-right text-sm"><input type="number" min="0" value={qty} onChange={(e) => updateChargeQuantity(c.id, e.target.value)} className="w-20 border p-1 text-right" /></td>
+                          <td className="p-2 text-right text-sm font-semibold">{currencyFormatter.format((c.price || 0) * qty)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Final invoice items (combined from server and selected charges) */}
             <table className="w-full">
               <thead className="bg-blue-600 text-white">
                 <tr>
@@ -112,12 +219,12 @@ const InvoicePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, index) => (
+                {itemsState.map((item, index) => (
                   <tr key={index} className="border-b">
                     <td className="p-3 text-sm">{item.description}</td>
                     <td className="p-3 text-sm text-right">{item.quantity}</td>
                     <td className="p-3 text-sm text-right">{currencyFormatter.format(item.price)}</td>
-                    <td className="p-3 text-sm text-right font-semibold">{currencyFormatter.format(item.quantity * item.price)}</td>
+                    <td className="p-3 text-sm text-right font-semibold">{currencyFormatter.format((item.quantity || 0) * (item.price || 0))}</td>
                   </tr>
                 ))}
               </tbody>
