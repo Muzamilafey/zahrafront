@@ -152,7 +152,7 @@ const InvoicePage = () => {
                 <p>Payment is due within 30 days. A late fee will be charged on overdue balances.</p>
               </div>
             </div>
-            <p className="text-center mt-8">Thank you for your business!</p>
+            <p className="text-center mt-8">CoreCare HMIS | +254722651888</p>
           </footer>
         </div>
       </div>
