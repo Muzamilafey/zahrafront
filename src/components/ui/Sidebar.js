@@ -27,6 +27,7 @@ export default function Sidebar({ role, onCollapse }) {
     admin: [
       { to: '/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
       { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
+      { to: '/dashboard/admin/tools', label: 'Admin Tools', icon: <FaBars />, perm: 'manageDiagnoses' },
       { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers />, perm: 'manageUsers' },
       { to: '/dashboard/admin/settings', label: 'Settings', icon: <FaCog />, perm: 'settings' },
       { to: '/dashboard/admin/doctors', label: 'Doctors', icon: <FaUserPlus />, perm: 'doctors' },

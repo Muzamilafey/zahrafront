@@ -106,6 +106,7 @@ import InternalPharmacyRequests from './pages/admission/pharmacy/InternalPharmac
 import DispenseDrugs from './pages/pharmacy/DispenseDrugs';
 import RegisterUser from './pages/admin/RegisterUser';
 import ManageMeals from './pages/admin/ManageMeals';
+import AdminTools from './pages/admin/AdminTools';
 import LabTestDetail from './pages/lab/LabTestDetail';
 import LabLayout from './components/Layout/LabLayout';
 // New Lab Pages
@@ -263,6 +264,7 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/dashboard/admin/patients" element={<PrivateRoute><Layout><AdminPatients /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/admin/tools" element={<PrivateRoute><Layout><AdminTools /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id" element={<PrivateRoute><Layout><AdminPatient /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id/assign" element={<PrivateRoute><Layout><AdminAssignDoctor /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/users/:id" element={<PrivateRoute><Layout><AdminUser /></Layout></PrivateRoute>} />

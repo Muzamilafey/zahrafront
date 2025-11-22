@@ -94,6 +94,7 @@ export default function Sidebar() {
         { to: '/dashboard/admin/settings', label: 'Settings', perm: 'settings' },
         { to: '/dashboard/admin/register', label: 'Register User', perm: 'manageUsers' },
         { to: '/dashboard/admin/meals', label: 'Manage Meals', perm: 'manageMeals' },
+        { to: '/dashboard/admin/tools', label: 'Admin Tools', perm: 'manageDiagnoses' },
         { to: '/lab/tests/new', label: 'Create Diagnoses', perm: 'manageDiagnoses' },
       ],
     },
