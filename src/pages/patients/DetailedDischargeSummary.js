@@ -8,6 +8,8 @@ const DetailedDischargeSummary = () => {
   const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
   const [summary, setSummary] = useState(null);
+  const [wardLabel, setWardLabel] = useState(null);
+  const [bedLabel, setBedLabel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -68,6 +70,62 @@ const DetailedDischargeSummary = () => {
         } catch(e){ console.warn('Failed to fetch patient diagnoses', e); }
 
         setSummary(mergedSummary);
+        // After setting merged summary, try to resolve ward/bed ids to friendly labels
+        try {
+          const wardId = mergedSummary?.admissionInfo?.ward;
+          const bedId = mergedSummary?.admissionInfo?.bed;
+
+          const resolveWard = async () => {
+            if (!wardId) return;
+            if (typeof wardId === 'object') {
+              const name = wardId.name || wardId.label || wardId.wardName || wardId.title;
+              if (name) return setWardLabel(name);
+            }
+
+            const endpoints = [`/wards/${wardId}`, `/wards?id=${wardId}`, `/wards?wardId=${wardId}`];
+            for (const ep of endpoints) {
+              try {
+                const r = await axiosInstance.get(ep);
+                const d = r.data;
+                const candidate = d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].name || d[0].label)) || d?.ward?.name;
+                if (candidate) {
+                  setWardLabel(candidate);
+                  return;
+                }
+              } catch (e) {
+                // ignore
+              }
+            }
+          };
+
+          const resolveBed = async () => {
+            if (!bedId) return;
+            if (typeof bedId === 'object') {
+              const name = bedId.name || bedId.label || bedId.number || bedId.bedNo || bedId.code;
+              if (name) return setBedLabel(name);
+            }
+
+            const endpoints = [`/beds/${bedId}`, `/rooms/${bedId}`, `/beds?id=${bedId}`, `/rooms?id=${bedId}`];
+            for (const ep of endpoints) {
+              try {
+                const r = await axiosInstance.get(ep);
+                const d = r.data;
+                const candidate = d?.number || d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].number || d[0].name)) || d?.bed?.number;
+                if (candidate) {
+                  setBedLabel(candidate);
+                  return;
+                }
+              } catch (e) {
+                // ignore
+              }
+            }
+          };
+
+          resolveWard();
+          resolveBed();
+        } catch (e) {
+          // ignore
+        }
         setError('');
       } catch (err) {
         console.error('Failed to fetch discharge summary:', err);
@@ -199,8 +257,8 @@ const DetailedDischargeSummary = () => {
               <PatientInfoRow label="Discharge Date" value={summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : null} />
               <PatientInfoRow label="UMR. No" value={summary.patientInfo?.mrn} />
               <PatientInfoRow label="Age / Gender" value={`${summary.patientInfo?.age || ''} / ${summary.patientInfo?.gender || ''}`} />
-              <PatientInfoRow label="Room Type" value={summary.admissionInfo?.ward} />
-              <PatientInfoRow label="Room No" value={summary.admissionInfo?.bed} />
+              <PatientInfoRow label="Room Type" value={wardLabel || (typeof summary.admissionInfo?.ward === 'string' ? summary.admissionInfo?.ward : (summary.admissionInfo?.ward?.name || summary.admissionInfo?.ward))} />
+              <PatientInfoRow label="Room No" value={bedLabel || (typeof summary.admissionInfo?.bed === 'string' ? summary.admissionInfo?.bed : (summary.admissionInfo?.bed?.number || summary.admissionInfo?.bed))} />
               <PatientInfoRow label="Consultant" value={summary.dischargingDoctorName} />
               <PatientInfoRow label="Co-Consultant" value={null} />
             </div>
