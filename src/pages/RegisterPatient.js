@@ -207,8 +207,7 @@ export default function RegisterPatient() {
     }
   };
 
-  const maxDob = new Date();
-  maxDob.setFullYear(maxDob.getFullYear() - 18);
+  const maxDob = new Date(); // allow DOB up to today
 
   const renderInput = (name, label, type = 'text', required = false, pattern) => (
     <div>

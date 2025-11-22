@@ -16,6 +16,8 @@ const InvoicePage = () => {
 
   // Invoice items (read-only here). Charge selection is done on Discharge page.
   const [itemsState, setItemsState] = useState([]);
+  const [wardLabel, setWardLabel] = useState(null);
+  const [bedLabel, setBedLabel] = useState(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -23,8 +25,53 @@ const InvoicePage = () => {
       try {
         const response = await axiosInstance.get(`/billing/patient/${id}`);
         setInvoiceData(response.data);
-        // initialize items from server-provided items (read-only)
         setItemsState(response.data.items || []);
+
+        // Try to resolve ward/bed labels if present
+        const admission = response.data.admissionInfo || response.data.admission || {};
+        const wardId = admission.ward;
+        const bedId = admission.bed;
+
+        const resolveWard = async () => {
+          if (!wardId) return;
+          if (typeof wardId === 'object') {
+            const name = wardId.name || wardId.label || wardId.wardName || wardId.title;
+            if (name) return setWardLabel(name);
+          }
+          const endpoints = [`/wards/${wardId}`, `/wards?id=${wardId}`, `/wards?wardId=${wardId}`];
+          for (const ep of endpoints) {
+            try {
+              const r = await axiosInstance.get(ep);
+              const d = r.data;
+              const candidate = d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].name || d[0].label)) || d?.ward?.name;
+              if (candidate) {
+                setWardLabel(candidate);
+                return;
+              }
+            } catch (e) {}
+          }
+        };
+        const resolveBed = async () => {
+          if (!bedId) return;
+          if (typeof bedId === 'object') {
+            const name = bedId.name || bedId.label || bedId.number || bedId.bedNo || bedId.code;
+            if (name) return setBedLabel(name);
+          }
+          const endpoints = [`/beds/${bedId}`, `/rooms/${bedId}`, `/beds?id=${bedId}`, `/rooms?id=${bedId}`];
+          for (const ep of endpoints) {
+            try {
+              const r = await axiosInstance.get(ep);
+              const d = r.data;
+              const candidate = d?.number || d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].number || d[0].name)) || d?.bed?.number;
+              if (candidate) {
+                setBedLabel(candidate);
+                return;
+              }
+            } catch (e) {}
+          }
+        };
+        resolveWard();
+        resolveBed();
       } catch (err) {
         console.error("Failed to fetch invoice:", err);
         setError(err.response?.data?.message || 'Failed to load invoice data.');
@@ -87,31 +134,40 @@ const InvoicePage = () => {
           </button>
         </div>
 
-        <div className="bg-white shadow-lg rounded-lg p-8" id="printable-area">
-          <header className="flex justify-between items-start pb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800">INVOICE</h1>
-              <div className="mt-4 text-sm text-gray-600">
-                <p><span className="font-bold">INVOICE NUMBER:</span> {invoiceId || 'N/A'}</p>
-                <p><span className="font-bold">DATE OF ISSUE:</span> {new Date().toLocaleDateString()}</p>
-                <p><span className="font-bold">PATIENT ID:</span> {patientId || id}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              {hospitalDetails.hospitalLogoUrl && (
-                <img src={hospitalDetails.hospitalLogoUrl} alt="Hospital Logo" className="h-16 w-auto ml-auto mb-2" />
-              )}
-              <h2 className="text-lg font-bold">{hospitalDetails.hospitalName}</h2>
-              <p className="text-xs text-gray-500">{hospitalDetails.hospitalAddress}</p>
-              <p className="text-xs text-gray-500">{hospitalDetails.hospitalContact}</p>
-            </div>
+
+        <div className="bg-white p-6 border-2 border-black print:shadow-none print:border-none" id="printable-area">
+          <header className="text-center mb-4">
+            <img src={hospitalDetails.hospitalLogoUrl || '/logo1.png'} alt="Hospital Logo" className="h-20 w-auto mx-auto mb-4" />
+            <h1 className="text-xl font-bold">{hospitalDetails.hospitalName || 'CoreCare'}</h1>
+            <p className="text-xs">{hospitalDetails.hospitalAddress || 'P.O. Box 20723, Nairobi, Kenya'}</p>
+            <p className="text-xs">{hospitalDetails.hospitalContact || 'Tel: 0722651888 | Web: www.manderasoft.co.ke'}</p>
+            <h2 className="text-base font-bold mt-4 border-y-2 border-black py-1">
+              INVOICE
+            </h2>
           </header>
 
-          <section className="grid grid-cols-2 gap-8 mt-8 border-t pt-6">
-            <div>
-              <h3 className="text-sm font-bold text-gray-600 uppercase">BILLED TO</h3>
-              <p className="text-lg font-semibold text-gray-800">{patientName || 'N/A'}</p>
-              <p className="text-sm text-gray-500">{address || 'Address not available'}</p>
+          <section className="border-2 border-black p-2 mb-6">
+            <div className="grid grid-cols-[max-content_1fr_max-content_1fr] gap-x-4 gap-y-1">
+              <div className="font-bold text-xs pr-2">Patient Name</div>
+              <div className="text-xs">: {patientName || '................................'}</div>
+              <div className="font-bold text-xs pr-2">Admission Date</div>
+              <div className="text-xs">: {invoiceData.admissionInfo?.admittedAt ? new Date(invoiceData.admissionInfo.admittedAt).toLocaleString() : '................................'}</div>
+              <div className="font-bold text-xs pr-2">IP. No</div>
+              <div className="text-xs">: {invoiceData.admission?.admissionIdLabel || '................................'}</div>
+              <div className="font-bold text-xs pr-2">Discharge Date</div>
+              <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
+              <div className="font-bold text-xs pr-2">UMR. No</div>
+              <div className="text-xs">: {invoiceData.patientInfo?.mrn || '................................'}</div>
+              <div className="font-bold text-xs pr-2">Age / Gender</div>
+              <div className="text-xs">: {(invoiceData.patientInfo?.age || '') + ' / ' + (invoiceData.patientInfo?.gender || '')}</div>
+              <div className="font-bold text-xs pr-2">Room Type</div>
+              <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div>
+              <div className="font-bold text-xs pr-2">Room No</div>
+              <div className="text-xs">: {bedLabel || (typeof invoiceData.admissionInfo?.bed === 'string' ? invoiceData.admissionInfo?.bed : (invoiceData.admissionInfo?.bed?.number || invoiceData.admissionInfo?.bed || '................................'))}</div>
+              <div className="font-bold text-xs pr-2">Consultant</div>
+              <div className="text-xs">: {invoiceData.dischargingDoctorName || '................................'}</div>
+              <div className="font-bold text-xs pr-2">Co-Consultant</div>
+              <div className="text-xs">: {'................................'}</div>
             </div>
           </section>
 

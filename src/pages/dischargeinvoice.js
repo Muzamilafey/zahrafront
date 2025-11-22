@@ -35,33 +35,34 @@ export default function Invoice({ invoiceId }) {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded mt-6 font-sans">
-      <div ref={printRef}>
-        <h1 className="text-3xl font-bold mb-6 text-center">Invoice</h1>
 
-        <section className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className="font-semibold text-gray-700">Invoice Number</p>
-            <p>{invoice.invoiceNumber}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Invoice Date</p>
-            <p>{new Date(invoice.invoiceDate).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Patient Name</p>
-            <p>{invoice.patientName}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Patient ID</p>
-            <p>{invoice.patientId}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Doctor</p>
-            <p>{invoice.doctorName}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Payment Status</p>
-            <p>{invoice.paymentStatus}</p>
+      <div ref={printRef}>
+        {/* Header structure matching DetailedDischargeSummary */}
+        <header className="text-center mb-4">
+          <img src={invoice.hospitalInfo?.hospitalLogoUrl || '/logo1.png'} alt="Hospital Logo" className="h-20 w-auto mx-auto mb-4" />
+          <h1 className="text-xl font-bold">{invoice.hospitalInfo?.hospitalName || 'CoreCare'}</h1>
+          <p className="text-xs">{invoice.hospitalInfo?.hospitalAddress || 'P.O. Box 20723, Nairobi, Kenya'}</p>
+          <p className="text-xs">{invoice.hospitalInfo?.hospitalContact || 'Tel: 0722651888 | Web: www.manderasoft.co.ke'}</p>
+          <h2 className="text-base font-bold mt-4 border-y-2 border-black py-1">
+            INVOICE
+          </h2>
+        </header>
+
+        {/* Patient/Invoice Info Section (bordered) */}
+        <section className="border-2 border-black p-2 mb-6">
+          <div className="grid grid-cols-[max-content_1fr_max-content_1fr] gap-x-4 gap-y-1">
+            <div className="font-bold text-xs pr-2">Invoice Number</div>
+            <div className="text-xs">: {invoice.invoiceNumber || '................................'}</div>
+            <div className="font-bold text-xs pr-2">Invoice Date</div>
+            <div className="text-xs">: {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleString() : '................................'}</div>
+            <div className="font-bold text-xs pr-2">Patient Name</div>
+            <div className="text-xs">: {invoice.patientName || '................................'}</div>
+            <div className="font-bold text-xs pr-2">Patient ID</div>
+            <div className="text-xs">: {invoice.patientId || '................................'}</div>
+            <div className="font-bold text-xs pr-2">Doctor</div>
+            <div className="text-xs">: {invoice.doctorName || '................................'}</div>
+            <div className="font-bold text-xs pr-2">Payment Status</div>
+            <div className="text-xs">: {invoice.paymentStatus || '................................'}</div>
           </div>
         </section>
 
