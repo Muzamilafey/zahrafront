@@ -120,6 +120,7 @@ import LabTestsPrices from './pages/lab_new/LabTestsPrices';
 import RegisterLabTemplate from './pages/lab_new/RegisterLabTemplate';
 import ViewLabTemplates from './pages/lab_new/ViewLabTemplates';
 import LabTemplatesOrder from './pages/lab_new/LabTemplatesOrder';
+import CreateLabTest from './pages/lab/CreateLabTest';
 
 function App() {
   return (
@@ -314,6 +315,7 @@ function App() {
             <Route path="visits-report-patient" element={<LabVisitsReportPerPatient />} />
             <Route path="referrals-report" element={<LabReferralsReport />} />
             <Route path="prices" element={<LabTestsPrices />} />
+            <Route path="tests/register" element={<CreateLabTest />} />
             <Route path="templates/register" element={<RegisterLabTemplate />} />
             <Route path="templates" element={<ViewLabTemplates />} />
             <Route path="templates/order" element={<LabTemplatesOrder />} />

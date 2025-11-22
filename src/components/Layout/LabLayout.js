@@ -13,6 +13,7 @@ const labNavLinks = [
   { to: '/lab/visits-report-patient', text: 'Patient Visits Report', icon: <FaChartBar /> },
   { to: '/lab/referrals-report', text: 'Referrals Report', icon: <FaFileInvoice /> },
   { to: '/lab/prices', text: 'Test Prices', icon: <FaFileInvoice /> },
+  { to: '/lab/tests/register', text: 'Register Test', icon: <FaVials /> },
   { to: '/lab/templates/register', text: 'Register Template', icon: <FaVials /> },
   { to: '/lab/templates', text: 'View Templates', icon: <FaThList /> },
   { to: '/lab/templates/order', text: 'Template Order', icon: <FaThList /> },
