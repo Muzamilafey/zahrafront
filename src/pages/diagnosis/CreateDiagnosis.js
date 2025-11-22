@@ -18,7 +18,7 @@ export default function CreateDiagnosis(){
       const payload = { name: form.name, code: form.code, description: form.description };
       await axiosInstance.post('/diagnoses', payload);
       alert('Diagnosis created');
-      navigate('/diagnoses');
+      navigate('/lab/tests/list');
     } catch (err) {
       console.error('Failed to create diagnosis', err);
       setError(err?.response?.data?.message || 'Failed to create diagnosis');
