@@ -202,11 +202,15 @@ const DetailedDischargeSummary = () => {
               <PatientInfoRow label="Discharge Date" value={summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : null} />
               <PatientInfoRow label="MRN. No" value={summary.patientInfo?.mrn} />
               <PatientInfoRow label="Age / Gender" value={`${summary.patientInfo?.age || ''} / ${summary.patientInfo?.gender || ''}`} />
-              <PatientInfoRow label="Ward / Room / Bed" value={[
-                summary.admissionInfo?.ward?.name,
-                summary.admissionInfo?.room?.number,
-                summary.admissionInfo?.bed?.number
-              ].filter(Boolean).join(' / ') || null} />
+              <PatientInfoRow label="Ward / Room / Bed" value={
+                summary.admissionInfo?.wardCategory === 'General'
+                ? summary.admissionInfo?.bedNumber
+                : [
+                  summary.admissionInfo?.ward?.name,
+                  summary.admissionInfo?.room?.number,
+                  summary.admissionInfo?.bed?.number
+                ].filter(Boolean).join(' / ') || null
+              } />
               <PatientInfoRow label="Consultant" value={summary.dischargingDoctorName} />
               
             </div>

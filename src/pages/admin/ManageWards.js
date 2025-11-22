@@ -6,6 +6,7 @@ export default function ManageWards(){
   const [wards, setWards] = useState([]);
   const [name, setName] = useState('');
   const [wardDailyRate, setWardDailyRate] = useState('');
+  const [category, setCategory] = useState('General');
   const [selectedWardForRoom, setSelectedWardForRoom] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
   const [selectedWardForBed, setSelectedWardForBed] = useState('');
@@ -21,7 +22,7 @@ export default function ManageWards(){
   const load = async ()=>{ try{ const res = await axiosInstance.get('/wards'); setWards(res.data.wards||[]); }catch(e){console.error(e);} };
   useEffect(()=>{ load(); }, []);
 
-  const createWard = async ()=>{ try{ await axiosInstance.post('/wards', { name, dailyRate: wardDailyRate ? Number(wardDailyRate) : undefined }); setName(''); setWardDailyRate(''); await load(); }catch(e){console.error(e);} };
+  const createWard = async ()=>{ try{ await axiosInstance.post('/wards', { name, dailyRate: wardDailyRate ? Number(wardDailyRate) : undefined, category }); setName(''); setWardDailyRate(''); await load(); }catch(e){console.error(e);} };
   const createRoom = async ()=>{ if(!selectedWardForRoom) return; try{ await axiosInstance.post(`/wards/${selectedWardForRoom}/rooms`, { number: roomNumber }); setRoomNumber(''); await load(); }catch(e){console.error(e);} };
   const loadRoomsForWard = async (wardId)=>{ try{ const res = await axiosInstance.get(`/wards/${wardId}/rooms`); const rooms = res.data.rooms||[]; setRoomsForSelectedWard(rooms); setRoomsByWard(r => ({ ...r, [wardId]: rooms })); }catch(e){console.error(e);} };
   const createBed = async ()=>{ if(!selectedWardForBed || !selectedRoomForBed) return; try{ await axiosInstance.post(`/wards/${selectedWardForBed}/rooms/${selectedRoomForBed}/beds`, { number: bedNumber, dailyRate: bedDailyRate ? Number(bedDailyRate) : undefined }); setBedNumber(''); setBedDailyRate(''); await load(); await loadRoomsForWard(selectedWardForBed); }catch(e){console.error(e);} };
@@ -38,6 +39,10 @@ export default function ManageWards(){
         <div className="bg-white p-4 rounded shadow">
           <h3 className="font-semibold">Create Ward</h3>
           <input className="input w-full mt-2" value={name} onChange={e=>setName(e.target.value)} placeholder="Ward name" />
+          <select className="input w-full mt-2" value={category} onChange={e=>setCategory(e.target.value)}>
+            <option value="General">General</option>
+            <option value="Special">Special</option>
+          </select>
           <div className="mt-2"><button className="btn-brand" onClick={createWard}>Create Ward</button></div>
         </div>
 

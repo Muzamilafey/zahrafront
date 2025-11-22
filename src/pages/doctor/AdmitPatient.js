@@ -11,6 +11,8 @@ export default function AdmitPatient(){
   const [selectedRoom, setSelectedRoom] = useState('');
   const [beds, setBeds] = useState([]);
   const [selectedBed, setSelectedBed] = useState('');
+  const [wardCategory, setWardCategory] = useState('Special');
+  const [bedNumber, setBedNumber] = useState('');
   const [searchParams] = useSearchParams();
   const [patientId, setPatientId] = useState(searchParams.get('patientId') || '');
   const [patientQuery, setPatientQuery] = useState('');
@@ -52,31 +54,31 @@ export default function AdmitPatient(){
   const handleRoomChange = (v)=>{ setSelectedRoom(v); setBeds([]); if(v) loadBeds(selectedWard, v); };
 
   const admit = async () => {
-    if (!selectedBed || !patientId || !admissionType || !paymentMode) {
+    if ((wardCategory === 'Special' && !selectedBed) || (wardCategory === 'General' && !bedNumber) || !patientId || !admissionType || !paymentMode) {
       alert('Please fill in all required fields');
       return;
     }
     setLoading(true);
     try {
-      // Compose patientData and admissionData for the new API
-      const patientData = { _id: patientId }; // If registering new, fill all fields; for existing, just id
+      const patientData = { _id: patientId };
       const admissionData = {
+        wardCategory,
         admissionType,
         expectedStayDays: expectedStay || undefined,
         reason: admissionReason,
         clinicalNotes,
         paymentMode,
-        insuranceDetails: paymentMode === 'insurance' ? insuranceDetails : undefined
+        insuranceDetails: paymentMode === 'insurance' ? insuranceDetails : undefined,
+        bedNumber: wardCategory === 'General' ? bedNumber : undefined,
       };
       const data = {
         patientData,
         admissionData,
-        roomId: selectedRoom,
-        bedId: selectedBed,
-        medications: [] // Optionally, collect from UI
+        roomId: wardCategory === 'Special' ? selectedRoom : null,
+        bedId: wardCategory === 'Special' ? selectedBed : null,
+        medications: []
       };
       try {
-        // Use the authenticated axiosInstance from AuthContext so auth headers/cookies are included
         const res = await axiosInstance.post('/inpatient/register-admit-bill', data);
         console.log('admit response', res);
         alert('Patient admitted and billed successfully');
@@ -101,6 +103,7 @@ export default function AdmitPatient(){
       setClinicalNotes('');
       setPaymentMode('');
       setInsuranceDetails('');
+      setBedNumber('');
     } catch (e) {
       console.error(e);
       alert(e.response?.data?.message || 'Failed to admit and bill patient');
@@ -133,26 +136,54 @@ export default function AdmitPatient(){
         {/* Ward and Bed Selection */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ward</label>
-            <select className="input w-full" value={selectedWard} onChange={e=>handleWardChange(e.target.value)}>
-              <option value="">-- select ward --</option>
-              {wards.map(w=> (<option key={w._id} value={w._id}>{w.name}</option>))}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ward Category</label>
+            <select className="input w-full" value={wardCategory} onChange={e => setWardCategory(e.target.value)}>
+              <option value="Special">Special</option>
+              <option value="General">General</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
-            <select className="input w-full" value={selectedRoom} onChange={e=>handleRoomChange(e.target.value)}>
-              <option value="">-- select room --</option>
-              {rooms.map(r=> (<option key={r._id} value={r._id}>{r.number}</option>))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bed</label>
-            <select className="input w-full" value={selectedBed} onChange={e=>setSelectedBed(e.target.value)}>
-              <option value="">-- select bed --</option>
-              {beds.map(b=> (<option key={b._id} value={b._id}>{b.number} — {b.status}</option>))}
-            </select>
-          </div>
+          {wardCategory === 'Special' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ward</label>
+                <select className="input w-full" value={selectedWard} onChange={e => handleWardChange(e.target.value)}>
+                  <option value="">-- select ward --</option>
+                  {wards.map(w => (
+                    <option key={w._id} value={w._id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                <select className="input w-full" value={selectedRoom} onChange={e => handleRoomChange(e.target.value)}>
+                  <option value="">-- select room --</option>
+                  {rooms.map(r => (
+                    <option key={r._id} value={r._id}>
+                      {r.number}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bed</label>
+                <select className="input w-full" value={selectedBed} onChange={e => setSelectedBed(e.target.value)}>
+                  <option value="">-- select bed --</option>
+                  {beds.map(b => (
+                    <option key={b._id} value={b._id}>
+                      {b.number} — {b.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bed Number</label>
+              <input className="input w-full" value={bedNumber} onChange={e => setBedNumber(e.target.value)} placeholder="Enter bed number" />
+            </div>
+          )}
         </div>
 
         {/* Admission Details */}
@@ -207,7 +238,7 @@ export default function AdmitPatient(){
           <button 
             className="btn-brand w-full md:w-auto" 
             onClick={admit}
-            disabled={!selectedBed || !patientId || loading}
+            disabled={((wardCategory === 'Special' && !selectedBed) || (wardCategory === 'General' && !bedNumber) || !patientId) || loading}
           >
             {loading ? 'Admitting...' : 'Admit Patient'}
           </button>

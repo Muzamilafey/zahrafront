@@ -33,6 +33,7 @@ const InvoicePage = () => {
           items: src.items || src.lineItems || src.invoiceItems || src.charges || src.itemsSold || [],
           patientInfo: src.patientInfo || src.patient || src.patientData || (src.patient && src.patient.user) || {},
           admissionInfo: src.admissionInfo || src.admission || src.admissionData || {},
+          nhifNumber: src.nhifNumber || (src.patient.nhifNumber),
           patientName: src.patientName || (src.patientInfo && (src.patientInfo.name || src.patientInfo.fullName)) || (src.patient && (src.patient.name || src.patient.fullName)) || '',
           dischargingDoctorName: src.dischargingDoctorName || src.servedBy || src.dischargingDoctor || '',
           taxRate: src.taxRate ?? src.taxPercentage ?? null,
@@ -135,11 +136,15 @@ const InvoicePage = () => {
               {/* <div className="font-bold text-xs pr-2">Room Type</div>
               <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
               <div className="font-bold text-xs pr-2">Ward / Room / Bed</div>
-              <div className="text-xs">: {[
-                invoiceData.admissionInfo?.ward?.name,
-                invoiceData.admissionInfo?.room?.number,
-                invoiceData.admissionInfo?.bed?.number
-              ].filter(Boolean).join(' / ') || '................................'}</div>
+              <div className="text-xs">: {
+                invoiceData.admissionInfo?.wardCategory === 'General' 
+                ? invoiceData.admissionInfo?.bedNumber
+                : [
+                    invoiceData.admissionInfo?.ward?.name,
+                    invoiceData.admissionInfo?.room?.number,
+                    invoiceData.admissionInfo?.bed?.number
+                  ].filter(Boolean).join(' / ') || '................................'
+              }</div>
               
               {/* <div className="font-bold text-xs pr-2">Co-Consultant</div>
               <div className="text-xs">: {'................................'}</div> */}
