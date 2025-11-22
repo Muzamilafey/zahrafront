@@ -17,7 +17,45 @@ const DetailedDischargeSummary = () => {
       try {
         setLoading(true);
         const response = await axiosInstance.get(`/discharge/patient/${id}/latest`);
-        setSummary(response.data);
+        let mergedSummary = response.data;
+        // best-effort: also fetch completed lab orders for this patient and merge sub-test results
+        try {
+          const labRes = await axiosInstance.get('/lab/orders', { params: { patient: id, status: 'completed' } });
+          const orders = labRes.data?.orders || labRes.data || [];
+          const labInvestigations = [];
+          orders.forEach(o => {
+            const subs = o.subTests || o.tests || o.items || [];
+            if (Array.isArray(subs) && subs.length) {
+              subs.forEach(s => {
+                const resultText = s.input || s.resultValue || s.value || o.resultsText || '';
+                labInvestigations.push({
+                  name: s.name || s.testName || o.testType || 'Lab Test',
+                  date: o.completedAt || o.updatedAt || o.createdAt || new Date().toISOString(),
+                  resultsText: resultText,
+                  status: o.status || 'completed'
+                });
+              });
+            } else {
+              if (o.resultsText) {
+                labInvestigations.push({ name: o.testType || o.name || 'Lab Test', date: o.completedAt || o.updatedAt || o.createdAt || new Date().toISOString(), resultsText: o.resultsText, status: o.status || 'completed' });
+              }
+            }
+          });
+
+          // merge labInvestigations into discharge investigations (avoid duplicates)
+          const existing = Array.isArray(response.data?.investigations) ? [...response.data.investigations] : [];
+          labInvestigations.forEach(li => {
+            const duplicate = existing.find(ev => ev.name === li.name && (ev.resultsText || '') === (li.resultsText || ''));
+            if (!duplicate) existing.push(li);
+          });
+          mergedSummary = { ...response.data, investigations: existing };
+        } catch (e) {
+          // non-fatal: if lab fetch fails, just use discharge summary as-is
+          console.warn('Failed to fetch/merge lab orders for discharge summary', e);
+          mergedSummary = response.data;
+        }
+
+        setSummary(mergedSummary);
         setError('');
       } catch (err) {
         console.error('Failed to fetch discharge summary:', err);

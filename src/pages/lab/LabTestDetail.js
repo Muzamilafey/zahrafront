@@ -65,6 +65,22 @@ const LabTestDetail = () => {
       const res = await axiosInstance.put(`/lab/${id}/results`, payload);
       if (res.data && res.data.labTest) setTest(res.data.labTest);
       alert('Structured results saved');
+      // Best-effort: also add these results to the patient's discharge investigations
+      try {
+        const patientId = test?.patient?._id || test?.patient?.id || test?.patient?.user?._id;
+        if (patientId) {
+          const investigations = structuredResults.map(r => ({
+            name: r.name,
+            date: new Date().toISOString(),
+            resultsText: r.input,
+            status: 'completed',
+            flag: r.flag,
+            source: 'lab',
+            labTestId: id
+          }));
+          await axiosInstance.post(`/discharge/patient/${patientId}/investigations`, { investigations }).catch(()=>{});
+        }
+      } catch(e) { console.warn('Failed to push results to discharge investigations', e); }
     }catch(err){
       console.error('structured save failed', err);
       // fallback to sending as text
@@ -75,6 +91,22 @@ const LabTestDetail = () => {
         const res2 = await axiosInstance.put(`/lab/${id}/results`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
         if (res2.data && res2.data.labTest) setTest(res2.data.labTest);
         alert('Results saved (fallback)');
+        // best-effort: push fallback results to discharge investigations as well
+        try {
+          const patientId = test?.patient?._id || test?.patient?.id || test?.patient?.user?._id;
+          if (patientId) {
+            const investigations = structuredResults.length ? structuredResults.map(r => ({
+              name: r.name,
+              date: new Date().toISOString(),
+              resultsText: r.input || resultsText || '',
+              status: 'completed',
+              flag: r.flag,
+              source: 'lab',
+              labTestId: id
+            })) : [{ name: test.testType || 'Lab result', date: new Date().toISOString(), resultsText: resultsText || '', status: 'completed', source: 'lab', labTestId: id }];
+            await axiosInstance.post(`/discharge/patient/${patientId}/investigations`, { investigations }).catch(()=>{});
+          }
+        } catch(e) { console.warn('Failed to push fallback results to discharge investigations', e); }
       }catch(e){ console.error(e); alert('Failed to save results'); }
     }
   };
