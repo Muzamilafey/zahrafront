@@ -16,12 +16,27 @@ const LabTestDetail = () => {
   useEffect(()=>{
     const load = async ()=>{
       try{
-        const res = await axiosInstance.get(`/lab/${id}`);
-        setTest(res.data.labTest);
-        setStatus(res.data.labTest?.status || '');
-        setSampleStatus(res.data.labTest?.sampleStatus || '');
+        // try multiple possible lab endpoints (some deployments use /labs or /labtests)
+        let res;
+        const endpoints = [`/lab/${id}`, `/labs/${id}`, `/labtests/${id}`];
+        let lastErr = null;
+        for (const ep of endpoints) {
+          try {
+            res = await axiosInstance.get(ep);
+            if (res && res.data) break;
+          } catch (e) {
+            lastErr = e;
+            // continue to next endpoint
+          }
+        }
+        if (!res || !res.data) {
+          throw lastErr || new Error('No response from lab endpoints');
+        }
+        setTest(res.data.labTest || res.data.lab || res.data);
+        setStatus((res.data.labTest || res.data.lab || res.data)?.status || '');
+        setSampleStatus((res.data.labTest || res.data.lab || res.data)?.sampleStatus || '');
         // initialize structured results if subtests exist
-        const t = res.data.labTest;
+        const t = res.data.labTest || res.data.lab || res.data;
         const subs = t?.subTests || t?.tests || t?.items || [];
         if (Array.isArray(subs) && subs.length) {
           setStructuredResults(subs.map(s => ({
@@ -33,7 +48,11 @@ const LabTestDetail = () => {
           })));
         }
         setLoading(false);
-      }catch(err){console.error(err); setLoading(false);}    };
+      }catch(err){
+        console.error('Failed to load lab test detail (tried multiple endpoints):', err);
+        setError(err?.response?.data?.message || err.message || 'Failed to load lab test');
+        setLoading(false);
+      }    };
     if (id) load();
   },[id, axiosInstance]);
 
