@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import Toast from '../components/ui/Toast';
 import { useNavigate } from 'react-router-dom';
+import { FaUser, FaHeartbeat, FaFileInvoiceDollar, FaPlus, FaTrash } from 'react-icons/fa';
 
 const initialForm = {
   hospitalId: '',
@@ -34,7 +35,6 @@ const initialForm = {
   bloodGroup: '',
   allergies: '',
   chronicConditions: '',
-  currentMedications: '',
   pastMedicalHistory: '',
   surgicalHistory: '',
 
@@ -50,6 +50,9 @@ const initialForm = {
   educationLevel: '',
   disabilityStatus: '',
   guardianInfo: '',
+  
+  smokingStatus: 'Never',
+  alcoholStatus: 'Never',
 };
 
 const options = {
@@ -57,20 +60,28 @@ const options = {
   nationality: ['Kenyan', 'Ugandan', 'Tanzanian', 'Nigerian', 'American', 'British', 'Indian', 'Chinese', 'Other'],
   nextOfKinRelationship: ['Parent', 'Spouse', 'Sibling', 'Child', 'Grandparent', 'Guardian', 'Other'],
   bloodGroup: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-  allergies: ['None', 'Pollen', 'Dust Mites', 'Peanuts', 'Shellfish', 'Other'],
   occupation: ['Healthcare', 'Technology', 'Education', 'Business', 'Student', 'Unemployed', 'Other'],
   educationLevel: ['Primary', 'Secondary', 'Diploma', 'Bachelor\'s Degree', 'Master\'s Degree', 'PhD', 'Other'],
   disabilityStatus: ['None', 'Physical', 'Sensory', 'Intellectual', 'Mental', 'Other'],
+  lifestyle: ['Never', 'Occasionally', 'Regularly', 'Daily'],
 };
 
-const FormSection = ({ title, children }) => (
-  <div className="col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-    <h3 className="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">{title}</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-      {children}
-    </div>
-  </div>
+const TabButton = ({ active, onClick, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 outline-none focus:outline-none ${
+      active
+        ? 'border-brand-500 text-brand-600'
+        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+    }`}
+  >
+    {children}
+  </button>
 );
+
+const Section = ({ children }) => <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-6">{children}</div>;
+const SectionTitle = ({ children }) => <h3 className="text-xl font-semibold mb-6 text-gray-800 border-b pb-3">{children}</h3>;
 
 export default function RegisterPatient() {
   const { axiosInstance, user } = useContext(AuthContext);
@@ -82,36 +93,13 @@ export default function RegisterPatient() {
   const [loading, setLoading] = useState(false);
   const [createdPatient, setCreatedPatient] = useState(null);
   const [errors, setErrors] = useState({});
+  const [activeTab, setActiveTab] = useState('patientInfo');
+  
+  const [medications, setMedications] = useState([{ name: '', dosage: '', frequency: '' }]);
+  const [hasAllergies, setHasAllergies] = useState(false);
+  const [hasChronicConditions, setHasChronicConditions] = useState(false);
 
   useEffect(() => { loadDoctors(); fetchNextPatientNumber(); }, []);
-  useEffect(()=>{
-    try{
-      const draft = localStorage.getItem('patientFormDraft');
-      if(draft){
-        const parsed = JSON.parse(draft);
-        setForm(f => ({ ...f, ...parsed }));
-      }
-    }catch(e){}
-  }, []);
-  useEffect(()=>{
-    try{ localStorage.setItem('patientFormDraft', JSON.stringify(form)); }catch(e){}
-  }, [form]);
-
-  const loadDoctors = async () => {
-    try {
-      const res = await axiosInstance.get('/doctors/list');
-      setDoctors(res.data.doctors || []);
-    } catch (e) { console.error(e); }
-  };
-
-  const fetchNextPatientNumber = async () => {
-    try {
-      const res = await axiosInstance.get('/patients/next-number').catch(() => null);
-      if (res && (res.data.next || res.data.hospitalId)) {
-        setForm(f => ({ ...f, hospitalId: res.data.next || res.data.hospitalId }));
-      }
-    } catch (e) { console.warn('Could not fetch next patient number'); }
-  };
 
   const calculateAge = dob => {
     if (!dob) return '';
@@ -132,36 +120,27 @@ export default function RegisterPatient() {
     });
   };
 
+  const handleMedicationChange = (index, e) => {
+    const newMeds = [...medications];
+    newMeds[index][e.target.name] = e.target.value;
+    setMedications(newMeds);
+  };
+
+  const addMedication = () => setMedications([...medications, { name: '', dosage: '', frequency: '' }]);
+  const removeMedication = (index) => setMedications(medications.filter((_, i) => i !== index));
+
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setToast(null);
     setErrors({});
 
-    const phoneRegex = /^[0-9+()\-\s]{7,20}$/;
-    if(!form.phonePrimary || !phoneRegex.test(form.phonePrimary)){
-      setErrors({ phonePrimary: 'Enter a valid primary phone number' });
-      setLoading(false);
-      return;
-    }
-    if(form.age && Number(form.age) < 18){
-      if(!form.guardianInfo && !form.nextOfKinName){
-        setErrors({ guardianInfo: 'Guardian or next of kin required for minors' });
-        setLoading(false);
-        return;
-      }
-    }
     try {
       const payload = {
         ...form,
-        nextOfKin: {
-          name: form.nextOfKinName,
-          relationship: form.nextOfKinRelationship,
-          phone: form.nextOfKinPhone,
-          altPhone: form.nextOfKinAltPhone,
-          address: form.nextOfKinAddress
-        },
-        allergies: form.allergies ? form.allergies.split(',').map(a => a.trim()) : [],
+        medications: medications.filter(m => m.name),
+        allergies: hasAllergies ? form.allergies : 'None',
+        chronicConditions: hasChronicConditions ? form.chronicConditions : 'None',
         assignedDoctor: doctorId || undefined,
         createdBy: user?._id
       };
@@ -172,10 +151,7 @@ export default function RegisterPatient() {
       setToast({ message: 'Patient registered successfully, redirecting...', type: 'success' });
       setForm({ ...initialForm, hospitalId: form.hospitalId });
       setDoctorId('');
-      try{ localStorage.removeItem('patientFormDraft'); }catch(e){}
-      setTimeout(() => {
-        navigate(`/patients/${createdPatient._id}`);
-      }, 1500);
+      setTimeout(() => navigate(`/patients/${createdPatient._id}`), 1500);
     } catch (e) {
       console.error(e);
       const srv = e?.response?.data || {};
@@ -186,18 +162,21 @@ export default function RegisterPatient() {
     }
   };
 
-  const renderInput = (name, placeholder, type = 'text', required = false) => (
+  const maxDob = new Date();
+  maxDob.setFullYear(maxDob.getFullYear() - 18);
+
+  const renderInput = (name, label, type = 'text', required = false, pattern) => (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{placeholder}</label>
-      <input name={name} value={form[name]} onChange={onChange} placeholder={placeholder} type={type} className="input" required={required} />
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <input name={name} value={form[name]} onChange={onChange} placeholder={label} type={type} className="input" required={required} pattern={pattern} />
     </div>
   );
 
-  const renderSelect = (name, placeholder, opts, required = false) => (
+  const renderSelect = (name, label, opts, required = false) => (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{placeholder}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <select name={name} value={form[name]} onChange={onChange} className="input" required={required}>
-        <option value="">-- select {placeholder.toLowerCase()} --</option>
+        <option value="">-- Select {label.toLowerCase()} --</option>
         {opts.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </div>
@@ -205,102 +184,117 @@ export default function RegisterPatient() {
   
   return (
     <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Register New Patient</h2>
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          {Object.keys(errors).length > 0 && (
-            <div className="col-span-2 p-4 bg-red-50 text-red-800 rounded-lg border border-red-200">
-              <p className="font-bold mb-2">Please correct the following errors:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                {Object.entries(errors).map(([k,v])=> <li key={k} className="text-sm">{v}</li>)}
-              </ul>
-            </div>
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">New Patient Registration</h2>
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-6">
+            <TabButton active={activeTab === 'patientInfo'} onClick={() => setActiveTab('patientInfo')}><FaUser className="mr-2"/>Patient Information</TabButton>
+            <TabButton active={activeTab === 'medicalHistory'} onClick={() => setActiveTab('medicalHistory')}><FaHeartbeat className="mr-2"/>Medical History</TabButton>
+            <TabButton active={activeTab === 'billing'} onClick={() => setActiveTab('billing')}><FaFileInvoiceDollar className="mr-2"/>Billing & Demographics</TabButton>
+          </nav>
+        </div>
+        
+        <form className="space-y-8" onSubmit={handleSubmit}>
+          {activeTab === 'patientInfo' && (
+            <Section>
+              <SectionTitle>Personal & Contact Details</SectionTitle>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {renderInput("firstName", "First Name", "text", true)}
+                {renderInput("middleName", "Middle Name")}
+                {renderInput("lastName", "Last Name", "text", true)}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                  <input name="dob" value={form.dob} onChange={onChange} className="input" type="date" required max={maxDob.toISOString().split("T")[0]}/>
+                  <div className="text-sm text-gray-500 mt-1">Age: {form.age || '—'}</div>
+                </div>
+                {renderSelect("gender", "Gender", ["Male", "Female", "Other"], true)}
+                {renderSelect("maritalStatus", "Marital Status", ["Single", "Married", "Divorced", "Widowed"])}
+                {renderInput("nationalId", "National ID / Passport No.")}
+                {renderInput("phonePrimary", "Primary Phone (07...)", "tel", true, "[0-9]{10}")}
+                {renderInput("phoneSecondary", "Secondary Phone", "tel", false, "[0-9]{10}")}
+                {renderInput("email", "Email Address", "email")}
+                <div className="lg:col-span-3">{renderInput("address", "Home Address")}</div>
+              </div>
+              <SectionTitle>Next of Kin</SectionTitle>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {renderInput("nextOfKinName", "Name")}
+                {renderSelect("nextOfKinRelationship", "Relationship", options.nextOfKinRelationship)}
+                {renderInput("nextOfKinPhone", "Phone Number", "tel", false, "[0-9]{10}")}
+              </div>
+            </Section>
           )}
 
-          <FormSection title="Patient Identification">
-            {renderInput("hospitalId", "Patient Number (auto)", "text")}
-            {renderInput("nationalId", "National ID / Passport No.", "text")}
-          </FormSection>
+          {activeTab === 'medicalHistory' && (
+             <Section>
+              <SectionTitle>Medical & Clinical Information</SectionTitle>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderSelect("bloodGroup", "Blood Group", options.bloodGroup)}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Do you have any allergies?</label>
+                  <select className="input" onChange={(e) => setHasAllergies(e.target.value === 'Yes')}>
+                    <option>No</option><option>Yes</option>
+                  </select>
+                  {hasAllergies && <textarea name="allergies" value={form.allergies} onChange={onChange} placeholder="Please list all allergies" className="input mt-2" />}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Do you have chronic conditions?</label>
+                  <select className="input" onChange={(e) => setHasChronicConditions(e.target.value === 'Yes')}>
+                    <option>No</option><option>Yes</option>
+                  </select>
+                  {hasChronicConditions && <textarea name="chronicConditions" value={form.chronicConditions} onChange={onChange} placeholder="Please list all chronic conditions" className="input mt-2" />}
+                </div>
 
-          <FormSection title="Personal Information">
-            {renderInput("firstName", "First Name", "text", true)}
-            {renderInput("middleName", "Middle Name", "text")}
-            {renderInput("lastName", "Last Name", "text", true)}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-              <input name="dob" value={form.dob} onChange={onChange} className="input" type="date" required />
-              <div className="text-sm text-gray-500 mt-1">Age: {form.age || '—'}</div>
-            </div>
-            {renderSelect("gender", "Gender", ["Male", "Female", "Other"], true)}
-            {renderSelect("maritalStatus", "Marital Status", ["Single", "Married", "Divorced", "Widowed"])}
-            {renderSelect("nationality", "Nationality", options.nationality)}
-            {renderInput("ethnicity", "Ethnicity (optional)", "text")}
-          </FormSection>
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-700 mt-4 mb-2">Current Medications</h4>
+                  {medications.map((med, index) => (
+                    <div key={index} className="flex items-center gap-2 mb-2">
+                      <input name="name" value={med.name} onChange={(e) => handleMedicationChange(index, e)} placeholder="Medication Name" className="input flex-1" />
+                      <input name="dosage" value={med.dosage} onChange={(e) => handleMedicationChange(index, e)} placeholder="Dosage" className="input w-32" />
+                      <input name="frequency" value={med.frequency} onChange={(e) => handleMedicationChange(index, e)} placeholder="Frequency" className="input w-32" />
+                      <button type="button" onClick={() => removeMedication(index)} className="p-2 text-red-500 hover:text-red-700"><FaTrash /></button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addMedication} className="btn-secondary text-sm mt-2"><FaPlus className="inline-block mr-1" /> Add Medication</button>
+                </div>
+              </div>
 
-          <FormSection title="Contact Information">
-            {renderInput("phonePrimary", "Primary Phone Number", "tel", true)}
-            {renderInput("phoneSecondary", "Secondary Phone Number", "tel")}
-            {renderInput("email", "Email Address (optional)", "email")}
-            {renderInput("postalAddress", "Postal Address (optional)", "text")}
-            <div className="md:col-span-2">{renderInput("address", "Home Address", "text")}</div>
-            {renderInput("county", "County", "text")}
-            {renderInput("subCounty", "Sub-County", "text")}
-            {renderInput("ward", "Ward", "text")}
-          </FormSection>
+              <SectionTitle>Lifestyle</SectionTitle>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {renderSelect("smokingStatus", "Smoking Status", options.lifestyle)}
+                 {renderSelect("alcoholStatus", "Alcohol Consumption", options.lifestyle)}
+              </div>
+            </Section>
+          )}
 
-          <FormSection title="Next of Kin / Emergency Contact">
-            {renderInput("nextOfKinName", "Name", "text")}
-            {renderSelect("nextOfKinRelationship", "Relationship", options.nextOfKinRelationship)}
-            {renderInput("nextOfKinPhone", "Phone Number", "tel")}
-            {renderInput("nextOfKinAltPhone", "Alternate Phone", "tel")}
-            <div className="md:col-span-2">{renderInput("nextOfKinAddress", "Address", "text")}</div>
-          </FormSection>
+          {activeTab === 'billing' && (
+            <Section>
+              <SectionTitle>Billing & Demographics</SectionTitle>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {renderSelect("paymentMode", "Payment Mode", ["Cash", "Insurance", "Corporate", "NHIF"])}
+                {renderInput("insuranceProvider", "Insurance Provider")}
+                {renderInput("insuranceCardNumber", "Insurance Card Number")}
+                {renderInput("nhifNumber", "NHIF Number")}
+                
+                {renderSelect("occupation", "Occupation", options.occupation)}
+                {renderSelect("religion", "Religion", options.religion)}
+                {renderSelect("educationLevel", "Education Level", options.educationLevel)}
+                {renderSelect("disabilityStatus", "Disability Status", options.disabilityStatus)}
+              </div>
+            </Section>
+          )}
 
-          <FormSection title="Medical & Clinical Information">
-            {renderSelect("bloodGroup", "Blood Group", options.bloodGroup)}
-            {renderSelect("allergies", "Allergies", options.allergies)}
-            {renderInput("chronicConditions", "Chronic Conditions", "text")}
-            {renderInput("currentMedications", "Current Medications", "text")}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Past Medical History / Notes</label>
-              <textarea name="pastMedicalHistory" value={form.pastMedicalHistory} onChange={onChange} placeholder="Past Medical History / Notes" className="input" />
-            </div>
-            {renderInput("surgicalHistory", "Surgical History (optional)", "text")}
-          </FormSection>
-
-          <FormSection title="Insurance & Billing">
-            {renderSelect("paymentMode", "Payment Mode", ["Cash", "Insurance", "Corporate", "NHIF"])}
-            {renderInput("insuranceProvider", "Insurance Provider", "text")}
-            {renderInput("insuranceCardNumber", "Insurance Card Number", "text")}
-            {renderInput("nhifNumber", "NHIF Number", "text")}
-            {renderInput("employer", "Employer (Corporate)", "text")}
-            {renderInput("corporateNumber", "Corporate Member Number", "text")}
-          </FormSection>
-
-          <FormSection title="Additional Demographic Info">
-            {renderSelect("occupation", "Occupation", options.occupation)}
-            {renderSelect("religion", "Religion", options.religion)}
-            {renderSelect("educationLevel", "Education Level", options.educationLevel)}
-            {renderSelect("disabilityStatus", "Disability Status", options.disabilityStatus)}
-            {renderInput("guardianInfo", "Guardian Info (for minors)", "text")}
-          </FormSection>
-
-          <div className="col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            {renderSelect("doctorId", "Assign Doctor (optional)", doctors.map(d => ({ value: d._id, label: `${d.user?.name} (${d.user?.email})` })).map(item => <option key={item.value} value={item.value}>{item.label}</option>))}
-          </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            <button type="button" className="btn-muted" onClick={() => setForm(initialForm)}>Reset</button>
+          <div className="flex justify-end gap-4 pt-6">
+            <button type="button" className="btn-muted" onClick={() => setForm(initialForm)}>Reset Form</button>
             <button className="btn-brand" type="submit" disabled={loading}>{loading ? 'Registering...' : 'Register Patient'}</button>
           </div>
         </form>
-
+        
         {createdPatient && (
-          <div className="mt-8 p-4 bg-green-50 rounded-lg shadow">
-            <div className="font-semibold text-lg text-green-800">Patient Registered Successfully!</div>
-            <div>Name: {createdPatient.user?.name || createdPatient.name}</div>
-            <div>Patient Number: {createdPatient.hospitalId}</div>
-            <div>MRN: {createdPatient.mrn}</div>
+          <div className="mt-8 p-6 bg-green-100 border border-green-200 rounded-lg shadow-sm">
+            <h3 className="font-semibold text-xl text-green-800">Patient Registered Successfully!</h3>
+            <p className="mt-2"><strong>Name:</strong> {createdPatient.user?.name || createdPatient.name}</p>
+            <p><strong>Patient Number:</strong> {createdPatient.hospitalId}</p>
+            <p><strong>MRN:</strong> {createdPatient.mrn}</p>
           </div>
         )}
         <Toast toast={toast} onClose={() => setToast(null)} />
