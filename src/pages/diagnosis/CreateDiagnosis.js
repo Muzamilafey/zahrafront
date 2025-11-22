@@ -16,9 +16,21 @@ export default function CreateDiagnosis(){
     setLoading(true);
     try {
       const payload = { name: form.name, code: form.code, description: form.description };
-      await axiosInstance.post('/diagnoses', payload);
-      alert('Diagnosis created');
-      navigate('/diagnoses');
+        // Try lab catalog create first (lab tests catalog is where tests/diagnoses are stored)
+        try {
+          await axiosInstance.post('/labs/catalog', { name: form.name, code: form.code, normalValue: '', startValue: '', endValue: '', unit: '', price: 0, category: 'diagnosis' });
+          alert('Diagnosis created');
+          navigate('/lab/tests/list');
+        } catch (e) {
+          // If lab catalog endpoint is not available, try legacy diagnoses endpoint
+          if (e.response && e.response.status === 404) {
+            await axiosInstance.post('/diagnoses', payload);
+            alert('Diagnosis created');
+            navigate('/lab/tests/list');
+          } else {
+            throw e;
+          }
+        }
     } catch (err) {
       console.error('Failed to create diagnosis', err);
       setError(err?.response?.data?.message || 'Failed to create diagnosis');

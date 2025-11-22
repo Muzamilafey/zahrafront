@@ -1,75 +1,40 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
+import { FaSearch, FaUserPlus, FaEllipsisV } from 'react-icons/fa';
+import './PatientList.css';
 
-export default function PatientList() {
-  const { axiosInstance, user } = useContext(AuthContext);
+export default function PatientListPage() {
+  const { axiosInstance } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [patients, setPatients] = useState([]);
-  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [filteredPatients, setFilteredPatients] = useState([]);
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    admitted: 0,
+    discharged: 0,
+  });
 
-  const status = searchParams.get('status') || 'all';
-
-  // ✅ Always re-load when filters or query change
   useEffect(() => {
-    setQuery(searchParams.get('q') || '');
     loadPatients();
-  }, [status, searchParams]);
+  }, []);
+
+  useEffect(() => {
+    filterPatients();
+  }, [query, patients]);
 
   const loadPatients = async () => {
     try {
       setLoading(true);
-      let res;
-
-      // ✅ Backend-side filtering by status
-      if (status === 'admitted') {
-        res = await axiosInstance.get('/patients/admitted');
-      } else if (status === 'discharged') {
-        res = await axiosInstance.get('/patients/discharged');
-      } else {
-        res = await axiosInstance.get('/patients');
-      }
-
-      let list = Array.isArray(res.data)
-        ? res.data
-        : (res.data.patients || []);
-
-      // Client-side text filtering (query)
-      const q = (searchParams.get('q') || '').toLowerCase().trim();
-      const getFullName = (p) => {
-        // prefer explicit patient name fields
-        const assembled = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim();
-        if (assembled) return assembled;
-        // try other possible name fields
-        if (p.surname) return String(p.surname);
-        if (p.name) return String(p.name);
-        if (p.fullName) return String(p.fullName);
-        // fallback to nested user name
-        return p.user?.name || '';
-      };
-
-      if (q) {
-        list = list.filter((p) => {
-          const fullName = getFullName(p).toLowerCase();
-          const hospitalId = String(p.hospitalId || p.mrn || '').toLowerCase();
-          const mrn = String(p.mrn || '').toLowerCase();
-          const email = (p.user?.email || '').toLowerCase();
-          return (
-            fullName.includes(q) ||
-            hospitalId.includes(q) ||
-            mrn.includes(q) ||
-            email.includes(q)
-          );
-        });
-      }
-
-      // Note: discharged patients are now listed on a dedicated page. PatientList shows 'all' or 'admitted'.
-
-      setPatients(list || []);
+      const res = await axiosInstance.get('/patients');
+      const patientData = Array.isArray(res.data) ? res.data : (res.data.patients || []);
+      setPatients(patientData);
+      setFilteredPatients(patientData);
+      calculateStats(patientData);
     } catch (e) {
       setToast({
         message: e?.response?.data?.message || 'Failed to load patients',
@@ -80,160 +45,120 @@ export default function PatientList() {
     }
   };
 
-  const applyStatus = (s) => {
-    const params = Object.fromEntries([...searchParams]);
-    if (s && s !== 'all') params.status = s;
-    else delete params.status;
-    setSearchParams(params);
+  const calculateStats = (patientData) => {
+    const total = patientData.length;
+    const admitted = patientData.filter(p => p.admission?.isAdmitted).length;
+    const discharged = total - admitted;
+    setStats({ total, admitted, discharged });
   };
 
-  const applySearch = (q) => {
-    const params = Object.fromEntries([...searchParams]);
-    if (q && q.trim().length > 0) params.q = q.trim();
-    else delete params.q;
-    setSearchParams(params);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString();
-  };
-
-  const fullNameOf = (p) => {
-    const assembled = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim();
-    if (assembled) return assembled;
-    if (p.surname) return String(p.surname);
-    if (p.name) return String(p.name);
-    if (p.fullName) return String(p.fullName);
-    return p.user?.name || '-';
+  const filterPatients = () => {
+    let filtered = patients;
+    if (query) {
+      const lowercasedQuery = query.toLowerCase();
+      filtered = patients.filter(p => {
+        const fullName = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim().toLowerCase();
+        const hospitalId = String(p.hospitalId || p.mrn || '').toLowerCase();
+        return fullName.includes(lowercasedQuery) || hospitalId.includes(lowercasedQuery);
+      });
+    }
+    setFilteredPatients(filtered);
   };
 
   const getPatientStatus = (patient) => {
-    if (patient.admission?.isAdmitted) return 'Admitted';
-    return 'Discharged';
+    return patient.admission?.isAdmitted ? 'In-treatment' : 'Recovered';
   };
 
-  const handleViewDischargeSummary = (patientId) => {
-    navigate(`/patients/${patientId}/discharge-summary`);
-  };
-
-  const handleDeletePatient = async (patientId) => {
-    if (!window.confirm('Delete this patient? This action is permanent.')) return;
-    try {
-      await axiosInstance.delete(`/patients/${patientId}`);
-      // remove from UI
-      setPatients(prev => prev.filter(p => String(p._id) !== String(patientId)));
-    } catch (e) {
-      setToast({ message: e?.response?.data?.message || 'Failed to delete patient', type: 'error' });
+  const getStatusClassName = (status) => {
+    switch (status) {
+      case 'In-treatment':
+        return 'status-in-treatment';
+      case 'Recovered':
+        return 'status-recovered';
+      default:
+        return 'status-default';
     }
   };
-
-  const pageTitle =
-    status === 'admitted'
-      ? 'Currently Admitted Patients'
-      : status === 'discharged'
-      ? 'Discharged Patients'
-      : 'All Patients';
+  
+  const StatCard = ({ title, value, icon }) => (
+    <div className="stat-card">
+      <div className="stat-icon">{icon}</div>
+      <div className="stat-info">
+        <p className="stat-title">{title}</p>
+        <p className="stat-value">{value}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-6">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">VIEW ALL PATIENTS</h1>
-        <div className="text-sm text-gray-500">TOTAL NO OF PATIENTS: <span className="font-semibold">{patients.length}</span></div>
-      </div>
-      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <input
-            className="input w-96"
-            placeholder="Search by name, hospital ID, or MRN..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') applySearch(query);
-            }}
-          />
-          <button className="btn-brand" onClick={() => applySearch(query)}>
-            Search
-          </button>
-          <button
-            className="btn-outline"
-            onClick={() => {
-              setQuery('');
-              applySearch('');
-            }}
-          >
-            Clear
+    <div className="patient-list-page">
+      <header className="page-header">
+        <h1>Patients</h1>
+        <div className="header-actions">
+          <div className="search-bar">
+            <FaSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <button className="new-patient-btn" onClick={() => navigate('/patients/register')}>
+            <FaUserPlus />
+            New Patient
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            className="input"
-            value={status}
-            onChange={(e) => applyStatus(e.target.value)}
-          >
-            <option value="all">All Patients</option>
-            <option value="admitted">Admitted</option>
-          </select>
-        </div>
+      </header>
+
+      <div className="stats-grid">
+        <StatCard title="Total Patients" value={stats.total} icon={<div className="icon-placeholder" />} />
+        <StatCard title="New Patients" value={stats.total} icon={<div className="icon-placeholder" />} />
+        <StatCard title="Discharged" value={stats.discharged} icon={<div className="icon-placeholder" />} />
+        <StatCard title="In-treatment" value={stats.admitted} icon={<div className="icon-placeholder" />} />
       </div>
 
-      {loading ? (
-        <div className="text-center">Loading patients...</div>
-      ) : patients.length === 0 ? (
-        <div className="text-center text-gray-500">No patients found</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {patients.map((p) => (
-            <div key={p._id} className="relative rounded-[28px] p-6 bg-gradient-to-br from-[#05a9a9] to-[#6ee06b] text-black shadow-md overflow-hidden">
-              {/* Status badge */}
-              <div className="absolute top-3 left-3">
-                <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${p.admission?.isAdmitted ? 'bg-green-800 text-white' : 'bg-gray-800 text-white'}`}>
-                  {p.admission?.isAdmitted ? 'ADMITTED' : 'NOT ADMITTED'}
-                </span>
-              </div>
-
-              <div className="mb-4 pt-6">
-                <div className="text-sm font-bold uppercase text-black/80">FULL NAME:</div>
-                <div className="text-lg font-semibold mb-2">{fullNameOf(p)}</div>
-
-                <div className="text-sm font-bold uppercase text-black/80">CONTACT:</div>
-                <div className="text-sm mb-2">{p.user?.phone || '-'}</div>
-
-                <div className="text-sm font-bold uppercase text-black/80">ID NUMBER</div>
-                <div className="text-sm">{p.idNumber || p.nationalId || '-'}</div>
-
-                <div className="text-sm font-bold uppercase mt-3 text-black/80">MRN</div>
-                <div className="text-sm font-semibold">{p.mrn || '-'}</div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => navigate(`/patients/${p._id}`)}
-                  className="bg-blue-500 text-white text-sm py-2 px-4 rounded-full shadow-md hover:bg-blue-600"
-                >
-                  OPEN PROFILE
-                </button>
-
-                <div className="flex items-center gap-3 text-xs">
-                  {/* Conditional small actions */}
-                  {!p.admission?.isAdmitted && (p.admissionHistory?.length > 0 || p.admission?.dischargedAt) && (
-                    <button onClick={() => handleViewDischargeSummary(p._id)} className="text-green-800 hover:underline">View Discharge</button>
-                  )}
-
-                  {p.admission?.isAdmitted && user && user.role === 'admin' && (
-                    <button onClick={() => navigate(`/patients/${p._id}/discharge`)} className="text-red-700 hover:underline">Discharge</button>
-                  )}
-
-                  {user && user.role === 'admin' && (
-                    <button onClick={() => handleDeletePatient(p._id)} className="text-sm text-red-700 hover:underline">Delete</button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
+      <div className="patient-list-container">
+        <table className="patient-table">
+          <thead>
+            <tr>
+              <th>Patient Name</th>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Diagnosis</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="6" className="text-center">Loading...</td></tr>
+            ) : (
+              filteredPatients.map(patient => (
+                <tr key={patient._id}>
+                  <td className="patient-name-cell">
+                    <div className="avatar-placeholder"></div>
+                    {`${patient.firstName} ${patient.lastName}`}
+                  </td>
+                  <td>{patient.mrn || 'N/A'}</td>
+                  <td>{new Date(patient.createdAt).toLocaleDateString()}</td>
+                  <td>{patient.diagnosis || 'N/A'}</td>
+                  <td>
+                    <span className={`status-tag ${getStatusClassName(getPatientStatus(patient))}`}>
+                      {getPatientStatus(patient)}
+                    </span>
+                  </td>
+                  <td>
+                    <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}`)}>
+                      <FaEllipsisV />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );

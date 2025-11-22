@@ -59,7 +59,7 @@ import AdminPatient from './pages/admin/AdminPatient';
 import AdminAssignDoctor from './pages/admin/AdminAssignDoctor';
 import AdminUser from './pages/admin/AdminUser';
 import AppointmentsBilling from './pages/finance/AppointmentsBilling';
-import PatientList from './pages/PatientList';
+import PatientListPage from './pages/patients/PatientList';
 import RegisterPatient from './pages/RegisterPatient';
 import PatientDetail from './pages/PatientDetail';
 import PatientPayments from './pages/PatientPayments';
@@ -156,7 +156,7 @@ function App() {
           <Route path="/dashboard/admin/doctors" element={<PrivateRoute><Layout><AdminDoctors /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/register" element={<PrivateRoute><Layout><RegisterUser /></Layout></PrivateRoute>} />
           {/* Patient Management Routes */}
-          <Route path="/patients" element={<PrivateRoute><Layout><PatientList /></Layout></PrivateRoute>} />
+          <Route path="/patients" element={<PrivateRoute><Layout><PatientListPage /></Layout></PrivateRoute>} />
           <Route path="/patients/register" element={<PrivateRoute><Layout><RegisterPatient /></Layout></PrivateRoute>} />
           <Route path="/patients/admitted" element={<PrivateRoute><Layout><AdmittedPatients /></Layout></PrivateRoute>} />
           <Route path="/patients/visits" element={<PrivateRoute><Layout><PatientVisits /></Layout></PrivateRoute>} />
@@ -264,9 +264,7 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/dashboard/admin/patients" element={<PrivateRoute><Layout><AdminPatients /></Layout></PrivateRoute>} />
-          {/* Ensure CreateDiagnosis can be opened with the normal app Layout (not LabLayout) */}
-          <Route path="/lab/tests/new" element={<PrivateRoute><Layout><CreateDiagnosis /></Layout></PrivateRoute>} />
-          <Route path="/dashboard/admin/tools" element={<PrivateRoute><Layout><AdminTools /></Layout></PrivateRoute>} />
+                    <Route path="/dashboard/admin/tools" element={<PrivateRoute><Layout><AdminTools /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id" element={<PrivateRoute><Layout><AdminPatient /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id/assign" element={<PrivateRoute><Layout><AdminAssignDoctor /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/users/:id" element={<PrivateRoute><Layout><AdminUser /></Layout></PrivateRoute>} />
