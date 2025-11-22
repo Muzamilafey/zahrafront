@@ -99,7 +99,26 @@ export default function RegisterPatient() {
   const [hasAllergies, setHasAllergies] = useState(false);
   const [hasChronicConditions, setHasChronicConditions] = useState(false);
 
-  useEffect(() => { loadDoctors(); fetchNextPatientNumber(); }, []);
+  const loadDoctors = async () => {
+    try {
+      const res = await axiosInstance.get('/doctors/list');
+      setDoctors(res.data.doctors || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchNextPatientNumber = async () => {
+    try {
+      const res = await axiosInstance.get('/patients/next-number').catch(() => null);
+      if (res && (res.data.next || res.data.hospitalId)) {
+        setForm(f => ({ ...f, hospitalId: res.data.next || res.data.hospitalId }));
+      }
+    } catch (e) { console.warn('Could not fetch next patient number'); }
+  };
+
+  useEffect(() => { 
+    loadDoctors(); 
+    fetchNextPatientNumber(); 
+  }, []);
 
   const calculateAge = dob => {
     if (!dob) return '';
