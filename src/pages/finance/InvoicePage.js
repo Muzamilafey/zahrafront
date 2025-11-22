@@ -16,9 +16,7 @@ const InvoicePage = () => {
 
   // Invoice items (read-only here). Charge selection is done on Discharge page.
   const [itemsState, setItemsState] = useState([]);
-  const [wardLabel, setWardLabel] = useState(null);
-  const [bedLabel, setBedLabel] = useState(null);
-  const [roomLabel, setRoomLabel] = useState(null);
+  
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -46,94 +44,7 @@ const InvoicePage = () => {
         setInvoiceData(normalized);
         setItemsState(normalized.items || []);
 
-        // Try to resolve ward/bed labels if present
-        const admission = normalized.admissionInfo || {};
-        const wardId = admission.ward;
-        const bedId = admission.bed;
-
-        const resolveWard = async () => {
-          if (!wardId) return;
-          if (typeof wardId === 'object') {
-            const name = wardId.name || wardId.label || wardId.wardName || wardId.title;
-            if (name) return setWardLabel(name);
-          }
-          const endpoints = [`/wards/${wardId}`, `/wards?id=${wardId}`, `/wards?wardId=${wardId}`];
-          for (const ep of endpoints) {
-            try {
-              const r = await axiosInstance.get(ep);
-              const d = r.data;
-              const candidate = d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].name || d[0].label)) || d?.ward?.name;
-              if (candidate) {
-                setWardLabel(candidate);
-                return;
-              }
-            } catch (e) {}
-          }
-          // fallback: fetch list and find matching id
-          try {
-            const listRes = await axiosInstance.get('/wards').catch(()=>({ data: [] }));
-            const list = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.wards || []);
-            const found = list.find(item => String(item._id) === String(wardId) || String(item.id) === String(wardId));
-            if (found) setWardLabel(found.name || found.label || found.wardName || null);
-          } catch(e) { /* ignore */ }
-        };
-        const resolveBed = async () => {
-          if (!bedId) return;
-          if (typeof bedId === 'object') {
-            const name = bedId.name || bedId.label || bedId.number || bedId.bedNo || bedId.code;
-            if (name) return setBedLabel(name);
-          }
-          const endpoints = [`/beds/${bedId}`, `/rooms/${bedId}`, `/beds?id=${bedId}`, `/rooms?id=${bedId}`];
-          for (const ep of endpoints) {
-            try {
-              const r = await axiosInstance.get(ep);
-              const d = r.data;
-              const candidate = d?.number || d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].number || d[0].name)) || d?.bed?.number;
-              if (candidate) {
-                setBedLabel(candidate);
-                return;
-              }
-            } catch (e) {}
-          }
-          // fallback: fetch list and find matching id
-          try {
-            const listRes = await axiosInstance.get('/beds').catch(()=>({ data: [] }));
-            const list = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.beds || []);
-            const found = list.find(item => String(item._id) === String(bedId) || String(item.id) === String(bedId) || String(item.number) === String(bedId));
-            if (found) setBedLabel(found.number || found.name || found.label || null);
-          } catch(e) { /* ignore */ }
-        };
-        const resolveRoom = async () => {
-          // try to resolve a room label if present on admission
-          const roomId = admission.room || admission?.room;
-          if (!roomId) return;
-          if (typeof roomId === 'object') {
-            const name = roomId.name || roomId.number || roomId.label || roomId.roomNo || roomId.code;
-            if (name) return setRoomLabel(name);
-          }
-          const endpoints = [`/rooms/${roomId}`, `/rooms?id=${roomId}`, `/rooms?roomId=${roomId}`];
-          for (const ep of endpoints) {
-            try {
-              const r = await axiosInstance.get(ep);
-              const d = r.data;
-              const candidate = d?.number || d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].number || d[0].name)) || d?.room?.number;
-              if (candidate) {
-                setRoomLabel(candidate);
-                return;
-              }
-            } catch (e) {}
-          }
-          // fallback: fetch list and find matching id
-          try {
-            const listRes = await axiosInstance.get('/rooms').catch(()=>({ data: [] }));
-            const list = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.rooms || []);
-            const found = list.find(item => String(item._id) === String(roomId) || String(item.id) === String(roomId) || String(item.number) === String(roomId));
-            if (found) setRoomLabel(found.number || found.name || found.label || null);
-          } catch(e) { /* ignore */ }
-        };
-        resolveWard();
-        resolveBed();
-        resolveRoom();
+        
       } catch (err) {
         console.error("Failed to fetch invoice:", err);
         setError(err.response?.data?.message || 'Failed to load invoice data.');
@@ -225,13 +136,11 @@ const InvoicePage = () => {
               {/* <div className="font-bold text-xs pr-2">Room Type</div>
               <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
               <div className="font-bold text-xs pr-2">Ward / Room / Bed</div>
-              <div className="text-xs">: {(() => {
-                const wardVal = wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward));
-                const roomVal = roomLabel || (typeof invoiceData.admissionInfo?.room === 'string' ? invoiceData.admissionInfo?.room : (invoiceData.admissionInfo?.room?.number || invoiceData.admissionInfo?.room));
-                const bedVal = bedLabel || (typeof invoiceData.admissionInfo?.bed === 'string' ? invoiceData.admissionInfo?.bed : (invoiceData.admissionInfo?.bed?.number || invoiceData.admissionInfo?.bed));
-                const parts = [wardVal, roomVal, bedVal].filter(p => p && String(p).trim() !== '');
-                return parts.length ? parts.join(' / ') : '................................';
-              })()}</div>
+              <div className="text-xs">: {[
+                invoiceData.admissionInfo?.ward?.name,
+                invoiceData.admissionInfo?.room?.number,
+                invoiceData.admissionInfo?.bed?.number
+              ].filter(Boolean).join(' / ') || '................................'}</div>
               <div className="font-bold text-xs pr-2">SERVED BY</div>
               <div className="text-xs">: {invoiceData.dischargingDoctorName || '................................'}</div>
               {/* <div className="font-bold text-xs pr-2">Co-Consultant</div>
