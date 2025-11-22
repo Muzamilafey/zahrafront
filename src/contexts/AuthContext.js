@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }) => {
 
   // 🔐 Axios instance with token - memoized to prevent recreation on every render
   const axiosInstance = useMemo(() => {
-    const instance = axios.create({ baseURL: API_BASE, timeout: 15000 });
+    const instance = axios.create({ baseURL: API_BASE, timeout: 30000 });
     instance.interceptors.request.use(
       (config) => {
         if (accessToken) {
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }) => {
   // 🧠 Login
   const login = async (email, password) => {
     try {
-      const res = await axios.post(`${API_BASE}/auth/login`, { email, password }, { timeout: 15000 });
+      const res = await axios.post(`${API_BASE}/auth/login`, { email, password }, { timeout: 30000 });
       const token = res.data.accessToken;
 
       if (!token) throw new Error('No access token returned from server');
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // Create a temporary axios instance with the token for this request
         // This is necessary because the memoized axiosInstance won't have the token yet
-        const tempAxios = axios.create({ baseURL: API_BASE, timeout: 15000 });
+        const tempAxios = axios.create({ baseURL: API_BASE, timeout: 30000 });
         tempAxios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
         console.log('[Login] Fetching user profile with token');
