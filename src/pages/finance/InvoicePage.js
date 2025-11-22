@@ -84,7 +84,7 @@ const InvoicePage = () => {
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
-  const { patientName, patientId, address, invoiceId } = invoiceData;
+  const { patientName,nhifNumber, patientId, address, invoiceId } = invoiceData;
   const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
 
   // compute subtotal / tax / total from itemsState and invoiceData settings
