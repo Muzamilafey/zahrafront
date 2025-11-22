@@ -99,6 +99,15 @@ export default function PatientList() {
     return new Date(date).toLocaleDateString();
   };
 
+  const fullNameOf = (p) => {
+    const assembled = `${p.firstName || ''} ${p.middleName || ''} ${p.lastName || ''}`.trim();
+    if (assembled) return assembled;
+    if (p.surname) return String(p.surname);
+    if (p.name) return String(p.name);
+    if (p.fullName) return String(p.fullName);
+    return p.user?.name || '-';
+  };
+
   const getPatientStatus = (patient) => {
     if (patient.admission?.isAdmitted) return 'Admitted';
     return 'Discharged';
@@ -175,129 +184,26 @@ export default function PatientList() {
       ) : patients.length === 0 ? (
         <div className="text-center text-gray-500">No patients found</div>
       ) : (
-        <div className="bg-white shadow overflow-hidden rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Patient ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Gender
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Age
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {patients.map((patient) => (
-                <tr key={patient._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {patient.hospitalId}
-                    </div>
-                    <div className="text-sm text-gray-500">{patient.mrn}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {(() => {
-                        const assembled = `${patient.firstName || ''} ${patient.middleName || ''} ${patient.lastName || ''}`.trim();
-                        if (assembled) return assembled;
-                        if (patient.surname) return patient.surname;
-                        if (patient.name) return patient.name;
-                        return patient.user?.name || '-';
-                      })()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {patient.gender || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {patient.dob
-                        ? Math.floor(
-                            (new Date() - new Date(patient.dob)) / 31557600000
-                          )
-                        : '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {patient.user?.phone || '-'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {patient.user?.email || ''}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${
-                        patient.admission?.isAdmitted
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {getPatientStatus(patient)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => navigate(`/patients/${patient._id}`)}
-                      className="text-brand-600 hover:text-brand-900 mr-4"
-                    >
-                      View Details
-                    </button>
-                    {!patient.admission?.isAdmitted &&
-                      (patient.admissionHistory?.length > 0 ||
-                        patient.admission?.dischargedAt) && (
-                        <button
-                          onClick={() =>
-                            handleViewDischargeSummary(patient._id)
-                          }
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Discharge Summary
-                        </button>
-                      )}
-                    {patient.admission?.isAdmitted &&
-                      user &&
-                      user.role === 'admin' && (
-                        <button
-                          onClick={() => navigate(`/patients/${patient._id}/discharge`)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Discharge
-                        </button>
-                      )}
-                      {user && user.role === 'admin' && (
-                        <button
-                          onClick={() => handleDeletePatient(patient._id)}
-                          className="text-sm text-red-700 hover:text-red-900 ml-4"
-                        >
-                          Delete
-                        </button>
-                      )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {patients.map((p) => (
+            <div key={p._id} className="relative rounded-2xl p-6 bg-gradient-to-br from-teal-400 to-green-400 text-black shadow-md">
+              <div className="mb-4">
+                <div className="text-base font-bold">FULL NAME: {fullNameOf(p)}</div>
+                <div className="text-sm mt-2">CONTACT: {p.user?.phone || '-'}</div>
+                <div className="text-sm">ID NUMBER: {p.idNumber || p.nationalId || '-'}</div>
+                <div className="text-sm font-semibold mt-2">MRN: {p.mrn || '-'}</div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => navigate(`/patients/${p._id}`)}
+                  className="bg-blue-600 text-white text-sm py-2 px-4 rounded-full shadow hover:bg-blue-700"
+                >
+                  OPEN PROFILE
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

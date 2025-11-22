@@ -234,7 +234,7 @@ const NewDischargeSummary = () => {
         <div className="max-w-3xl w-full text-center">
           <div className="mb-6">
             <img src={'/logo1.png'} alt="Hospital Logo" className="mx-auto h-16 mb-2" />
-            <div className="text-xs text-gray-600">HOSPITAL LOGO AS USED IN DETAILEDDISCHARGE SUMMARY</div>
+            <div className="text-xs text-gray-600"></div>
           </div>
 
           <h2 className="text-xl md:text-2xl font-semibold mb-4">“{patient.user?.name || patient.firstName + ' ' + (patient.lastName || '')}” IS ALREADY DISCHARGED</h2>
