@@ -55,6 +55,18 @@ const DetailedDischargeSummary = () => {
           mergedSummary = response.data;
         }
 
+        // best-effort: also fetch patient's diagnoses and ensure they appear on the discharge
+        try {
+          const pDiag = await axiosInstance.get(`/patients/${id}/diagnoses`).catch(()=>({ data: { diagnoses: [] } }));
+          const patientDiags = pDiag.data?.diagnoses || pDiag.data || [];
+          if (patientDiags && patientDiags.length) {
+            // ensure primary/secondary fields exist on mergedSummary
+            if (!mergedSummary.primaryDiagnosis && patientDiags[0]) mergedSummary.primaryDiagnosis = patientDiags[0].name || patientDiags[0];
+            const sec = patientDiags.slice(1).map(d => d.name || d);
+            mergedSummary.secondaryDiagnoses = Array.isArray(mergedSummary.secondaryDiagnoses) ? [...mergedSummary.secondaryDiagnoses, ...sec] : sec;
+          }
+        } catch(e){ console.warn('Failed to fetch patient diagnoses', e); }
+
         setSummary(mergedSummary);
         setError('');
       } catch (err) {

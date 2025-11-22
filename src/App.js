@@ -121,6 +121,9 @@ import RegisterLabTemplate from './pages/lab_new/RegisterLabTemplate';
 import ViewLabTemplates from './pages/lab_new/ViewLabTemplates';
 import LabTemplatesOrder from './pages/lab_new/LabTemplatesOrder';
 import CreateLabTest from './pages/lab/CreateLabTest';
+import CreateDiagnosis from './pages/diagnosis/CreateDiagnosis';
+import DiagnosisList from './pages/diagnosis/DiagnosisList';
+import PatientDiagnosis from './pages/patients/PatientDiagnosis';
 
 function App() {
   return (
@@ -235,7 +238,7 @@ function App() {
 
           {/* Dedicated page for discharged patients */}
           <Route path="/patients/discharged" element={<PrivateRoute><Layout><DischargedPatientsList /></Layout></PrivateRoute>} />
-          <Route path="/patients/:id/diagnosis" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Diagnosis" /></ErrorBoundary></Layout></PrivateRoute>} />
+          <Route path="/patients/:id/diagnosis" element={<PrivateRoute><Layout><ErrorBoundary><PatientDiagnosis /></ErrorBoundary></Layout></PrivateRoute>} />
           <Route path="/patients/:id/referral-letter" element={<PrivateRoute><Layout><ErrorBoundary><Placeholder title="Referral Letter" /></ErrorBoundary></Layout></PrivateRoute>} />
           
           {/* Admission Summary Routes */}
@@ -316,6 +319,8 @@ function App() {
             <Route path="referrals-report" element={<LabReferralsReport />} />
             <Route path="prices" element={<LabTestsPrices />} />
             <Route path="tests/register" element={<CreateLabTest />} />
+            <Route path="tests/new" element={<CreateDiagnosis />} />
+            <Route path="tests/list" element={<DiagnosisList />} />
             <Route path="templates/register" element={<RegisterLabTemplate />} />
             <Route path="templates" element={<ViewLabTemplates />} />
             <Route path="templates/order" element={<LabTemplatesOrder />} />
