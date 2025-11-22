@@ -202,17 +202,20 @@ export default function AdmissionSummary() {
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <div className="flex items-start justify-between mb-2">
           <h1 className="text-2xl font-bold">In-Patient Admission Profile</h1>
-          {patient && patient.admission && !patient.admission.dischargedAt && (
-            <div>
-              <button
-                onClick={handleDischarge}
-                disabled={dischargeLoading}
-                className="btn-brand"
-              >
-                {dischargeLoading ? 'Discharging…' : 'Discharge Patient'}
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(`/patients/${patientId}/diagnosis`)} className="btn-secondary text-sm">Diagnoses</button>
+            {patient && patient.admission && !patient.admission.dischargedAt && (
+              <div>
+                <button
+                  onClick={handleDischarge}
+                  disabled={dischargeLoading}
+                  className="btn-brand"
+                >
+                  {dischargeLoading ? 'Discharging…' : 'Discharge Patient'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>

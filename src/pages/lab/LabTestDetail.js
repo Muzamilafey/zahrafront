@@ -12,6 +12,7 @@ const LabTestDetail = () => {
   const [resultsText, setResultsText] = useState('');
   const [files, setFiles] = useState(null);
   const [structuredResults, setStructuredResults] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(()=>{
     const load = async ()=>{
@@ -131,6 +132,7 @@ const LabTestDetail = () => {
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!test) return <div className="p-6">Not found</div>;
 
   return (
