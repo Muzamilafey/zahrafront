@@ -4,7 +4,7 @@ import Toast from '../components/ui/Toast';
 import { useNavigate } from 'react-router-dom';
 
 const initialForm = {
-  hospitalId: '', // patient number / auto increment
+  hospitalId: '',
   nationalId: '',
   firstName: '',
   middleName: '',
@@ -13,7 +13,7 @@ const initialForm = {
   age: '',
   gender: '',
   maritalStatus: '',
-  nationality: '',
+  nationality: 'Kenyan',
   ethnicity: '',
 
   phonePrimary: '',
@@ -52,6 +52,26 @@ const initialForm = {
   guardianInfo: '',
 };
 
+const options = {
+  religion: ['Christian', 'Muslim', 'Hindu', 'Buddhist', 'Sikh', 'Jewish', 'Other', 'Prefer not to say'],
+  nationality: ['Kenyan', 'Ugandan', 'Tanzanian', 'Nigerian', 'American', 'British', 'Indian', 'Chinese', 'Other'],
+  nextOfKinRelationship: ['Parent', 'Spouse', 'Sibling', 'Child', 'Grandparent', 'Guardian', 'Other'],
+  bloodGroup: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+  allergies: ['None', 'Pollen', 'Dust Mites', 'Peanuts', 'Shellfish', 'Other'],
+  occupation: ['Healthcare', 'Technology', 'Education', 'Business', 'Student', 'Unemployed', 'Other'],
+  educationLevel: ['Primary', 'Secondary', 'Diploma', 'Bachelor\'s Degree', 'Master\'s Degree', 'PhD', 'Other'],
+  disabilityStatus: ['None', 'Physical', 'Sensory', 'Intellectual', 'Mental', 'Other'],
+};
+
+const FormSection = ({ title, children }) => (
+  <div className="col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <h3 className="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">{title}</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+      {children}
+    </div>
+  </div>
+);
+
 export default function RegisterPatient() {
   const { axiosInstance, user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -64,7 +84,6 @@ export default function RegisterPatient() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => { loadDoctors(); fetchNextPatientNumber(); }, []);
-  // load draft from localStorage if present
   useEffect(()=>{
     try{
       const draft = localStorage.getItem('patientFormDraft');
@@ -74,8 +93,6 @@ export default function RegisterPatient() {
       }
     }catch(e){}
   }, []);
-
-  // autosave draft to localStorage
   useEffect(()=>{
     try{ localStorage.setItem('patientFormDraft', JSON.stringify(form)); }catch(e){}
   }, [form]);
@@ -89,7 +106,6 @@ export default function RegisterPatient() {
 
   const fetchNextPatientNumber = async () => {
     try {
-      // backend may provide a next patient number endpoint
       const res = await axiosInstance.get('/patients/next-number').catch(() => null);
       if (res && (res.data.next || res.data.hospitalId)) {
         setForm(f => ({ ...f, hospitalId: res.data.next || res.data.hospitalId }));
@@ -122,19 +138,12 @@ export default function RegisterPatient() {
     setToast(null);
     setErrors({});
 
-    // simple front-end validation
     const phoneRegex = /^[0-9+()\-\s]{7,20}$/;
     if(!form.phonePrimary || !phoneRegex.test(form.phonePrimary)){
       setErrors({ phonePrimary: 'Enter a valid primary phone number' });
       setLoading(false);
       return;
     }
-    if(form.phoneSecondary && !phoneRegex.test(form.phoneSecondary)){
-      setErrors({ phoneSecondary: 'Enter a valid secondary phone number' });
-      setLoading(false);
-      return;
-    }
-    // guardian required for minors
     if(form.age && Number(form.age) < 18){
       if(!form.guardianInfo && !form.nextOfKinName){
         setErrors({ guardianInfo: 'Guardian or next of kin required for minors' });
@@ -143,32 +152,8 @@ export default function RegisterPatient() {
       }
     }
     try {
-      // Structure payload to match backend expectations
       const payload = {
-        // Basic Information
-        hospitalId: form.hospitalId,
-        nationalId: form.nationalId,
-        firstName: form.firstName,
-        middleName: form.middleName,
-        lastName: form.lastName,
-        dob: form.dob,
-        age: form.age,
-        gender: form.gender,
-        maritalStatus: form.maritalStatus,
-        nationality: form.nationality,
-        ethnicity: form.ethnicity,
-
-        // Contact Information
-        phonePrimary: form.phonePrimary,
-        phoneSecondary: form.phoneSecondary,
-        email: form.email,
-        address: form.address,
-        county: form.county,
-        subCounty: form.subCounty,
-        ward: form.ward,
-        postalAddress: form.postalAddress,
-
-        // Next of Kin
+        ...form,
         nextOfKin: {
           name: form.nextOfKinName,
           relationship: form.nextOfKinRelationship,
@@ -176,34 +161,8 @@ export default function RegisterPatient() {
           altPhone: form.nextOfKinAltPhone,
           address: form.nextOfKinAddress
         },
-
-        // Clinical Information
-        bloodGroup: form.bloodGroup,
         allergies: form.allergies ? form.allergies.split(',').map(a => a.trim()) : [],
-        chronicConditions: form.chronicConditions,
-        currentMedications: form.currentMedications,
-        pastMedicalHistory: form.pastMedicalHistory,
-        surgicalHistory: form.surgicalHistory,
-
-        // Billing Information
-        paymentMode: form.paymentMode,
-        insuranceProvider: form.insuranceProvider,
-        insuranceCardNumber: form.insuranceCardNumber,
-        nhifNumber: form.nhifNumber,
-        employer: form.employer,
-        corporateNumber: form.corporateNumber,
-
-        // Demographics
-        occupation: form.occupation,
-        religion: form.religion,
-        educationLevel: form.educationLevel,
-        disabilityStatus: form.disabilityStatus,
-        guardianInfo: form.guardianInfo,
-
-        // Optional assignments
         assignedDoctor: doctorId || undefined,
-        
-        // Metadata
         createdBy: user?._id
       };
 
@@ -214,13 +173,11 @@ export default function RegisterPatient() {
       setForm({ ...initialForm, hospitalId: form.hospitalId });
       setDoctorId('');
       try{ localStorage.removeItem('patientFormDraft'); }catch(e){}
-      // Redirect to patient detail page after a short delay
       setTimeout(() => {
         navigate(`/patients/${createdPatient._id}`);
       }, 1500);
     } catch (e) {
       console.error(e);
-      // show server validation errors if provided
       const srv = e?.response?.data || {};
       if(srv.errors) setErrors(srv.errors);
       setToast({ message: srv.message || 'Failed to register patient', type: 'error' });
@@ -229,127 +186,125 @@ export default function RegisterPatient() {
     }
   };
 
+  const renderInput = (name, placeholder, type = 'text', required = false) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{placeholder}</label>
+      <input name={name} value={form[name]} onChange={onChange} placeholder={placeholder} type={type} className="input" required={required} />
+    </div>
+  );
+
+  const renderSelect = (name, placeholder, opts, required = false) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{placeholder}</label>
+      <select name={name} value={form[name]} onChange={onChange} className="input" required={required}>
+        <option value="">-- select {placeholder.toLowerCase()} --</option>
+        {opts.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+  
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Register New Patient</h2>
-      <form className="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
-        {Object.keys(errors).length > 0 && (
-          <div className="col-span-2 p-3 bg-red-50 text-red-700 rounded">
-            <ul className="list-disc pl-5">
-              {Object.entries(errors).map(([k,v])=> <li key={k}>{v}</li>)}
-            </ul>
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Register New Patient</h2>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          {Object.keys(errors).length > 0 && (
+            <div className="col-span-2 p-4 bg-red-50 text-red-800 rounded-lg border border-red-200">
+              <p className="font-bold mb-2">Please correct the following errors:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {Object.entries(errors).map(([k,v])=> <li key={k} className="text-sm">{v}</li>)}
+              </ul>
+            </div>
+          )}
+
+          <FormSection title="Patient Identification">
+            {renderInput("hospitalId", "Patient Number (auto)", "text")}
+            {renderInput("nationalId", "National ID / Passport No.", "text")}
+          </FormSection>
+
+          <FormSection title="Personal Information">
+            {renderInput("firstName", "First Name", "text", true)}
+            {renderInput("middleName", "Middle Name", "text")}
+            {renderInput("lastName", "Last Name", "text", true)}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <input name="dob" value={form.dob} onChange={onChange} className="input" type="date" required />
+              <div className="text-sm text-gray-500 mt-1">Age: {form.age || '—'}</div>
+            </div>
+            {renderSelect("gender", "Gender", ["Male", "Female", "Other"], true)}
+            {renderSelect("maritalStatus", "Marital Status", ["Single", "Married", "Divorced", "Widowed"])}
+            {renderSelect("nationality", "Nationality", options.nationality)}
+            {renderInput("ethnicity", "Ethnicity (optional)", "text")}
+          </FormSection>
+
+          <FormSection title="Contact Information">
+            {renderInput("phonePrimary", "Primary Phone Number", "tel", true)}
+            {renderInput("phoneSecondary", "Secondary Phone Number", "tel")}
+            {renderInput("email", "Email Address (optional)", "email")}
+            {renderInput("postalAddress", "Postal Address (optional)", "text")}
+            <div className="md:col-span-2">{renderInput("address", "Home Address", "text")}</div>
+            {renderInput("county", "County", "text")}
+            {renderInput("subCounty", "Sub-County", "text")}
+            {renderInput("ward", "Ward", "text")}
+          </FormSection>
+
+          <FormSection title="Next of Kin / Emergency Contact">
+            {renderInput("nextOfKinName", "Name", "text")}
+            {renderSelect("nextOfKinRelationship", "Relationship", options.nextOfKinRelationship)}
+            {renderInput("nextOfKinPhone", "Phone Number", "tel")}
+            {renderInput("nextOfKinAltPhone", "Alternate Phone", "tel")}
+            <div className="md:col-span-2">{renderInput("nextOfKinAddress", "Address", "text")}</div>
+          </FormSection>
+
+          <FormSection title="Medical & Clinical Information">
+            {renderSelect("bloodGroup", "Blood Group", options.bloodGroup)}
+            {renderSelect("allergies", "Allergies", options.allergies)}
+            {renderInput("chronicConditions", "Chronic Conditions", "text")}
+            {renderInput("currentMedications", "Current Medications", "text")}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Past Medical History / Notes</label>
+              <textarea name="pastMedicalHistory" value={form.pastMedicalHistory} onChange={onChange} placeholder="Past Medical History / Notes" className="input" />
+            </div>
+            {renderInput("surgicalHistory", "Surgical History (optional)", "text")}
+          </FormSection>
+
+          <FormSection title="Insurance & Billing">
+            {renderSelect("paymentMode", "Payment Mode", ["Cash", "Insurance", "Corporate", "NHIF"])}
+            {renderInput("insuranceProvider", "Insurance Provider", "text")}
+            {renderInput("insuranceCardNumber", "Insurance Card Number", "text")}
+            {renderInput("nhifNumber", "NHIF Number", "text")}
+            {renderInput("employer", "Employer (Corporate)", "text")}
+            {renderInput("corporateNumber", "Corporate Member Number", "text")}
+          </FormSection>
+
+          <FormSection title="Additional Demographic Info">
+            {renderSelect("occupation", "Occupation", options.occupation)}
+            {renderSelect("religion", "Religion", options.religion)}
+            {renderSelect("educationLevel", "Education Level", options.educationLevel)}
+            {renderSelect("disabilityStatus", "Disability Status", options.disabilityStatus)}
+            {renderInput("guardianInfo", "Guardian Info (for minors)", "text")}
+          </FormSection>
+
+          <div className="col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            {renderSelect("doctorId", "Assign Doctor (optional)", doctors.map(d => ({ value: d._id, label: `${d.user?.name} (${d.user?.email})` })).map(item => <option key={item.value} value={item.value}>{item.label}</option>))}
+          </div>
+
+          <div className="flex justify-end gap-4 mt-6">
+            <button type="button" className="btn-muted" onClick={() => setForm(initialForm)}>Reset</button>
+            <button className="btn-brand" type="submit" disabled={loading}>{loading ? 'Registering...' : 'Register Patient'}</button>
+          </div>
+        </form>
+
+        {createdPatient && (
+          <div className="mt-8 p-4 bg-green-50 rounded-lg shadow">
+            <div className="font-semibold text-lg text-green-800">Patient Registered Successfully!</div>
+            <div>Name: {createdPatient.user?.name || createdPatient.name}</div>
+            <div>Patient Number: {createdPatient.hospitalId}</div>
+            <div>MRN: {createdPatient.mrn}</div>
           </div>
         )}
-        <div className="col-span-2 flex gap-4">
-          <input name="hospitalId" value={form.hospitalId} onChange={onChange} placeholder="Patient Number (auto)" className="input" />
-          <input name="nationalId" value={form.nationalId} onChange={onChange} placeholder="National ID / Passport / Birth Cert No" className="input" />
-        </div>
-
-        <input name="firstName" value={form.firstName} onChange={onChange} placeholder="First Name" className="input" required />
-        <input name="middleName" value={form.middleName} onChange={onChange} placeholder="Middle Name (optional)" className="input" />
-        <input name="lastName" value={form.lastName} onChange={onChange} placeholder="Last Name" className="input" required />
-
-        <div>
-          <label className="text-sm text-gray-600">Date of Birth</label>
-          <input name="dob" value={form.dob} onChange={onChange} className="input" type="date" required />
-          <div className="text-sm text-gray-500">Age: {form.age || '—'}</div>
-        </div>
-
-        <select name="gender" value={form.gender} onChange={onChange} className="input" required>
-          <option value="">-- select gender --</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-
-        <select name="maritalStatus" value={form.maritalStatus} onChange={onChange} className="input">
-          <option value="">-- marital status --</option>
-          <option value="single">Single</option>
-          <option value="married">Married</option>
-          <option value="divorced">Divorced</option>
-          <option value="widowed">Widowed</option>
-        </select>
-
-        <input name="nationality" value={form.nationality} onChange={onChange} placeholder="Nationality" className="input" />
-        <input name="ethnicity" value={form.ethnicity} onChange={onChange} placeholder="Ethnicity (optional)" className="input" />
-
-        <input name="phonePrimary" value={form.phonePrimary} onChange={onChange} placeholder="Phone Number (Primary)" className="input" required />
-        <input name="phoneSecondary" value={form.phoneSecondary} onChange={onChange} placeholder="Phone Number (Secondary)" className="input" />
-
-        <input name="email" value={form.email} onChange={onChange} placeholder="Email (optional)" className="input" type="email" />
-        <input name="postalAddress" value={form.postalAddress} onChange={onChange} placeholder="Postal Address (optional)" className="input" />
-
-        <input name="address" value={form.address} onChange={onChange} placeholder="Home Address" className="input col-span-2" />
-        <input name="county" value={form.county} onChange={onChange} placeholder="County" className="input" />
-        <input name="subCounty" value={form.subCounty} onChange={onChange} placeholder="Sub-County" className="input" />
-        <input name="ward" value={form.ward} onChange={onChange} placeholder="Ward" className="input" />
-
-        <div className="col-span-2 border-t pt-4">
-          <h4 className="font-medium">Next of Kin / Emergency Contact</h4>
-          <input name="nextOfKinName" value={form.nextOfKinName} onChange={onChange} placeholder="Name" className="input" />
-          <input name="nextOfKinRelationship" value={form.nextOfKinRelationship} onChange={onChange} placeholder="Relationship" className="input" />
-          <input name="nextOfKinPhone" value={form.nextOfKinPhone} onChange={onChange} placeholder="Phone" className="input" />
-          <input name="nextOfKinAltPhone" value={form.nextOfKinAltPhone} onChange={onChange} placeholder="Alternate Phone" className="input" />
-          <input name="nextOfKinAddress" value={form.nextOfKinAddress} onChange={onChange} placeholder="Address" className="input" />
-        </div>
-
-        <div className="col-span-2 border-t pt-4">
-          <h4 className="font-medium">Medical & Clinical Information</h4>
-          <input name="bloodGroup" value={form.bloodGroup} onChange={onChange} placeholder="Blood Group" className="input" />
-          <input name="allergies" value={form.allergies} onChange={onChange} placeholder="Allergies (comma separated)" className="input" />
-          <input name="chronicConditions" value={form.chronicConditions} onChange={onChange} placeholder="Chronic Conditions" className="input" />
-          <input name="currentMedications" value={form.currentMedications} onChange={onChange} placeholder="Current Medications" className="input" />
-          <textarea name="pastMedicalHistory" value={form.pastMedicalHistory} onChange={onChange} placeholder="Past Medical History / Notes" className="input" />
-          <input name="surgicalHistory" value={form.surgicalHistory} onChange={onChange} placeholder="Surgical History (optional)" className="input" />
-        </div>
-
-        <div className="col-span-2 border-t pt-4">
-          <h4 className="font-medium">Insurance / Billing</h4>
-          <select name="paymentMode" value={form.paymentMode} onChange={onChange} className="input">
-            <option value="">-- payment mode --</option>
-            <option value="cash">Cash</option>
-            <option value="insurance">Insurance</option>
-            <option value="corporate">Corporate</option>
-            <option value="nhif">NHIF</option>
-          </select>
-          <input name="insuranceProvider" value={form.insuranceProvider} onChange={onChange} placeholder="Insurance Provider" className="input" />
-          <input name="insuranceCardNumber" value={form.insuranceCardNumber} onChange={onChange} placeholder="Insurance Card Number" className="input" />
-          <input name="nhifNumber" value={form.nhifNumber} onChange={onChange} placeholder="NHIF Number" className="input" />
-          <input name="employer" value={form.employer} onChange={onChange} placeholder="Employer (Corporate)" className="input" />
-          <input name="corporateNumber" value={form.corporateNumber} onChange={onChange} placeholder="Corporate Member Number" className="input" />
-        </div>
-
-        <div className="col-span-2 border-t pt-4">
-          <h4 className="font-medium">Additional Demographic Info</h4>
-          <input name="occupation" value={form.occupation} onChange={onChange} placeholder="Occupation" className="input" />
-          <input name="religion" value={form.religion} onChange={onChange} placeholder="Religion" className="input" />
-          <input name="educationLevel" value={form.educationLevel} onChange={onChange} placeholder="Education Level" className="input" />
-          <input name="disabilityStatus" value={form.disabilityStatus} onChange={onChange} placeholder="Disability Status" className="input" />
-          <input name="guardianInfo" value={form.guardianInfo} onChange={onChange} placeholder="Guardian Info (for minors)" className="input" />
-        </div>
-
-        <select value={doctorId} onChange={e => setDoctorId(e.target.value)} className="input col-span-2">
-          <option value="">-- assign doctor (optional) --</option>
-          {doctors.map(d => (
-            <option key={d._id} value={d._id}>{d.user?.name} ({d.user?.email})</option>
-          ))}
-        </select>
-
-        <div className="col-span-2 flex gap-2">
-          <button className="btn-brand flex-1" type="submit" disabled={loading}>{loading ? 'Registering...' : 'Register Patient'}</button>
-          <button type="button" className="btn-muted" onClick={() => setForm(initialForm)}>Reset</button>
-        </div>
-      </form>
-
-      {createdPatient && (
-        <div className="mt-4 p-4 bg-green-50 rounded shadow">
-          <div className="font-semibold">Patient Registered:</div>
-          <div>Name: {createdPatient.user?.name || createdPatient.name}</div>
-          <div>Patient Number: {createdPatient.hospitalId}</div>
-          <div>MRN: {createdPatient.mrn}</div>
-        </div>
-      )}
-      <Toast toast={toast} onClose={() => setToast(null)} />
+        <Toast toast={toast} onClose={() => setToast(null)} />
+      </div>
     </div>
   );
 }
