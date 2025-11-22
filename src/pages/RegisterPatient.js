@@ -166,7 +166,18 @@ export default function RegisterPatient() {
       };
       delete payload.medications;
 
-      const res = await axiosInstance.post('/patients/register', payload);
+      // Clean payload: remove empty strings and undefined values to avoid server-side validation errors
+      const cleanPayload = Object.keys(payload).reduce((acc, key) => {
+        const v = payload[key];
+        if (v === undefined || v === null) return acc;
+        if (typeof v === 'string' && v.trim() === '') return acc;
+        acc[key] = v;
+        return acc;
+      }, {});
+
+      // Debug: log payload before sending to help diagnose 400 errors
+      console.debug('[RegisterPatient] payload (clean):', cleanPayload);
+      const res = await axiosInstance.post('/patients/register', cleanPayload);
       const createdPatient = res.data.patient || res.data;
       setCreatedPatient(createdPatient);
       setToast({ message: 'Patient registered successfully!', type: 'success' });
@@ -174,10 +185,23 @@ export default function RegisterPatient() {
       setDoctorId('');
       setShowPostRegistrationModal(true);
     } catch (e) {
-      console.error(e);
+      console.error('[RegisterPatient] registration error', e);
       const srv = e?.response?.data || {};
-      if(srv.errors) setErrors(srv.errors);
-      setToast({ message: srv.message || 'Failed to register patient', type: 'error' });
+      // show any validation errors returned by server
+      if (srv.errors && typeof srv.errors === 'object') {
+        setErrors(srv.errors);
+        console.warn('[RegisterPatient] server validation errors:', srv.errors);
+      }
+
+      // If server returned a message or details, include them in toast
+      const serverMsg = srv.message || (srv.error && (srv.error.message || srv.error)) || null;
+      if (serverMsg) {
+        setToast({ message: `Failed to register patient: ${serverMsg}`, type: 'error' });
+      } else {
+        setToast({ message: 'Failed to register patient (see console/network for details)', type: 'error' });
+      }
+      // also expose full server response for debugging
+      if (e?.response) console.debug('[RegisterPatient] server response:', e.response);
     } finally {
       setLoading(false);
     }
