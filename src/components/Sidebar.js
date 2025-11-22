@@ -114,7 +114,6 @@ export default function Sidebar() {
         { to: '/dashboard/lab/queue', label: 'Lab Queue', perm: 'labQueue' },
         { to: '/dashboard/lab/requests', label: 'Lab Requests', perm: 'labRequests' },
         { to: '/dashboard/lab/tests', label: 'Lab Tests Catalog', perm: 'lab' },
-        { to: '/lab/tests/new', label: 'Create Diagnoses', perm: 'lab' },
         { to: '/dashboard/lab/prices', label: 'Lab Tests Prices', perm: 'lab' },
         { to: '/dashboard/lab/patient-report', label: 'Lab Visits Report', perm: 'lab' },
         { to: '/dashboard/lab/templates', label: 'Register Lab Templates', perm: 'lab' },
