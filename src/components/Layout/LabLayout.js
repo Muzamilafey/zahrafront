@@ -22,6 +22,12 @@ const LabLayout = () => {
   const { user, logout } = useContext(AuthContext) || {};
   const navigate = useNavigate();
 
+  const getNavLinkClass = ({ isActive }) => {
+    return `flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${
+      isActive ? 'bg-teal-100 border-r-4 border-teal-500' : ''
+    }`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Topbar user={user} onLogout={logout} />
@@ -37,10 +43,7 @@ const LabLayout = () => {
                 <li key={link.to}>
                   <NavLink
                     to={link.to}
-                    className={({ isActive }) =>
-                      `flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${
-                        isActive ? 'bg-teal-100 border-r-4 border-teal-500' : ''
-                      }`
+                    className={getNavLinkClass}
                   >
                     <span className="mr-3">{link.icon}</span>
                     {link.text}
