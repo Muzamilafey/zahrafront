@@ -43,9 +43,56 @@ const NewDischargeSummary = () => {
           { id: 'doctor', description: 'DOCTOR WARD ROUND CHARGES', amount: 2000.0, quantity: days, checked: true },
         ]);
 
-        // procedures & medications are left empty by default (matching image)
+        // procedures left empty by default (matching image)
         setProcedureCharges([]);
-        setMedicationCharges([]);
+
+        // Try to fetch medication / dispensed items for this patient from multiple possible endpoints
+        const tryFetchMedications = async () => {
+          const endpoints = [
+            `/patients/${id}/medications`,
+            `/patients/${id}/dispenses`,
+            `/dispenses?patient=${id}`,
+            `/prescriptions?patientId=${id}`,
+            `/pharmacy/dispenses?patient=${id}`,
+          ];
+
+          for (const ep of endpoints) {
+            try {
+              const r = await axiosInstance.get(ep);
+              const data = r.data;
+              // Accept several shapes: array at root, { items: [...] }, { dispenses: [...] }
+              const list = Array.isArray(data)
+                ? data
+                : Array.isArray(data.items)
+                ? data.items
+                : Array.isArray(data.dispenses)
+                ? data.dispenses
+                : Array.isArray(data.medications)
+                ? data.medications
+                : null;
+
+              if (list && list.length) {
+                const meds = list.map((m, idx) => {
+                  // best-effort mapping
+                  const description = m.name || m.itemName || m.description || m.drug || m.product || `Medication ${idx + 1}`;
+                  const amount = Number(m.price || m.cost || m.unitPrice || m.amount || 0) || 0;
+                  const quantity = Number(m.quantity || m.qty || m.units || 1) || 1;
+                  const idKey = m.id || m.dispenseId || m.prescriptionId || `med-${idx}`;
+                  return { id: idKey, description, amount, quantity, checked: true };
+                });
+                setMedicationCharges(meds);
+                return;
+              }
+            } catch (err) {
+              // ignore and try next
+            }
+          }
+
+          // If none found, leave empty (matching image)
+          setMedicationCharges([]);
+        };
+
+        tryFetchMedications();
 
         setLoading(false);
       } catch (err) {
@@ -75,6 +122,68 @@ const NewDischargeSummary = () => {
       if (!row.checked) return sum;
       return sum + (Number(row.amount) || 0) * (Number(row.quantity) || 0);
     }, 0);
+  };
+
+  const buildLineItems = () => {
+    const selected = [];
+    procedureCharges.filter((c) => c.checked).forEach((p) => selected.push({ description: p.description, amount: Number(p.amount) || 0, quantity: Number(p.quantity) || 1, total: (Number(p.amount)||0)*(Number(p.quantity)||1) }));
+    medicationCharges.filter((c) => c.checked).forEach((m) => selected.push({ description: m.description, amount: Number(m.amount) || 0, quantity: Number(m.quantity) || 1, total: (Number(m.amount)||0)*(Number(m.quantity)||1) }));
+    wardCharges.filter((c) => c.checked).forEach((w) => selected.push({ description: w.description, amount: Number(w.amount) || 0, quantity: Number(w.quantity) || 1, total: (Number(w.amount)||0)*(Number(w.quantity)||1) }));
+    return selected;
+  };
+
+  const saveCharges = async () => {
+    const items = buildLineItems();
+    if (!items.length) {
+      alert('No charges selected to save.');
+      return;
+    }
+
+    // Attempt several likely endpoints with PUT -> POST fallback patterns
+    const invoiceId = patient?.admission?.invoiceId || patient?.invoice?.id || patient?.invoiceId || null;
+
+    const payload = { patientId: id, items };
+
+    const tryRequests = async () => {
+      const attempts = [];
+
+      if (invoiceId) {
+        attempts.push({ method: 'put', url: `/billing/${invoiceId}` });
+        attempts.push({ method: 'put', url: `/invoices/${invoiceId}` });
+      }
+
+      attempts.push({ method: 'post', url: `/billing/patient/${id}` });
+      attempts.push({ method: 'post', url: `/invoices` });
+      attempts.push({ method: 'post', url: `/patients/${id}/invoices` });
+
+      for (const a of attempts) {
+        try {
+          const res = a.method === 'put' ? await axiosInstance.put(a.url, payload) : await axiosInstance.post(a.url, payload);
+          return res;
+        } catch (err) {
+          // continue to next attempt
+        }
+      }
+
+      throw new Error('All invoice endpoints failed');
+    };
+
+    try {
+      const res = await tryRequests();
+      const returned = res.data || {};
+      // Try to find invoice id from response
+      const newInvoiceId = returned.invoiceId || returned.id || (returned.invoice && returned.invoice.id) || invoiceId;
+      alert('Charges saved to invoice successfully');
+      if (newInvoiceId) {
+        // Navigate to likely invoice path
+        navigate(`/billing/${newInvoiceId}`);
+      } else if (returned.link) {
+        window.open(returned.link, '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to save charges to invoice', err);
+      alert('Failed to save charges to invoice. Check console for details.');
+    }
   };
 
   const handleDischarge = async (e) => {
@@ -232,6 +341,9 @@ const NewDischargeSummary = () => {
           <div className="text-right">
             <div className="mb-4">
               <Link to={`/patients/${id}/detailed-discharge-summary`} className="inline-block mb-2 text-sm text-blue-600 underline">Open Detailed Summary</Link>
+            </div>
+            <div className="mb-2">
+              <button type="button" onClick={saveCharges} className="bg-green-600 text-white font-bold py-2 px-4 rounded shadow hover:bg-green-700 mr-2">Save Charges</button>
             </div>
             <button type="submit" className="bg-blue-700 text-white font-bold py-3 px-6 rounded shadow hover:bg-blue-800">Discharge Patient</button>
           </div>
