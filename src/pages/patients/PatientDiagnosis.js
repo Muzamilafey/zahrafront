@@ -22,10 +22,7 @@ export default function PatientDiagnosis(){
         const available = dRes.data?.diagnoses || dRes.data || [];
         setDiagnoses(available);
         const patient = pRes.data?.patient || pRes.data || {};
-        const existing = patient.diagnoses || patient.primaryDiagnosis ? (
-          // patient may store diagnoses in different shapes
-          (patient.diagnoses && Array.isArray(patient.diagnoses) ? patient.diagnoses.map(d=>d._id || d.id) : [])
-        ) : [];
+        const existing = (patient.diagnoses && Array.isArray(patient.diagnoses)) ? patient.diagnoses.map(d => d.condition) : [];
         setSelected(existing);
       }catch(e){ console.error(e); setError('Failed to load'); }
       finally{ setLoading(false); }
