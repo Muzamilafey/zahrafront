@@ -137,11 +137,9 @@ export default function PatientList() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-semibold">{pageTitle}</h2>
-        <div>
-          <button onClick={() => navigate('/patients?status=discharged')} className="btn-outline">View Discharged Patients</button>
-        </div>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">VIEW ALL PATIENTS</h1>
+        <div className="text-sm text-gray-500">TOTAL NO OF PATIENTS: <span className="font-semibold">{patients.length}</span></div>
       </div>
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -184,20 +182,28 @@ export default function PatientList() {
       ) : patients.length === 0 ? (
         <div className="text-center text-gray-500">No patients found</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
           {patients.map((p) => (
-            <div key={p._id} className="relative rounded-2xl p-6 bg-gradient-to-br from-teal-400 to-green-400 text-black shadow-md">
+            <div key={p._id} className="relative rounded-[28px] p-6 bg-gradient-to-br from-[#00b4b4] to-[#7be56d] text-black shadow-md">
               <div className="mb-4">
-                <div className="text-base font-bold">FULL NAME: {fullNameOf(p)}</div>
-                <div className="text-sm mt-2">CONTACT: {p.user?.phone || '-'}</div>
-                <div className="text-sm">ID NUMBER: {p.idNumber || p.nationalId || '-'}</div>
-                <div className="text-sm font-semibold mt-2">MRN: {p.mrn || '-'}</div>
+                <div className="text-base font-bold uppercase">FULL NAME:</div>
+                <div className="text-lg font-semibold mb-2">{fullNameOf(p)}</div>
+
+                <div className="text-sm font-bold uppercase">CONTACT:</div>
+                <div className="text-sm mb-2">{p.user?.phone || '-'}</div>
+
+                <div className="text-sm font-bold uppercase">ID NUMBER</div>
+                <div className="text-sm">{p.idNumber || p.nationalId || '-'}</div>
+
+                <div className="text-sm font-bold uppercase mt-3">MRN</div>
+                <div className="text-sm font-semibold">{p.mrn || '-'}</div>
               </div>
 
               <div className="flex justify-end">
                 <button
                   onClick={() => navigate(`/patients/${p._id}`)}
-                  className="bg-blue-600 text-white text-sm py-2 px-4 rounded-full shadow hover:bg-blue-700"
+                  className="bg-blue-400 text-black text-sm py-2 px-4 rounded-full shadow-md hover:bg-blue-500"
+                  style={{ boxShadow: '0 6px 0 rgba(0,0,0,0.12)'}}
                 >
                   OPEN PROFILE
                 </button>
