@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useContext } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function AdmitPatient(){
@@ -10,7 +11,8 @@ export default function AdmitPatient(){
   const [selectedRoom, setSelectedRoom] = useState('');
   const [beds, setBeds] = useState([]);
   const [selectedBed, setSelectedBed] = useState('');
-  const [patientId, setPatientId] = useState('');
+  const [searchParams] = useSearchParams();
+  const [patientId, setPatientId] = useState(searchParams.get('patientId') || '');
   const [patientQuery, setPatientQuery] = useState('');
   const [patientResults, setPatientResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +24,13 @@ export default function AdmitPatient(){
   const [clinicalNotes, setClinicalNotes] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
   const [insuranceDetails, setInsuranceDetails] = useState('');
+
+  useEffect(() => {
+    const patientIdFromUrl = searchParams.get('patientId');
+    if (patientIdFromUrl) {
+      setPatientId(patientIdFromUrl);
+    }
+  }, [searchParams]);
 
   useEffect(()=>{
     const t = setTimeout(()=>{

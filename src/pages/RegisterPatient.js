@@ -98,6 +98,7 @@ export default function RegisterPatient() {
   const [medications, setMedications] = useState([{ name: '', dosage: '', frequency: '' }]);
   const [hasAllergies, setHasAllergies] = useState(false);
   const [hasChronicConditions, setHasChronicConditions] = useState(false);
+  const [showPostRegistrationModal, setShowPostRegistrationModal] = useState(false);
 
   const loadDoctors = async () => {
     try {
@@ -157,20 +158,21 @@ export default function RegisterPatient() {
     try {
       const payload = {
         ...form,
-        medications: medications.filter(m => m.name),
+        currentMedications: medications.filter(m => m.name).map(m => `${m.name} (${m.dosage} ${m.frequency})`).join(', '),
         allergies: hasAllergies ? form.allergies : 'None',
         chronicConditions: hasChronicConditions ? form.chronicConditions : 'None',
         assignedDoctor: doctorId || undefined,
         createdBy: user?._id
       };
+      delete payload.medications;
 
       const res = await axiosInstance.post('/patients/register', payload);
       const createdPatient = res.data.patient || res.data;
       setCreatedPatient(createdPatient);
-      setToast({ message: 'Patient registered successfully, redirecting...', type: 'success' });
+      setToast({ message: 'Patient registered successfully!', type: 'success' });
       setForm({ ...initialForm, hospitalId: form.hospitalId });
       setDoctorId('');
-      setTimeout(() => navigate(`/patients/${createdPatient._id}`), 1500);
+      setShowPostRegistrationModal(true);
     } catch (e) {
       console.error(e);
       const srv = e?.response?.data || {};
@@ -308,12 +310,37 @@ export default function RegisterPatient() {
           </div>
         </form>
         
-        {createdPatient && (
-          <div className="mt-8 p-6 bg-green-100 border border-green-200 rounded-lg shadow-sm">
-            <h3 className="font-semibold text-xl text-green-800">Patient Registered Successfully!</h3>
-            <p className="mt-2"><strong>Name:</strong> {createdPatient.user?.name || createdPatient.name}</p>
-            <p><strong>Patient Number:</strong> {createdPatient.hospitalId}</p>
-            <p><strong>MRN:</strong> {createdPatient.mrn}</p>
+        {showPostRegistrationModal && createdPatient && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+              <h3 className="font-semibold text-xl text-green-800">Patient Registered Successfully!</h3>
+              <div className="mt-4">
+                <p><strong>Name:</strong> {createdPatient.user?.name || createdPatient.name}</p>
+                <p><strong>MRN:</strong> {createdPatient.mrn}</p>
+              </div>
+              <p className="mt-4">What would you like to do next?</p>
+              <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-4">
+                <button
+                  className="btn-secondary"
+                  onClick={() => navigate(`/appointments/new?patientId=${createdPatient._id}`)}
+                >
+                  Create Appointment
+                </button>
+                <button
+                  className="btn-brand"
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to admit this patient now?')) {
+                      navigate(`/dashboard/doctor/admitpatient?patientId=${createdPatient._id}`);
+                    }
+                  }}
+                >
+                  Admit Patient
+                </button>
+                <button className="btn-muted" onClick={() => setShowPostRegistrationModal(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
         <Toast toast={toast} onClose={() => setToast(null)} />

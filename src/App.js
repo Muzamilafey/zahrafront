@@ -124,6 +124,7 @@ import CreateLabTest from './pages/lab/CreateLabTest';
 import CreateDiagnosis from './pages/diagnosis/CreateDiagnosis';
 import DiagnosisList from './pages/diagnosis/DiagnosisList';
 import PatientDiagnosis from './pages/patients/PatientDiagnosis';
+import CreateAppointment from './pages/CreateAppointment';
 
 function App() {
   return (
@@ -284,6 +285,7 @@ function App() {
 
           <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
           <Route path="/appointments" element={<PrivateRoute><Layout><Appointments /></Layout></PrivateRoute>} />
+          <Route path="/appointments/new" element={<PrivateRoute><Layout><CreateAppointment /></Layout></PrivateRoute>} />
           {/* Patient-specific route (used by sidebar) */}
           <Route path="/dashboard/patient/appointments" element={<PrivateRoute><Layout><Appointments /></Layout></PrivateRoute>} />
           <Route path="/dashboard/patient/prescriptions" element={<PrivateRoute><Layout><PatientPrescriptions /></Layout></PrivateRoute>} />
