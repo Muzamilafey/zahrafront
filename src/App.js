@@ -264,6 +264,8 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/dashboard/admin/patients" element={<PrivateRoute><Layout><AdminPatients /></Layout></PrivateRoute>} />
+          {/* Ensure CreateDiagnosis can be opened with the normal app Layout (not LabLayout) */}
+          <Route path="/lab/tests/new" element={<PrivateRoute><Layout><CreateDiagnosis /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/tools" element={<PrivateRoute><Layout><AdminTools /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id" element={<PrivateRoute><Layout><AdminPatient /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/patients/:id/assign" element={<PrivateRoute><Layout><AdminAssignDoctor /></Layout></PrivateRoute>} />
