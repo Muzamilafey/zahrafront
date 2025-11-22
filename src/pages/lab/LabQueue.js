@@ -50,8 +50,9 @@ const LabQueue = () => {
                 <td className="px-2 py-1">
                   <div className="flex gap-2">
                     <button onClick={()=>updateStatus(o._id, 'collected')} className="px-2 py-1 bg-yellow-300 rounded">Collect Sample</button>
+                    <button onClick={()=>updateStatus(o._id, 'ready_for_collection')} className="px-2 py-1 bg-indigo-200 rounded">Ready For Collection</button>
                     <button onClick={()=>updateStatus(o._id, 'referred')} className="px-2 py-1 bg-gray-200 rounded">Referral</button>
-                    <Link to={`/dashboard/lab/requests/${o._id}`} className="px-2 py-1 bg-blue-600 text-white rounded">View Tests</Link>
+                    <Link to={`/labtests/${o._id}`} className="px-2 py-1 bg-blue-600 text-white rounded">View Tests</Link>
                   </div>
                 </td>
               </tr>

@@ -41,7 +41,7 @@ export default function LabRequestsAll() {
                 <td>{o.doctor?.name || o.doctor?.firstName || '-'}</td>
                 <td>{o.testType}</td>
                 <td>{o.status}</td>
-                <td><Link to={`/dashboard/lab/requests/${o._id}`} className="text-brand-600">View</Link></td>
+                <td><Link to={`/labtests/${o._id}`} className="text-brand-600">View</Link></td>
               </tr>
             ))}
           </tbody>
