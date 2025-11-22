@@ -25,11 +25,29 @@ const InvoicePage = () => {
       if (!id || !axiosInstance) return;
       try {
         const response = await axiosInstance.get(`/billing/patient/${id}`);
-        setInvoiceData(response.data);
-        setItemsState(response.data.items || []);
+        // Normalize server response shapes: server may return { invoice: {...} } or {...}
+        const raw = response.data || {};
+        const src = raw.invoice || raw.data || raw || {};
+
+        // Build a normalized invoice object with common fallbacks
+        const normalized = {
+          invoiceId: src.invoiceId || src.id || src._id || (src.invoice && src.invoice.id),
+          items: src.items || src.lineItems || src.invoiceItems || src.charges || src.itemsSold || [],
+          patientInfo: src.patientInfo || src.patient || src.patientData || (src.patient && src.patient.user) || {},
+          admissionInfo: src.admissionInfo || src.admission || src.admissionData || {},
+          patientName: src.patientName || (src.patientInfo && (src.patientInfo.name || src.patientInfo.fullName)) || (src.patient && (src.patient.name || src.patient.fullName)) || '',
+          dischargingDoctorName: src.dischargingDoctorName || src.servedBy || src.dischargingDoctor || '',
+          taxRate: src.taxRate ?? src.taxPercentage ?? null,
+          tax: src.tax || src.vat || 0,
+          // keep original raw for debugging if needed
+          _raw: raw,
+        };
+
+        setInvoiceData(normalized);
+        setItemsState(normalized.items || []);
 
         // Try to resolve ward/bed labels if present
-        const admission = response.data.admissionInfo || response.data.admission || {};
+        const admission = normalized.admissionInfo || {};
         const wardId = admission.ward;
         const bedId = admission.bed;
 
@@ -87,7 +105,7 @@ const InvoicePage = () => {
         };
         const resolveRoom = async () => {
           // try to resolve a room label if present on admission
-          const roomId = response.data.admissionInfo?.room || response.data.admission?.room;
+          const roomId = admission.room || admission?.room;
           if (!roomId) return;
           if (typeof roomId === 'object') {
             const name = roomId.name || roomId.number || roomId.label || roomId.roomNo || roomId.code;
