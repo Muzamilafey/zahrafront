@@ -182,31 +182,52 @@ export default function PatientList() {
       ) : patients.length === 0 ? (
         <div className="text-center text-gray-500">No patients found</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {patients.map((p) => (
-            <div key={p._id} className="relative rounded-[28px] p-6 bg-gradient-to-br from-[#00b4b4] to-[#7be56d] text-black shadow-md">
-              <div className="mb-4">
-                <div className="text-base font-bold uppercase">FULL NAME:</div>
+            <div key={p._id} className="relative rounded-[28px] p-6 bg-gradient-to-br from-[#05a9a9] to-[#6ee06b] text-black shadow-md overflow-hidden">
+              {/* Status badge */}
+              <div className="absolute top-3 left-3">
+                <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${p.admission?.isAdmitted ? 'bg-green-800 text-white' : 'bg-gray-800 text-white'}`}>
+                  {p.admission?.isAdmitted ? 'ADMITTED' : 'NOT ADMITTED'}
+                </span>
+              </div>
+
+              <div className="mb-4 pt-6">
+                <div className="text-sm font-bold uppercase text-black/80">FULL NAME:</div>
                 <div className="text-lg font-semibold mb-2">{fullNameOf(p)}</div>
 
-                <div className="text-sm font-bold uppercase">CONTACT:</div>
+                <div className="text-sm font-bold uppercase text-black/80">CONTACT:</div>
                 <div className="text-sm mb-2">{p.user?.phone || '-'}</div>
 
-                <div className="text-sm font-bold uppercase">ID NUMBER</div>
+                <div className="text-sm font-bold uppercase text-black/80">ID NUMBER</div>
                 <div className="text-sm">{p.idNumber || p.nationalId || '-'}</div>
 
-                <div className="text-sm font-bold uppercase mt-3">MRN</div>
+                <div className="text-sm font-bold uppercase mt-3 text-black/80">MRN</div>
                 <div className="text-sm font-semibold">{p.mrn || '-'}</div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
                 <button
                   onClick={() => navigate(`/patients/${p._id}`)}
-                  className="bg-blue-400 text-black text-sm py-2 px-4 rounded-full shadow-md hover:bg-blue-500"
-                  style={{ boxShadow: '0 6px 0 rgba(0,0,0,0.12)'}}
+                  className="bg-blue-500 text-white text-sm py-2 px-4 rounded-full shadow-md hover:bg-blue-600"
                 >
                   OPEN PROFILE
                 </button>
+
+                <div className="flex items-center gap-3 text-xs">
+                  {/* Conditional small actions */}
+                  {!p.admission?.isAdmitted && (p.admissionHistory?.length > 0 || p.admission?.dischargedAt) && (
+                    <button onClick={() => handleViewDischargeSummary(p._id)} className="text-green-800 hover:underline">View Discharge</button>
+                  )}
+
+                  {p.admission?.isAdmitted && user && user.role === 'admin' && (
+                    <button onClick={() => navigate(`/patients/${p._id}/discharge`)} className="text-red-700 hover:underline">Discharge</button>
+                  )}
+
+                  {user && user.role === 'admin' && (
+                    <button onClick={() => handleDeletePatient(p._id)} className="text-sm text-red-700 hover:underline">Delete</button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
