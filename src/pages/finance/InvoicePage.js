@@ -51,6 +51,13 @@ const InvoicePage = () => {
               }
             } catch (e) {}
           }
+          // fallback: fetch list and find matching id
+          try {
+            const listRes = await axiosInstance.get('/wards').catch(()=>({ data: [] }));
+            const list = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.wards || []);
+            const found = list.find(item => String(item._id) === String(wardId) || String(item.id) === String(wardId));
+            if (found) setWardLabel(found.name || found.label || found.wardName || null);
+          } catch(e) { /* ignore */ }
         };
         const resolveBed = async () => {
           if (!bedId) return;
@@ -70,6 +77,13 @@ const InvoicePage = () => {
               }
             } catch (e) {}
           }
+          // fallback: fetch list and find matching id
+          try {
+            const listRes = await axiosInstance.get('/beds').catch(()=>({ data: [] }));
+            const list = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.beds || []);
+            const found = list.find(item => String(item._id) === String(bedId) || String(item.id) === String(bedId) || String(item.number) === String(bedId));
+            if (found) setBedLabel(found.number || found.name || found.label || null);
+          } catch(e) { /* ignore */ }
         };
         const resolveRoom = async () => {
           // try to resolve a room label if present on admission
@@ -91,6 +105,13 @@ const InvoicePage = () => {
               }
             } catch (e) {}
           }
+          // fallback: fetch list and find matching id
+          try {
+            const listRes = await axiosInstance.get('/rooms').catch(()=>({ data: [] }));
+            const list = Array.isArray(listRes.data) ? listRes.data : (listRes.data?.rooms || []);
+            const found = list.find(item => String(item._id) === String(roomId) || String(item.id) === String(roomId) || String(item.number) === String(roomId));
+            if (found) setRoomLabel(found.number || found.name || found.label || null);
+          } catch(e) { /* ignore */ }
         };
         resolveWard();
         resolveBed();

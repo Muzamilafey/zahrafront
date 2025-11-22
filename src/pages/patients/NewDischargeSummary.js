@@ -190,6 +190,21 @@ const NewDischargeSummary = () => {
     e.preventDefault();
     if (!window.confirm('Are you sure you want to discharge this patient? This will finalize their admission and generate an invoice.')) return;
 
+    // Ensure patient has at least one diagnosis before allowing discharge
+    try {
+      const diagRes = await axiosInstance.get(`/patients/${id}/diagnoses`).catch(() => ({ data: { diagnoses: [] } }));
+      const patientDiagnoses = diagRes.data?.diagnoses || diagRes.data || [];
+      if (!patientDiagnoses || patientDiagnoses.length === 0) {
+        alert('Cannot discharge patient: no diagnoses have been added. Please add at least one diagnosis before discharging the patient.');
+        return;
+      }
+    } catch (err) {
+      // If the check fails due to network/permission issues, block discharge as a safety measure
+      console.error('Failed to verify patient diagnoses before discharge', err);
+      alert('Unable to verify patient diagnoses. Please ensure the patient has at least one diagnosis before discharging.');
+      return;
+    }
+
     try {
       const selectedCharges = {
         procedures: procedureCharges.filter((c) => c.checked),
