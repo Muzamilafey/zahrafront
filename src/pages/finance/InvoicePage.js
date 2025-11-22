@@ -130,9 +130,8 @@ const InvoicePage = () => {
               <div className="font-bold text-xs pr-2">Discharge Date</div>
               <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
               <div className="font-bold text-xs pr-2">MRN. No</div>
-              <div className="text-xs">: {invoiceData.patientInfo?.mrn || '................................'}</div>
-              <div className="font-bold text-xs pr-2">Age / Gender</div>
-              <div className="text-xs">: {(invoiceData.patientInfo?.age || '') + ' / ' + (invoiceData.patientInfo?.gender || '')}</div>
+              <div className="text-xs">: value={summary.patientInfo?.mrn || '................................'}</div>
+              
               {/* <div className="font-bold text-xs pr-2">Room Type</div>
               <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
               <div className="font-bold text-xs pr-2">Ward / Room / Bed</div>
@@ -141,8 +140,7 @@ const InvoicePage = () => {
                 invoiceData.admissionInfo?.room?.number,
                 invoiceData.admissionInfo?.bed?.number
               ].filter(Boolean).join(' / ') || '................................'}</div>
-              <div className="font-bold text-xs pr-2">SERVED BY</div>
-              <div className="text-xs">: {invoiceData.dischargingDoctorName || '................................'}</div>
+              
               {/* <div className="font-bold text-xs pr-2">Co-Consultant</div>
               <div className="text-xs">: {'................................'}</div> */}
             </div>

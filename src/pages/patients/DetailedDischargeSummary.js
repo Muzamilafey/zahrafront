@@ -196,10 +196,11 @@ const DetailedDischargeSummary = () => {
           <section className="border-2 border-black p-2">
             <div className="grid grid-cols-[max-content_1fr_max-content_1fr] gap-x-4 gap-y-1">
               <PatientInfoRow label="Patient Name" value={summary.patientInfo?.name} />
+              <PatientInfoRow label="Co-Consultant" value={summary.patientInfo?.nationalId} />
               <PatientInfoRow label="Admission Date" value={summary.admissionInfo?.admittedAt ? new Date(summary.admissionInfo.admittedAt).toLocaleString() : null} />
-              <PatientInfoRow label="IP. No" value={summary.admission?.admissionIdLabel} />
+              <PatientInfoRow label="HOSPITAL NO" value={summary.patientInfo?.hospitalId} />
               <PatientInfoRow label="Discharge Date" value={summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : null} />
-              <PatientInfoRow label="UMR. No" value={summary.patientInfo?.mrn} />
+              <PatientInfoRow label="MRN. No" value={summary.patientInfo?.mrn} />
               <PatientInfoRow label="Age / Gender" value={`${summary.patientInfo?.age || ''} / ${summary.patientInfo?.gender || ''}`} />
               <PatientInfoRow label="Ward / Room / Bed" value={[
                 summary.admissionInfo?.ward?.name,
@@ -207,7 +208,7 @@ const DetailedDischargeSummary = () => {
                 summary.admissionInfo?.bed?.number
               ].filter(Boolean).join(' / ') || null} />
               <PatientInfoRow label="Consultant" value={summary.dischargingDoctorName} />
-              <PatientInfoRow label="Co-Consultant" value={null} />
+              
             </div>
           </section>
 
