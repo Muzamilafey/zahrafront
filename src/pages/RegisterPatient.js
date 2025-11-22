@@ -222,7 +222,11 @@ export default function RegisterPatient() {
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <select name={name} value={form[name]} onChange={onChange} className="input" required={required}>
         <option value="">-- Select {label.toLowerCase()} --</option>
-        {opts.map(o => <option key={o} value={o}>{o}</option>)}
+        {opts.map((o) => {
+          if (typeof o === 'string') return <option key={o} value={o}>{o}</option>;
+          // object shape { value, label }
+          return <option key={o.value} value={o.value}>{o.label}</option>;
+        })}
       </select>
     </div>
   );
@@ -252,8 +256,17 @@ export default function RegisterPatient() {
                   <input name="dob" value={form.dob} onChange={onChange} className="input" type="date" required max={maxDob.toISOString().split("T")[0]}/>
                   <div className="text-sm text-gray-500 mt-1">Age: {form.age || '—'}</div>
                 </div>
-                {renderSelect("gender", "Gender", ["Male", "Female", "Other"], true)}
-                {renderSelect("maritalStatus", "Marital Status", ["Single", "Married", "Divorced", "Widowed"])}
+                {renderSelect("gender", "Gender", [
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' },
+                  { value: 'other', label: 'Other' }
+                ], true)}
+                {renderSelect("maritalStatus", "Marital Status", [
+                  { value: 'single', label: 'Single' },
+                  { value: 'married', label: 'Married' },
+                  { value: 'divorced', label: 'Divorced' },
+                  { value: 'widowed', label: 'Widowed' }
+                ])}
                 {renderInput("nationalId", "National ID / Passport No.")}
                 {renderInput("phonePrimary", "Primary Phone (07...)", "tel", true, "[0-9]{10}")}
                 {renderInput("phoneSecondary", "Secondary Phone", "tel", false, "[0-9]{10}")}
@@ -315,7 +328,12 @@ export default function RegisterPatient() {
             <Section>
               <SectionTitle>Billing & Demographics</SectionTitle>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {renderSelect("paymentMode", "Payment Mode", ["Cash", "Insurance", "Corporate", "NHIF"])}
+                 {renderSelect("paymentMode", "Payment Mode", [
+                   { value: 'cash', label: 'Cash' },
+                   { value: 'insurance', label: 'Insurance' },
+                   { value: 'corporate', label: 'Corporate' },
+                   { value: 'nhif', label: 'NHIF' }
+                 ])}
                 {renderInput("insuranceProvider", "Insurance Provider")}
                 {renderInput("insuranceCardNumber", "Insurance Card Number")}
                 {renderInput("nhifNumber", "NHIF Number")}
