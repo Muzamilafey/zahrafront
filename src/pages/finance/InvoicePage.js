@@ -33,7 +33,6 @@ const InvoicePage = () => {
           items: src.items || src.lineItems || src.invoiceItems || src.charges || src.itemsSold || [],
           patientInfo: src.patientInfo || src.patient || src.patientData || (src.patient && src.patient.user) || {},
           admissionInfo: src.admissionInfo || src.admission || src.admissionData || {},
-          nhifNumber: src.nhifNumber || (src.patient.nhifNumber),
           patientName: src.patientName || (src.patientInfo && (src.patientInfo.name || src.patientInfo.fullName)) || (src.patient && (src.patient.name || src.patient.fullName)) || '',
           dischargingDoctorName: src.dischargingDoctorName || src.servedBy || src.dischargingDoctor || '',
           taxRate: src.taxRate ?? src.taxPercentage ?? null,
@@ -84,7 +83,7 @@ const InvoicePage = () => {
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!invoiceData) return <div className="text-center p-8">No invoice found for this patient.</div>;
 
-  const { patientName,nhifNumber, patientId, address, invoiceId } = invoiceData;
+  const { patientName, patientId, address, invoiceId } = invoiceData;
   const currencyFormatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' });
 
   // compute subtotal / tax / total from itemsState and invoiceData settings
@@ -131,20 +130,16 @@ const InvoicePage = () => {
               <div className="font-bold text-xs pr-2">Discharge Date</div>
               <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
               <div className="font-bold text-xs pr-2">SHA. No</div>
-              <div className="text-xs">: {nhifNumber || '................................'}</div>
+              <div className="text-xs">: {invoiceData.patient?.nhifNumber || '................................'}</div>
               
               {/* <div className="font-bold text-xs pr-2">Room Type</div>
               <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
               <div className="font-bold text-xs pr-2">Ward / Room / Bed</div>
-              <div className="text-xs">: {
-                invoiceData.admissionInfo?.wardCategory === 'General' 
-                ? invoiceData.admissionInfo?.bedNumber
-                : [
-                    invoiceData.admissionInfo?.ward?.name,
-                    invoiceData.admissionInfo?.room?.number,
-                    invoiceData.admissionInfo?.bed?.number
-                  ].filter(Boolean).join(' / ') || '................................'
-              }</div>
+              <div className="text-xs">: {[
+                invoiceData.admissionInfo?.ward?.name,
+                invoiceData.admissionInfo?.room?.number,
+                invoiceData.admissionInfo?.bed?.number
+              ].filter(Boolean).join(' / ') || '................................'}</div>
               
               {/* <div className="font-bold text-xs pr-2">Co-Consultant</div>
               <div className="text-xs">: {'................................'}</div> */}
