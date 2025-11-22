@@ -166,18 +166,10 @@ export default function RegisterPatient() {
       };
       delete payload.medications;
 
-      // Clean payload: remove empty strings and undefined values to avoid server-side validation errors
-      const cleanPayload = Object.keys(payload).reduce((acc, key) => {
-        const v = payload[key];
-        if (v === undefined || v === null) return acc;
-        if (typeof v === 'string' && v.trim() === '') return acc;
-        acc[key] = v;
-        return acc;
-      }, {});
-
       // Debug: log payload before sending to help diagnose 400 errors
-      console.debug('[RegisterPatient] payload (clean):', cleanPayload);
-      const res = await axiosInstance.post('/patients/register', cleanPayload);
+      console.debug('[RegisterPatient] payload:', payload);
+
+      const res = await axiosInstance.post('/patients/register', payload);
       const createdPatient = res.data.patient || res.data;
       setCreatedPatient(createdPatient);
       setToast({ message: 'Patient registered successfully!', type: 'success' });
@@ -186,6 +178,12 @@ export default function RegisterPatient() {
       setShowPostRegistrationModal(true);
     } catch (e) {
       console.error('[RegisterPatient] registration error', e);
+
+      // Enhanced error logging
+      if (e.response) {
+        console.error('Server Response:', e.response.data);
+      }
+
       const srv = e?.response?.data || {};
       // show any validation errors returned by server
       if (srv.errors && typeof srv.errors === 'object') {

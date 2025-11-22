@@ -10,6 +10,7 @@ const DetailedDischargeSummary = () => {
   const [summary, setSummary] = useState(null);
   const [wardLabel, setWardLabel] = useState(null);
   const [bedLabel, setBedLabel] = useState(null);
+  const [roomLabel, setRoomLabel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -120,6 +121,29 @@ const DetailedDischargeSummary = () => {
               }
             }
           };
+
+            const resolveRoom = async () => {
+              const roomId = mergedSummary?.admissionInfo?.room || mergedSummary?.admission?.room;
+              if (!roomId) return;
+              if (typeof roomId === 'object') {
+                const name = roomId.name || roomId.number || roomId.label || roomId.roomNo || roomId.code;
+                if (name) return setRoomLabel(name);
+              }
+              const endpoints = [`/rooms/${roomId}`, `/rooms?id=${roomId}`, `/rooms?roomId=${roomId}`];
+              for (const ep of endpoints) {
+                try {
+                  const r = await axiosInstance.get(ep);
+                  const d = r.data;
+                  const candidate = d?.number || d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].number || d[0].name)) || d?.room?.number;
+                  if (candidate) {
+                    setRoomLabel(candidate);
+                    return;
+                  }
+                } catch (e) {
+                  // ignore
+                }
+              }
+            };
 
           resolveWard();
           resolveBed();
@@ -257,8 +281,13 @@ const DetailedDischargeSummary = () => {
               <PatientInfoRow label="Discharge Date" value={summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : null} />
               <PatientInfoRow label="UMR. No" value={summary.patientInfo?.mrn} />
               <PatientInfoRow label="Age / Gender" value={`${summary.patientInfo?.age || ''} / ${summary.patientInfo?.gender || ''}`} />
-              <PatientInfoRow label="Room Type" value={wardLabel || (typeof summary.admissionInfo?.ward === 'string' ? summary.admissionInfo?.ward : (summary.admissionInfo?.ward?.name || summary.admissionInfo?.ward))} />
-              <PatientInfoRow label="Room No" value={bedLabel || (typeof summary.admissionInfo?.bed === 'string' ? summary.admissionInfo?.bed : (summary.admissionInfo?.bed?.number || summary.admissionInfo?.bed))} />
+              <PatientInfoRow label="Ward / Room / Bed" value={(() => {
+                const wardVal = wardLabel || (typeof summary.admissionInfo?.ward === 'string' ? summary.admissionInfo?.ward : (summary.admissionInfo?.ward?.name || summary.admissionInfo?.ward));
+                const roomVal = roomLabel || (typeof summary.admissionInfo?.room === 'string' ? summary.admissionInfo?.room : (summary.admissionInfo?.room?.number || summary.admissionInfo?.room));
+                const bedVal = bedLabel || (typeof summary.admissionInfo?.bed === 'string' ? summary.admissionInfo?.bed : (summary.admissionInfo?.bed?.number || summary.admissionInfo?.bed));
+                const parts = [wardVal, roomVal, bedVal].filter(p => p && String(p).trim() !== '');
+                return parts.length ? parts.join(' / ') : null;
+              })()} />
               <PatientInfoRow label="Consultant" value={summary.dischargingDoctorName} />
               <PatientInfoRow label="Co-Consultant" value={null} />
             </div>

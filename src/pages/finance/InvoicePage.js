@@ -18,6 +18,7 @@ const InvoicePage = () => {
   const [itemsState, setItemsState] = useState([]);
   const [wardLabel, setWardLabel] = useState(null);
   const [bedLabel, setBedLabel] = useState(null);
+  const [roomLabel, setRoomLabel] = useState(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -70,8 +71,30 @@ const InvoicePage = () => {
             } catch (e) {}
           }
         };
+        const resolveRoom = async () => {
+          // try to resolve a room label if present on admission
+          const roomId = response.data.admissionInfo?.room || response.data.admission?.room;
+          if (!roomId) return;
+          if (typeof roomId === 'object') {
+            const name = roomId.name || roomId.number || roomId.label || roomId.roomNo || roomId.code;
+            if (name) return setRoomLabel(name);
+          }
+          const endpoints = [`/rooms/${roomId}`, `/rooms?id=${roomId}`, `/rooms?roomId=${roomId}`];
+          for (const ep of endpoints) {
+            try {
+              const r = await axiosInstance.get(ep);
+              const d = r.data;
+              const candidate = d?.number || d?.name || d?.label || (Array.isArray(d) && d[0] && (d[0].number || d[0].name)) || d?.room?.number;
+              if (candidate) {
+                setRoomLabel(candidate);
+                return;
+              }
+            } catch (e) {}
+          }
+        };
         resolveWard();
         resolveBed();
+        resolveRoom();
       } catch (err) {
         console.error("Failed to fetch invoice:", err);
         setError(err.response?.data?.message || 'Failed to load invoice data.');
@@ -152,22 +175,28 @@ const InvoicePage = () => {
               <div className="text-xs">: {patientName || '................................'}</div>
               <div className="font-bold text-xs pr-2">Admission Date</div>
               <div className="text-xs">: {invoiceData.admissionInfo?.admittedAt ? new Date(invoiceData.admissionInfo.admittedAt).toLocaleString() : '................................'}</div>
-              <div className="font-bold text-xs pr-2">IP. No</div>
-              <div className="text-xs">: {invoiceData.admission?.admissionIdLabel || '................................'}</div>
+              {/* <div className="font-bold text-xs pr-2">IP. No</div>
+              <div className="text-xs">: {invoiceData.admission?.admissionIdLabel || '................................'}</div> */}
               <div className="font-bold text-xs pr-2">Discharge Date</div>
               <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
-              <div className="font-bold text-xs pr-2">UMR. No</div>
+              <div className="font-bold text-xs pr-2">MRN. No</div>
               <div className="text-xs">: {invoiceData.patientInfo?.mrn || '................................'}</div>
               <div className="font-bold text-xs pr-2">Age / Gender</div>
               <div className="text-xs">: {(invoiceData.patientInfo?.age || '') + ' / ' + (invoiceData.patientInfo?.gender || '')}</div>
-              <div className="font-bold text-xs pr-2">Room Type</div>
-              <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div>
-              <div className="font-bold text-xs pr-2">Room No</div>
-              <div className="text-xs">: {bedLabel || (typeof invoiceData.admissionInfo?.bed === 'string' ? invoiceData.admissionInfo?.bed : (invoiceData.admissionInfo?.bed?.number || invoiceData.admissionInfo?.bed || '................................'))}</div>
-              <div className="font-bold text-xs pr-2">Consultant</div>
+              {/* <div className="font-bold text-xs pr-2">Room Type</div>
+              <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
+              <div className="font-bold text-xs pr-2">Ward / Room / Bed</div>
+              <div className="text-xs">: {(() => {
+                const wardVal = wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward));
+                const roomVal = roomLabel || (typeof invoiceData.admissionInfo?.room === 'string' ? invoiceData.admissionInfo?.room : (invoiceData.admissionInfo?.room?.number || invoiceData.admissionInfo?.room));
+                const bedVal = bedLabel || (typeof invoiceData.admissionInfo?.bed === 'string' ? invoiceData.admissionInfo?.bed : (invoiceData.admissionInfo?.bed?.number || invoiceData.admissionInfo?.bed));
+                const parts = [wardVal, roomVal, bedVal].filter(p => p && String(p).trim() !== '');
+                return parts.length ? parts.join(' / ') : '................................';
+              })()}</div>
+              <div className="font-bold text-xs pr-2">SERVED BY</div>
               <div className="text-xs">: {invoiceData.dischargingDoctorName || '................................'}</div>
-              <div className="font-bold text-xs pr-2">Co-Consultant</div>
-              <div className="text-xs">: {'................................'}</div>
+              {/* <div className="font-bold text-xs pr-2">Co-Consultant</div>
+              <div className="text-xs">: {'................................'}</div> */}
             </div>
           </section>
 

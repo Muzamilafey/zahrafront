@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }) => {
 
   // 🔐 Axios instance with token - memoized to prevent recreation on every render
   const axiosInstance = useMemo(() => {
-    const instance = axios.create({ baseURL: API_BASE, timeout: 30000 });
+    const instance = axios.create({ baseURL: API_BASE, timeout: 50000 });
     instance.interceptors.request.use(
       (config) => {
         if (accessToken) {
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }) => {
   // 🧠 Login
   const login = async (email, password) => {
     try {
-      const res = await axios.post(`${API_BASE}/auth/login`, { email, password }, { timeout: 30000 });
+      const res = await axios.post(`${API_BASE}/auth/login`, { email, password }, { timeout: 50000 });
       const token = res.data.accessToken;
 
       if (!token) throw new Error('No access token returned from server');

@@ -218,6 +218,41 @@ const NewDischargeSummary = () => {
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!patient) return <div className="text-center p-8">No patient data found.</div>;
 
+  // If patient already discharged, show simplified discharged screen (per design)
+  const isDischarged = Boolean(
+    patient?.admission?.dischargedAt ||
+    (patient?.admission?.status && String(patient.admission.status).toLowerCase() === 'discharged') ||
+    patient?.admission?.discharged
+  );
+
+  if (isDischarged) {
+    const dischargedAt = patient?.admission?.dischargedAt || patient?.admission?.dischargedAt === 0 ? patient.admission.dischargedAt : null;
+    const dischargedText = dischargedAt ? new Date(dischargedAt).toLocaleString() : 'DISCHARGED';
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="max-w-3xl w-full text-center">
+          <div className="mb-6">
+            <img src={'/logo1.png'} alt="Hospital Logo" className="mx-auto h-16 mb-2" />
+            <div className="text-xs text-gray-600">HOSPITAL LOGO AS USED IN DETAILEDDISCHARGE SUMMARY</div>
+          </div>
+
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">“{patient.user?.name || patient.firstName + ' ' + (patient.lastName || '')}” IS ALREADY DISCHARGED</h2>
+          <div className="text-sm text-gray-600 mb-8">DISCHARGED : “{dischargedText}”</div>
+
+          <div className="flex gap-6 justify-center">
+            <Link to={`/patients/${id}/detailed-discharge-summary`} className="inline-block bg-blue-400 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-full shadow">
+              OPEN DETAILED DISCHARGED SUMMARY
+            </Link>
+            <Link to={`/patients/${id}/invoice`} className="inline-block bg-blue-400 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-full shadow">
+              OPEN FINALIZED INVOICE
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-6xl bg-gray-50">
       <div className="text-center mb-6">
