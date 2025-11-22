@@ -130,7 +130,7 @@ const InvoicePage = () => {
               <div className="font-bold text-xs pr-2">Discharge Date</div>
               <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
               <div className="font-bold text-xs pr-2">SHA. No</div>
-              <div className="text-xs">: value={summary.patientInfo?.nhifNumber || '................................'}</div>
+              <div className="text-xs">: value={invoiceData.patientInfo?.nhifNumber || '................................'}</div>
               
               {/* <div className="font-bold text-xs pr-2">Room Type</div>
               <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
