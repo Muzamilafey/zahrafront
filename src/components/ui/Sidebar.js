@@ -41,6 +41,13 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/nurseassignment', label: 'Nurse Assignment', icon: <FaUsers />, perm: 'nurseAssignment' },
       { to: '/pharmacy', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
       { to: '/pharmacy/pos', label: 'POS', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
+      { to: '/pharmacy/dispense', label: 'Dispense Requests', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/reverse', label: 'Reverse Confirmed', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/injections', label: 'Injections', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/inventory', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/register-drugs', label: 'Register Drugs', icon: <FaPills />, perm: 'inventory' },
+      { to: '/pharmacy/sales-report', label: 'Transactions', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
+      { to: '/pharmacy/edit-group', label: 'Edit Medication Groups', icon: <FaBoxes />, perm: 'inventory' },
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       // Laboratory links for admins
@@ -72,9 +79,15 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/users', label: 'Manage Users', icon: <FaUsers />, perm: 'manageUsers' },
     ],
     pharmacist: [
-      { to: '/dashboard/pharmacy', label: 'Inventory', icon: <FaPills />, perm: 'inventory' },
+      { to: '/pharmacy', label: 'Pharmacy Home', icon: <FaPills />, perm: 'inventory' },
       { to: '/pharmacy/pos', label: 'POS', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
-      { to: '/dashboard/pharmacy/transactions', label: 'Transactions', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
+      { to: '/pharmacy/dispense', label: 'Dispense Requests', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/reverse', label: 'Reverse Confirmed', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/injections', label: 'Injections', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/inventory', label: 'Inventory', icon: <FaBoxes />, perm: 'inventory' },
+      { to: '/pharmacy/register-drugs', label: 'Register Drugs', icon: <FaPills />, perm: 'inventory' },
+      { to: '/pharmacy/sales-report', label: 'Transactions', icon: <FaFileInvoiceDollar />, perm: 'inventory' },
+      { to: '/pharmacy/edit-group', label: 'Edit Medication Groups', icon: <FaBoxes />, perm: 'inventory' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       // admin-grantable permissions
       { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
@@ -209,10 +222,13 @@ export default function Sidebar({ role, onCollapse }) {
 
   const [patientsOpen, setPatientsOpen] = useState(false);
   const [labOpen, setLabOpen] = useState(false);
+  const [pharmacyOpen, setPharmacyOpen] = useState(false);
   const [admittedCount, setAdmittedCount] = useState(0);
 
   // collect lab-related links (those under /dashboard/lab) and filter by permissions
   const labItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/dashboard/lab') || i.to.startsWith('/lab')));
+  // collect pharmacy-related links
+  const pharmacyItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/pharmacy') || i.to.startsWith('/dashboard/pharmacy')));
 
   useEffect(()=>{
     if(role === 'doctor'){
@@ -286,6 +302,25 @@ export default function Sidebar({ role, onCollapse }) {
                   )}
                 </div>
               )}
+              {/* Pharmacy group in hover overlay */}
+              {pharmacyItems.length > 0 && (
+                <div>
+                  <button onClick={() => setPharmacyOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaPills /></div><div>Pharmacy</div></div>
+                    <div>{pharmacyOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                  </button>
+                  {pharmacyOpen && (
+                    <div className="pl-8 flex flex-col">
+                      {pharmacyItems.map(i => (
+                        <Link key={i.to} to={i.to} onClick={() => setPharmacyOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                          <div className="text-sm text-brand-600">{i.icon}</div>
+                          <div className="text-sm">{i.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* remaining items */}
               {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
@@ -344,6 +379,26 @@ export default function Sidebar({ role, onCollapse }) {
               <div className="pl-4 flex flex-col">
                 {labItems.map(i => (
                   <Link key={i.to} to={i.to} onClick={() => setLabOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="text-sm text-brand-600">{i.icon}</div>
+                    <div className="text-sm">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pharmacy collapsible group */}
+        {pharmacyItems.length > 0 && (
+          <div>
+            <button onClick={() => setPharmacyOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+              <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaPills /></div><div>Pharmacy</div></div>
+              <div>{pharmacyOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+            </button>
+            {pharmacyOpen && (
+              <div className="pl-4 flex flex-col">
+                {pharmacyItems.map(i => (
+                  <Link key={i.to} to={i.to} onClick={() => setPharmacyOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                     <div className="text-sm text-brand-600">{i.icon}</div>
                     <div className="text-sm">{i.label}</div>
                   </Link>
