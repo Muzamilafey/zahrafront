@@ -322,7 +322,7 @@ export default function Sidebar({ role, onCollapse }) {
                 </div>
               )}
               {/* remaining items */}
-              {items.filter(i => !patientItems.find(p => p.to === i.to)).map(i => (
+              {items.filter(i => !patientItems.find(p => p.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                   <div className="text-sm text-brand-600">{i.icon}</div>
                   <div className="text-sm">{i.label}</div>
@@ -409,7 +409,7 @@ export default function Sidebar({ role, onCollapse }) {
         )}
 
         {/* remaining items */}
-        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to)).map(i => (
+        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !pharmacyItems.find(p => p.to === i.to)).map(i => (
           <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
             <div className="text-sm text-brand-600">{i.icon}</div>
             <div className="text-sm">{i.label}</div>
