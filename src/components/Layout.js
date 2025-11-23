@@ -27,7 +27,7 @@ export default function Layout({ children }){
 
   return (
     <NotificationsProvider>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="h-screen bg-gray-50 flex flex-col">
         <Topbar user={user} onLogout={logout} />
         <div className="flex-1 flex min-h-0">
           <Sidebar role={role} />
