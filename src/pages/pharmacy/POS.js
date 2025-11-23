@@ -18,6 +18,8 @@ export default function POS(){
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [receiptModal, setReceiptModal] = useState({ open: false, html: '', blobUrl: '', isPdf: false });
+  const receiptIframeRef = useRef(null);
 
   useEffect(()=>{ (async ()=>{
     setLoading(true);
@@ -125,24 +127,16 @@ export default function POS(){
       try{
         // Prefer the HTML thermal receipt (authorized request)
         const r = await axiosInstance.get(`/pharmacy/sales/${id}/receipt-html?print=1`, { responseType: 'text' });
-        const w = window.open('', '_blank');
-        if (w) {
-          w.document.open();
-          w.document.write(r.data);
-          w.document.close();
-          try{ w.focus(); }catch(err){}
-          // attempt to print after a short delay to allow images to load
-          setTimeout(()=>{ try{ w.print(); }catch(err){} }, 350);
-        }
+        // show receipt in modal instead of opening a new window
+        setReceiptModal({ open: true, html: r.data, blobUrl: '', isPdf: false });
       }catch(e){
-        // fallback: fetch PDF blob and open
+        // fallback: fetch PDF blob and show in modal
         try{
           const pdf = await axiosInstance.get(`/pharmacy/sales/${id}/receipt`, { responseType: 'blob' });
           const blob = new Blob([pdf.data], { type: 'application/pdf' });
           const blobUrl = URL.createObjectURL(blob);
-          const w2 = window.open(blobUrl, '_blank');
-          try{ if (w2) w2.focus(); }catch(err){}
-        }catch(err){ console.error('Failed to open receipt', err); }
+          setReceiptModal({ open: true, html: '', blobUrl, isPdf: true });
+        }catch(err){ console.error('Failed to load receipt', err); }
       }
       setCart([]);
       // refresh inventory
@@ -150,6 +144,25 @@ export default function POS(){
       // refresh recent sales
       const sres = await axiosInstance.get('/pharmacy/sales'); setRecentSales(sres.data.sales || []);
     }catch(e){ console.error(e); showToast({ message: e?.response?.data?.message || 'Sale failed', type: 'error' }); }
+  };
+
+  const closeReceiptModal = () => {
+    if (receiptModal.blobUrl) {
+      try { URL.revokeObjectURL(receiptModal.blobUrl); } catch (e) {}
+    }
+    setReceiptModal({ open: false, html: '', blobUrl: '', isPdf: false });
+  };
+
+  const printReceipt = () => {
+    try {
+      const iframe = receiptIframeRef.current;
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
+    } catch (err) {
+      console.warn('Failed to print receipt from modal', err);
+    }
   };
 
   const handleExitFullscreen = async () => {
@@ -303,6 +316,29 @@ export default function POS(){
           </div>
         )}
       </div>
+      {/* Receipt modal (shows HTML via srcDoc or PDF via blob URL) */}
+      {receiptModal.open && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center" onClick={closeReceiptModal}>
+          <div className="absolute inset-0 bg-black opacity-40" />
+          <div className="bg-white rounded shadow-lg z-70 max-w-3xl w-full mx-4" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="font-semibold">Receipt</div>
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-1 bg-gray-200 rounded" onClick={printReceipt}>Print</button>
+                <button className="px-3 py-1 bg-red-600 text-white rounded" onClick={closeReceiptModal}>Close</button>
+              </div>
+            </div>
+            <div className="p-4 h-[70vh] overflow-auto">
+              {!receiptModal.isPdf && (
+                <iframe ref={receiptIframeRef} title="receipt-html" srcDoc={receiptModal.html} className="w-full h-full border" />
+              )}
+              {receiptModal.isPdf && (
+                <iframe ref={receiptIframeRef} title="receipt-pdf" src={receiptModal.blobUrl} className="w-full h-full border" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
