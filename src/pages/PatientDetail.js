@@ -370,7 +370,6 @@ export default function PatientDetail(){
           </div>
         </div>
       </div>
-      </div>
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
