@@ -25,22 +25,36 @@ const NewDischargeSummary = () => {
 
   useEffect(() => {
     if (!id || !axiosInstance) return;
-    const fetchPatient = async () => {
+    const fetchPatientAndCharges = async () => {
       try {
-        const response = await axiosInstance.get(`/patients/${id}`);
-        const p = response.data.patient;
+        const [patientRes, chargesRes] = await Promise.all([
+          axiosInstance.get(`/patients/${id}`),
+          axiosInstance.get('/charges'),
+        ]);
+
+        const p = patientRes.data.patient;
         setPatient(p);
+
+        const chargesMap = {};
+        if (chargesRes.data && Array.isArray(chargesRes.data)) {
+          chargesRes.data.forEach((charge) => {
+            chargesMap[charge.name] = charge;
+          });
+        }
 
         // Setup ward charges defaults based on admission length if possible
         const admittedAt = p?.admission?.admittedAt ? new Date(p.admission.admittedAt) : new Date();
         const today = new Date();
         const days = Math.max(1, Math.ceil((today - admittedAt) / (1000 * 60 * 60 * 24)));
 
+        const admissionCharge = chargesMap['Admission Fee']?.amount || 1000.0;
+        const nursingCharge = chargesMap['Daily Nursing Management Fee']?.amount || 100.0;
+        const doctorCharge = chargesMap['Initial Consultation Fee']?.amount || 2000.0;
+
         setWardCharges([
-          { id: 'admission', description: 'ADMISSION CHARGE', amount: 1000.0, quantity: 1, checked: true },
-          { id: 'ward', description: 'WARD CHARGES', amount: 3000.0, quantity: days, checked: true },
-          { id: 'nursing', description: 'NURSING CHARGES', amount: 100.0, quantity: days, checked: true },
-          { id: 'doctor', description: 'DOCTOR WARD ROUND CHARGES', amount: 2000.0, quantity: days, checked: true },
+          { id: 'admission', description: 'ADMISSION CHARGE', amount: admissionCharge, quantity: 1, checked: false },
+          { id: 'nursing', description: 'NURSING CHARGES', amount: nursingCharge, quantity: days, checked: false },
+          { id: 'doctor', description: 'DOCTOR WARD ROUND CHARGES', amount: doctorCharge, quantity: days, checked: false },
         ]);
 
         // procedures left empty by default (matching image)
@@ -96,12 +110,12 @@ const NewDischargeSummary = () => {
 
         setLoading(false);
       } catch (err) {
-        console.error('Failed to load patient data:', err);
-        setError('Failed to fetch patient data. You may not have permission to view this patient.');
+        console.error('Failed to load patient data or charges:', err);
+        setError('Failed to fetch patient data or charges.');
         setLoading(false);
       }
     };
-    fetchPatient();
+    fetchPatientAndCharges();
   }, [id, axiosInstance]);
 
   const formatCurrency = (amt) => {
