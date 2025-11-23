@@ -111,7 +111,7 @@ const InvoicePage = () => {
               {/* <div className="font-bold text-xs pr-2">IP. No</div>
               <div className="text-xs">: {invoiceData.admission?.admissionIdLabel || '................................'}</div> */}
               <div className="font-bold text-xs pr-2">Discharge Date</div>
-              <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
+              <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : 'Not Discharged yet'}</div>
               <div className="font-bold text-xs pr-2">SHA. No</div>
               <div className="text-xs">: {invoiceData.nhifNumber || '................................'}</div>
               

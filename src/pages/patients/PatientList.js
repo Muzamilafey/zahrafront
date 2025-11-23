@@ -150,17 +150,24 @@ export default function PatientListPage() {
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}`)} title="View Details">
-                        <FaEye />
+                      <button className="action-item" onClick={() => navigate(`/patients/${patient._id}`)} title="View Details">
+                        <div className="action-icon"><FaEye /></div>
+                        <span className="action-label">View</span>
                       </button>
-                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/profile`)} title="Profile">
-                        <FaUser />
+
+                      <button className="action-item" onClick={() => navigate(`/patients/${patient._id}/profile`)} title="Profile">
+                        <div className="action-icon"><FaUser /></div>
+                        <span className="action-label">Profile</span>
                       </button>
-                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/discharge-summary`)} title="Discharge Summary">
-                        <FaFileMedical />
+
+                      <button className="action-item" onClick={() => navigate(`/patients/${patient._id}/discharge-summary`)} title="Discharge Summary">
+                        <div className="action-icon"><FaFileMedical /></div>
+                        <span className="action-label">Discharge</span>
                       </button>
-                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/invoice`)} title="Invoice">
-                        <FaFileInvoice />
+
+                      <button className="action-item" onClick={() => navigate(`/patients/${patient._id}/invoice`)} title="Invoice">
+                        <div className="action-icon"><FaFileInvoice /></div>
+                        <span className="action-label">Invoice</span>
                       </button>
                     </div>
                   </td>

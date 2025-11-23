@@ -171,6 +171,42 @@
     color: #9ca3af;
     cursor: pointer;
   }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem 0.35rem;
+  }
+
+  .action-item .action-icon {
+    font-size: 1rem;
+    line-height: 1;
+    color: #6b7280;
+  }
+
+  .action-item .action-label {
+    font-size: 0.65rem;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .action-item:hover .action-icon,
+  .action-item:hover .action-label {
+    color: #111827;
+  }
   
   .text-center {
     text-align: center;

@@ -112,14 +112,28 @@ export const AuthProvider = ({ children }) => {
     instance.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          console.warn(`[AuthContext] 401 Unauthorized on ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
-          // Don't auto-logout on 401 for some endpoints (they may be optional)
-          // Only critical endpoints should trigger logout
-          const criticalEndpoints = ['/users/me'];
-          const isCritical = criticalEndpoints.some(ep => error.config?.url?.includes(ep));
-          if (isCritical) {
-            console.error('[AuthContext] Critical endpoint failed with 401, token may be expired');
+        const status = error.response?.status;
+        if (status === 401 || status === 403) {
+          console.warn(`[AuthContext] ${status} on ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+          // If the server responded with 401/403 treat it as invalid/expired token.
+          // Perform a local logout and redirect to login page.
+          try {
+            // clear client state (avoid calling logout here because it's defined later)
+            setUser(null);
+            setAccessToken(null);
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+          } catch (e) {
+            console.warn('Failed to clear auth state during interceptor', e);
+          }
+
+          // Avoid redirecting when user is already on login page or when the failing
+          // request itself is login/refresh endpoints to prevent loops.
+          const url = (error.config && error.config.url) ? String(error.config.url) : '';
+          const lower = url.toLowerCase();
+          if (!lower.includes('/auth/login') && !lower.includes('/auth/refresh')) {
+            // Use replace so browser back doesn't return to protected page
+            try { window.location.replace('/login'); } catch (e) { window.location.href = '/login'; }
           }
         }
         return Promise.reject(error);

@@ -126,6 +126,17 @@ import CreateDiagnosis from './pages/diagnosis/CreateDiagnosis';
 import DiagnosisList from './pages/diagnosis/DiagnosisList';
 import PatientDiagnosis from './pages/patients/PatientDiagnosis';
 import CreateAppointment from './pages/CreateAppointment';
+// Pharmacy layout & pages
+import PharmacyLayout from './components/Layout/PharmacyLayout';
+import PharmacyDashboard from './pages/pharmacy/Dashboard';
+import PharmacyPOS from './pages/pharmacy/POS';
+import PharmacyDispenseRequests from './pages/pharmacy/DispenseRequests';
+import PharmacyReverseConfirmed from './pages/pharmacy/ReverseConfirmed';
+import PharmacyInjections from './pages/pharmacy/Injections';
+import PharmacyInventory from './pages/pharmacy/Inventory';
+import PharmacyRegisterDrugs from './pages/pharmacy/RegisterDrugs';
+import PharmacySalesReport from './pages/pharmacy/SalesReport';
+import PharmacyEditGroup from './pages/pharmacy/EditMedicationGroup';
 
 function App() {
   return (
@@ -328,6 +339,19 @@ function App() {
             <Route path="templates/register" element={<RegisterLabTemplate />} />
             <Route path="templates" element={<ViewLabTemplates />} />
             <Route path="templates/order" element={<LabTemplatesOrder />} />
+          </Route>
+
+          {/* Pharmacy section (new layout) */}
+          <Route path="/pharmacy" element={<PrivateRoute><PharmacyLayout /></PrivateRoute>}>
+            <Route index element={<PharmacyDashboard />} />
+            <Route path="pos" element={<PharmacyPOS />} />
+            <Route path="dispense" element={<PharmacyDispenseRequests />} />
+            <Route path="reverse" element={<PharmacyReverseConfirmed />} />
+            <Route path="injections" element={<PharmacyInjections />} />
+            <Route path="inventory" element={<PharmacyInventory />} />
+            <Route path="register-drugs" element={<PharmacyRegisterDrugs />} />
+            <Route path="sales-report" element={<PharmacySalesReport />} />
+            <Route path="edit-group" element={<PharmacyEditGroup />} />
           </Route>
 
           {/* Old Laboratory Routes */}

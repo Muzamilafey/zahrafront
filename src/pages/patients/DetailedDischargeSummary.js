@@ -72,8 +72,9 @@ const DetailedDischargeSummary = () => {
         
         setError('');
       } catch (err) {
-        console.error('Failed to fetch discharge summary:', err);
-        setError('Failed to load discharge summary. No summary may be available for this patient, or there was a server error.');
+        console.error('Failed to fetch discharge summary: login again', err);
+        setError('Auto loged Out. Re-login again.');
+        navigate(`/login`);
       } finally {
         setLoading(false);
       }
