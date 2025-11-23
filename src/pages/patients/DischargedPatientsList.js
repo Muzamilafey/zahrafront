@@ -4,6 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
 import { FaSearch, FaEllipsisV, FaUsers, FaUserCheck, FaBed, FaEye, FaFileMedical, FaFileInvoice } from 'react-icons/fa';
 import './PatientList.css';
+import { User } from "lucide-react";
 
 export default function DischargedPatientsList() {
   const { axiosInstance } = useContext(AuthContext);
@@ -20,9 +21,15 @@ export default function DischargedPatientsList() {
       setLoading(true);
       const res = await axiosInstance.get('/patients/discharged');
       const list = Array.isArray(res.data) ? res.data : (res.data.patients || []);
-      setPatients(list || []);
-      setFilteredPatients(list || []);
-      setStats({ total: list.length, discharged: list.length, admitted: 0 });
+      // sort by dischargedAt descending so the most recently discharged patients are first
+      const sorted = (list || []).slice().sort((a, b) => {
+        const da = a.admission?.dischargedAt ? new Date(a.admission.dischargedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        const db = b.admission?.dischargedAt ? new Date(b.admission.dischargedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+        return db - da;
+      });
+      setPatients(sorted);
+      setFilteredPatients(sorted);
+      setStats({ total: sorted.length, discharged: sorted.length, admitted: 0 });
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to load discharged patients', type: 'error' });
     } finally {
@@ -90,7 +97,9 @@ export default function DischargedPatientsList() {
               filteredPatients.map(p => (
                 <tr key={p._id}>
                   <td className="patient-name-cell">
-                    <div className="avatar-placeholder" />
+                    <div className="avatar-placeholder flex items-center justify-center w-20 h-20 rounded-full bg-blue-100">
+                      <User className="text-blue-600 w-10 h-10" />
+                    </div>
                     {getPatientName(p)}
                   </td>
                   <td>{p.mrn || p.hospitalId || 'N/A'}</td>

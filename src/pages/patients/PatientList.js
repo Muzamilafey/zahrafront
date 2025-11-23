@@ -32,8 +32,14 @@ export default function PatientListPage() {
       setLoading(true);
       const res = await axiosInstance.get('/patients');
       const patientData = Array.isArray(res.data) ? res.data : (res.data.patients || []);
-      setPatients(patientData);
-      setFilteredPatients(patientData);
+      // sort by registration/creation date descending so newest patients appear first
+      const sorted = (patientData || []).slice().sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return db - da;
+      });
+      setPatients(sorted);
+      setFilteredPatients(sorted);
       calculateStats(patientData);
     } catch (e) {
       setToast({
