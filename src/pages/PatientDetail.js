@@ -158,36 +158,46 @@ export default function PatientDetail(){
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-            <h2 className="text-2xl font-semibold">{patient.firstName} {patient.middleName} {patient.lastName}</h2>
-          <div className="text-sm text-gray-500">Hospital ID: {patient.hospitalId} • MRN: {patient.mrn}</div>
-        </div>
-        <div className="flex items-center gap-2">
-            <button onClick={() => navigate(`/patients/${id}/payments`)} className="btn-outline">View Payments</button>
-            {(user && (user.role === 'doctor' || user.role === 'admin')) && (
-              <button onClick={() => navigate(`/patients/${id}/lab-requests`)} className="btn-brand">Add Lab Request</button>
-            )}
-            <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="btn-brand">New Visit</button>
-            {user && user.role === 'admin' && (
-              <>
-                <button onClick={() => setIsEditing(e => !e)} className="btn-outline">{isEditing ? 'Cancel Edit' : 'Edit'}</button>
-                <button onClick={async ()=>{
-                  if(!user || user.role !== 'admin') { setToast({ type: 'error', message: 'Only admins can delete patients' }); return; }
-                  if(!window.confirm('Permanently delete this patient? This cannot be undone.')) return;
-                  try{
-                    await axiosInstance.delete(`/patients/${id}`);
-                    setToast({ type: 'success', message: 'Patient deleted' });
-                    setTimeout(()=>navigate('/patients'),1000);
-                  }catch(e){ setToast({ type: 'error', message: e?.response?.data?.message || 'Delete failed' }); }
-                }} className="btn-danger">Delete</button>
-              </>
-            )}
-            <Link to="/patients" className="btn-muted">Back to list</Link>
-        </div>
-      </div>
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-bold text-gray-700">
+                  {patient.user?.name ? patient.user.name.split(' ').map(n=>n[0]).slice(0,2).join('') : (patient.firstName||'')[0] || 'P'}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold">{patient.firstName} {patient.middleName} {patient.lastName}</h2>
+                  <div className="text-sm text-gray-500">Hospital ID: {patient.hospitalId} • MRN: {patient.mrn}</div>
+                  <div className="mt-1 text-sm text-gray-600">{patient.phonePrimary || 'No phone'} • {patient.email || ''}</div>
+                </div>
+              </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-2">
+                <button onClick={() => navigate(`/patients/${id}/payments`)} className="px-3 py-1 border rounded text-sm">View Payments</button>
+                {(user && (user.role === 'doctor' || user.role === 'admin')) && (
+                  <button onClick={() => navigate(`/patients/${id}/lab-requests`)} className="px-3 py-1 bg-brand-600 text-white rounded text-sm">Add Lab Request</button>
+                )}
+                <button onClick={() => navigate(`/patients/visits/new?patientId=${id}`)} className="px-3 py-1 bg-brand-600 text-white rounded text-sm">New Visit</button>
+                {user && user.role === 'admin' && (
+                  <>
+                    <button onClick={() => setIsEditing(e => !e)} className="px-3 py-1 border rounded text-sm">{isEditing ? 'Cancel' : 'Edit'}</button>
+                    <button onClick={async ()=>{
+                      if(!user || user.role !== 'admin') { setToast({ type: 'error', message: 'Only admins can delete patients' }); return; }
+                      if(!window.confirm('Permanently delete this patient? This cannot be undone.')) return;
+                      try{
+                        await axiosInstance.delete(`/patients/${id}`);
+                        setToast({ type: 'success', message: 'Patient deleted' });
+                        setTimeout(()=>navigate('/patients'),1000);
+                      }catch(e){ setToast({ type: 'error', message: e?.response?.data?.message || 'Delete failed' }); }
+                    }} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 pb-6">
         {isEditing && (
           <div className="col-span-1 md:col-span-3 bg-white p-4 rounded shadow mb-4">
             <h3 className="font-medium mb-2">Edit Patient (admin)</h3>
@@ -276,197 +286,58 @@ export default function PatientDetail(){
         )}
         <div className="col-span-1">
           <div className="bg-white p-4 rounded shadow mb-4">
-            <h3 className="font-medium mb-2">Personal Info</h3>
-            <div className="space-y-1">
-              <div className="text-sm">
-                <span className="text-gray-500">Hospital ID:</span> {patient.hospitalId}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">MRN:</span> {patient.mrn}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Name:</span> {patient.firstName} {patient.middleName} {patient.lastName}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">National ID:</span> {patient.nationalId || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Gender:</span> {patient.gender || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Date of Birth:</span> {patient.dob ? new Date(patient.dob).toLocaleDateString() : 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Age:</span> {patient.age || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Marital Status:</span> {patient.maritalStatus || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Nationality:</span> {patient.nationality || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Ethnicity:</span> {patient.ethnicity || 'N/A'}
-              </div>
+            <h3 className="font-medium mb-2">Summary</h3>
+            <div className="space-y-2 text-sm text-gray-700">
+              <div><span className="text-gray-500">Age:</span> {patient.age || 'N/A'}</div>
+              <div><span className="text-gray-500">Gender:</span> {patient.gender || 'N/A'}</div>
+              <div><span className="text-gray-500">DOB:</span> {patient.dob ? new Date(patient.dob).toLocaleDateString() : 'N/A'}</div>
+              <div><span className="text-gray-500">Phone:</span> {patient.phonePrimary || 'N/A'}</div>
+              <div><span className="text-gray-500">Address:</span> {patient.address || 'N/A'}</div>
             </div>
           </div>
 
           <div className="bg-white p-4 rounded shadow mb-4">
-            <h3 className="font-medium mb-2">Contact Information</h3>
-            <div className="space-y-1">
-              <div className="text-sm">
-                <span className="text-gray-500">Phone (Primary):</span> {patient.phonePrimary || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Phone (Secondary):</span> {patient.phoneSecondary || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Email:</span> {patient.email || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Address:</span> {patient.address || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">County:</span> {patient.county || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Sub-County:</span> {patient.subCounty || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Ward:</span> {patient.ward || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Postal Address:</span> {patient.postalAddress || 'N/A'}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded shadow mb-4">
-            <h3 className="font-medium mb-2">Next of Kin</h3>
-            <div className="space-y-1">
-              <div className="text-sm">
-                <span className="text-gray-500">Name:</span> {patient.nextOfKin?.name || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Relationship:</span> {patient.nextOfKin?.relationship || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Phone:</span> {patient.nextOfKin?.phone || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Alt Phone:</span> {patient.nextOfKin?.altPhone || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Address:</span> {patient.nextOfKin?.address || 'N/A'}
-              </div>
+            <h3 className="font-medium mb-2">Contact</h3>
+            <div className="text-sm text-gray-700">
+              <div><strong>{patient.nextOfKin?.name || 'Next of kin'}</strong></div>
+              <div className="text-xs text-gray-500">{patient.nextOfKin?.relationship || ''} • {patient.nextOfKin?.phone || ''}</div>
             </div>
           </div>
 
           <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-medium mb-2">Demographics</h3>
-            <div className="space-y-1">
-              <div className="text-sm">
-                <span className="text-gray-500">Occupation:</span> {patient.occupation || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Religion:</span> {patient.religion || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Education Level:</span> {patient.educationLevel || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Disability Status:</span> {patient.disabilityStatus || 'N/A'}
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Guardian Info:</span> {patient.guardianInfo || 'N/A'}
-              </div>
+            <h3 className="font-medium mb-2">Administrative</h3>
+            <div className="space-y-1 text-sm text-gray-700">
+              <div><span className="text-gray-500">Payment Mode:</span> {patient.paymentMode || 'N/A'}</div>
+              <div><span className="text-gray-500">Insurance:</span> {patient.insuranceProvider || 'N/A'}</div>
+              <div><span className="text-gray-500">NHIF:</span> {patient.nhifNumber || 'N/A'}</div>
             </div>
           </div>
         </div>
 
         <div className="col-span-2">
           <div className="bg-white p-4 rounded shadow mb-4">
-            <h3 className="font-medium mb-2">Clinical Information</h3>
+            <h3 className="font-medium mb-2">Clinical Overview</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Blood Group:</span> {patient.bloodGroup || 'N/A'}
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Allergies:</span>
-                  {patient.allergies && patient.allergies.length > 0 ? (
-                    <ul className="ml-4 list-disc">
-                      {Array.isArray(patient.allergies) 
-                        ? patient.allergies.map((allergy, idx) => (
-                            <li key={idx}>{allergy}</li>
-                          ))
-                        : <li>{patient.allergies}</li>
-                      }
-                    </ul>
-                  ) : ' None'}
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Chronic Conditions:</span>
-                  <div className="ml-4">{patient.chronicConditions || 'None recorded'}</div>
-                </div>
+                <div className="text-sm mb-2"><span className="text-gray-500">Allergies:</span></div>
+                <div className="ml-4 text-sm text-gray-700">{patient.allergies && patient.allergies.length ? (Array.isArray(patient.allergies) ? patient.allergies.join(', ') : patient.allergies) : 'None'}</div>
               </div>
               <div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Current Medications:</span>
-                  <div className="ml-4">{patient.currentMedications || 'None recorded'}</div>
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Past Medical History:</span>
-                  <div className="ml-4">{patient.pastMedicalHistory || 'None recorded'}</div>
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Surgical History:</span>
-                  <div className="ml-4">{patient.surgicalHistory || 'None recorded'}</div>
-                </div>
+                <div className="text-sm mb-2"><span className="text-gray-500">Current Medications:</span></div>
+                <div className="ml-4 text-sm text-gray-700">{patient.currentMedications || 'None recorded'}</div>
               </div>
             </div>
           </div>
 
           <div className="bg-white p-4 rounded shadow mb-4">
-            <h3 className="font-medium mb-2">Billing Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 className="font-medium mb-2">Recent Activities</h3>
+            <div className="space-y-3">
               <div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Payment Mode:</span> {patient.paymentMode || 'N/A'}
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Insurance Provider:</span> {patient.insuranceProvider || 'N/A'}
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Insurance Card Number:</span> {patient.insuranceCardNumber || 'N/A'}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">NHIF Number:</span> {patient.nhifNumber || 'N/A'}
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Employer:</span> {patient.employer || 'N/A'}
-                </div>
-                <div className="text-sm mb-2">
-                  <span className="text-gray-500">Corporate Number:</span> {patient.corporateNumber || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-medium mb-2">Health Record</h3>
-
-            <div className="mb-4">
-              <h4 className="font-medium">Recent Visits</h4>
-              {records.visits.length === 0 ? (
-                <div className="text-sm text-gray-500">No visits recorded</div>
-              ) : (
-                <ul className="divide-y">
-                  {records.visits.slice(0,10).map(v => (
-                    <li key={v._id || v.id} className="py-2">
-                      <div className="flex items-start justify-between">
+                <h4 className="font-medium">Recent Visits</h4>
+                {records.visits.length === 0 ? <div className="text-sm text-gray-500">No visits recorded</div> : (
+                  <ul className="divide-y">
+                    {records.visits.slice(0,5).map(v => (
+                      <li key={v._id || v.id} className="py-2 flex justify-between items-start">
                         <div>
                           <div className="text-sm font-medium">{v.diagnosis || 'No diagnosis'}</div>
                           <div className="text-xs text-gray-500">{v.doctor?.user?.name || v.doctorName || 'Unknown'} • {new Date(v.createdAt || v.date).toLocaleString()}</div>
@@ -475,139 +346,30 @@ export default function PatientDetail(){
                           <button className="btn-outline text-xs" onClick={()=>printVisit(v)}>Print</button>
                           <button className="btn-muted text-xs" onClick={()=>navigate(`/visits/${v._id || v.id}`)}>View</button>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <h4 className="font-medium">Recent Prescriptions</h4>
-              {records.prescriptions.length === 0 ? (
-                <div className="text-sm text-gray-500">No prescriptions</div>
-              ) : (
-                <ul className="divide-y">
-                  {records.prescriptions.slice(0,10).map(pr => (
-                    <li key={pr._id || pr.id} className="py-2">
-                      <div className="text-sm font-medium">{pr.drugs?.map(d=>d.name).join(', ') || pr.notes || 'Prescription'}</div>
-                      <div className="text-xs text-gray-500">{pr.doctor?.user?.name || pr.doctorName} • {new Date(pr.createdAt || pr.date).toLocaleString()}</div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div>
-              <h4 className="font-medium">Labs</h4>
-              {records.labs.length === 0 ? (
-                <div className="text-sm text-gray-500">No lab tests</div>
-              ) : (
-                <ul className="divide-y">
-                  {records.labs.slice(0,10).map(l => (
-                    <li key={l._id || l.id} className="py-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium">{l.testType}</div>
-                          <div className="text-xs text-gray-500">
-                            Priority: <span className={`font-medium ${l.priority === 'stat' ? 'text-red-600' : l.priority === 'urgent' ? 'text-orange-500' : 'text-green-600'}`}>{l.priority}</span> • Status: {l.status}
-                          </div>
-                          {l.resultsText && <div className="text-xs text-gray-500">Result: {l.resultsText.substring(0, 50)}{l.resultsText.length > 50 ? '...' : ''}</div>}
-                          <div className="text-xs text-gray-500">Requested: {new Date(l.createdAt).toLocaleString()}</div>
-                        </div>
-                        <button className="btn-muted text-xs" onClick={() => navigate(`/labtests/${l._id}`)}>View Details</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <h4 className="font-medium">Recent Payments</h4>
-              {payments.length === 0 ? (
-                <div className="text-sm text-gray-500">No payments found</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-left text-xs text-gray-600">
-                      <tr>
-                        <th className="px-2 py-1">Date</th>
-                        <th className="px-2 py-1">Amount</th>
-                        <th className="px-2 py-1">Method</th>
-                        <th className="px-2 py-1">Reference</th>
-                        <th className="px-2 py-1">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payments.slice(0,10).map(p => (
-                        <tr key={p._id || p.id} className="border-t">
-                          <td className="px-2 py-2">{new Date(p.createdAt || p.date).toLocaleString()}</td>
-                          <td className="px-2 py-2">{p.amount || p.total || 0}</td>
-                          <td className="px-2 py-2">{p.method || p.source || 'N/A'}</td>
-                          <td className="px-2 py-2">{p.reference || p.transactionId || p._id}</td>
-                          <td className="px-2 py-2">
-                            {user && user.role === 'admin' && (
-                              <button className="btn-danger text-sm" onClick={()=>handleDeletePayment(p._id || p.id)}>Delete</button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 border-t pt-4">
-              <h4 className="font-medium mb-2">Record Payment</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
-                <div className="col-span-1">
-                  <label className="text-xs text-gray-600">Amount</label>
-                  <input name="amount" value={payForm.amount} onChange={e=>setPayForm(f=>({ ...f, amount: e.target.value }))} className="input" placeholder="Amount" type="number" min="0" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">Method</label>
-                  <select name="method" value={payForm.method} onChange={e=>setPayForm(f=>({ ...f, method: e.target.value }))} className="input">
-                    <option value="cash">Cash</option>
-                    <option value="mpesa">M-Pesa</option>
-                    <option value="card">Card</option>
-                    <option value="insurance">Insurance</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">Reference</label>
-                  <input name="reference" value={payForm.reference} onChange={e=>setPayForm(f=>({ ...f, reference: e.target.value }))} className="input" placeholder="Reference / Transaction ID" />
-                </div>
-                <div className="col-span-3 mt-2 flex gap-2">
-                  <button className="btn-brand" onClick={async ()=>{
-                    // simple validation
-                    if(!payForm.amount || Number(payForm.amount) <= 0){ setToast({ type: 'error', message: 'Enter a valid amount' }); return; }
-                    setPayLoading(true); setToast(null);
-                    try{
-                      const payload = { patientId: id, amount: Number(payForm.amount), method: payForm.method, reference: payForm.reference };
-                      // try POST /payments then fallback
-                      let res;
-                      try{ res = await axiosInstance.post('/payments', payload); }
-                      catch(err){ res = await axiosInstance.post(`/patients/${id}/payments`, payload).catch(e=>{ throw e; }); }
-                      const saved = res.data.payment || res.data || null;
-                      if(saved) setPayments(p=>[saved, ...(p||[])]);
-                      setPayForm({ amount: '', method: 'cash', reference: '' });
-                      setToast({ type: 'success', message: 'Payment recorded' });
-                      // optionally refresh patient summary
-                      try{ const r = await axiosInstance.get(`/patients/${id}`); setPatient(r.data.patient || r.data || patient); }catch(e){}
-                    }catch(e){ console.error(e); setToast({ type: 'error', message: e?.response?.data?.message || 'Failed to record payment' }); }
-                    finally{ setPayLoading(false); }
-                  }} disabled={payLoading}>
-                    {payLoading ? 'Saving...' : 'Record Payment'}
-                  </button>
-                  <button type="button" className="btn-muted" onClick={()=>setPayForm({ amount: '', method: 'cash', reference: '' })}>Reset</button>
-                </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
+
+              <div>
+                <h4 className="font-medium">Recent Prescriptions</h4>
+                {records.prescriptions.length === 0 ? <div className="text-sm text-gray-500">No prescriptions</div> : (
+                  <ul className="divide-y">
+                    {records.prescriptions.slice(0,5).map(pr => (
+                      <li key={pr._id || pr.id} className="py-2">
+                        <div className="text-sm font-medium">{pr.drugs?.map(d=>d.name).join(', ') || pr.notes || 'Prescription'}</div>
+                        <div className="text-xs text-gray-500">{pr.doctor?.user?.name || pr.doctorName} • {new Date(pr.createdAt || pr.date).toLocaleString()}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
             </div>
           </div>
-
         </div>
+      </div>
       </div>
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>

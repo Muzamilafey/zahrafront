@@ -21,13 +21,13 @@ const NewDischargeSummary = () => {
   // Charges
   const [procedureCharges, setProcedureCharges] = useState([]);
   const [medicationCharges, setMedicationCharges] = useState([]);
-  const [wardCharges, setWardCharges] = useState([]);
+  const [allCharges, setAllCharges] = useState({});
 
   useEffect(() => {
     if (!id || !axiosInstance) return;
     const fetchPatientAndCharges = async () => {
       try {
-        const [patientRes, chargesRes] = await Promise.all([
+        const [patientRes, allChargesRes] = await Promise.all([
           axiosInstance.get(`/patients/${id}`),
           axiosInstance.get('/charges'),
         ]);
@@ -35,27 +35,22 @@ const NewDischargeSummary = () => {
         const p = patientRes.data.patient;
         setPatient(p);
 
-        const chargesMap = {};
-        if (chargesRes.data && Array.isArray(chargesRes.data)) {
-          chargesRes.data.forEach((charge) => {
-            chargesMap[charge.name] = charge;
+        const charges = allChargesRes.data || [];
+        const groupedCharges = charges.reduce((acc, charge) => {
+          const category = charge.category || 'Other';
+          if (!acc[category]) {
+            acc[category] = [];
+          }
+          acc[category].push({
+            id: charge._id,
+            description: charge.name,
+            amount: charge.amount,
+            quantity: 1,
+            checked: false,
           });
-        }
-
-        // Setup ward charges defaults based on admission length if possible
-        const admittedAt = p?.admission?.admittedAt ? new Date(p.admission.admittedAt) : new Date();
-        const today = new Date();
-        const days = Math.max(1, Math.ceil((today - admittedAt) / (1000 * 60 * 60 * 24)));
-
-        const admissionCharge = chargesMap['Admission Fee']?.amount || 1000.0;
-        const nursingCharge = chargesMap['Daily Nursing Management Fee']?.amount || 100.0;
-        const doctorCharge = chargesMap['Initial Consultation Fee']?.amount || 2000.0;
-
-        setWardCharges([
-          { id: 'admission', description: 'ADMISSION CHARGE', amount: admissionCharge, quantity: 1, checked: false },
-          { id: 'nursing', description: 'NURSING CHARGES', amount: nursingCharge, quantity: days, checked: false },
-          { id: 'doctor', description: 'DOCTOR WARD ROUND CHARGES', amount: doctorCharge, quantity: days, checked: false },
-        ]);
+          return acc;
+        }, {});
+        setAllCharges(groupedCharges);
 
         // procedures left empty by default (matching image)
         setProcedureCharges([]);
@@ -123,26 +118,27 @@ const NewDischargeSummary = () => {
     return amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const toggleWardCharge = (index) => {
-    setWardCharges((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], checked: !copy[index].checked };
-      return copy;
+  const toggleCharge = (category, index) => {
+    setAllCharges(prev => {
+      const newCharges = { ...prev };
+      newCharges[category][index].checked = !newCharges[category][index].checked;
+      return newCharges;
     });
   };
 
-  const totalWard = () => {
-    return wardCharges.reduce((sum, row) => {
-      if (!row.checked) return sum;
-      return sum + (Number(row.amount) || 0) * (Number(row.quantity) || 0);
-    }, 0);
+  const handleQuantityChange = (category, index, quantity) => {
+    setAllCharges(prev => {
+      const newCharges = { ...prev };
+      newCharges[category][index].quantity = quantity;
+      return newCharges;
+    });
   };
 
   const buildLineItems = () => {
     const selected = [];
     procedureCharges.filter((c) => c.checked).forEach((p) => selected.push({ description: p.description, amount: Number(p.amount) || 0, quantity: Number(p.quantity) || 1, total: (Number(p.amount)||0)*(Number(p.quantity)||1) }));
     medicationCharges.filter((c) => c.checked).forEach((m) => selected.push({ description: m.description, amount: Number(m.amount) || 0, quantity: Number(m.quantity) || 1, total: (Number(m.amount)||0)*(Number(m.quantity)||1) }));
-    wardCharges.filter((c) => c.checked).forEach((w) => selected.push({ description: w.description, amount: Number(w.amount) || 0, quantity: Number(w.quantity) || 1, total: (Number(w.amount)||0)*(Number(w.quantity)||1) }));
+    Object.values(allCharges).flat().filter((c) => c.checked).forEach((c) => selected.push({ description: c.description, amount: Number(c.amount) || 0, quantity: Number(c.quantity) || 1, total: (Number(c.amount)||0)*(Number(c.quantity)||1) }));
     return selected;
   };
 
@@ -216,7 +212,7 @@ const NewDischargeSummary = () => {
       const selectedCharges = {
         procedures: procedureCharges.filter((c) => c.checked),
         medications: medicationCharges.filter((c) => c.checked),
-        ward: wardCharges.filter((c) => c.checked),
+        additional: Object.values(allCharges).flat().filter((c) => c.checked),
       };
 
       await axiosInstance.post(`/patients/${id}/discharge`, {
@@ -355,38 +351,44 @@ const NewDischargeSummary = () => {
           </table>
         )}
 
-        <h3 className="font-semibold text-lg mb-2">Admission, Ward Charges & Daily Doctor & Nursing Service Charges</h3>
+        <h3 className="font-semibold text-lg mb-2">Additional Charges</h3>
         <div className="overflow-x-auto mb-4">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="px-2 py-2">&nbsp;</th>
-                <th className="px-2 py-2">DESCRIPTION</th>
-                <th className="px-2 py-2 text-right">AMOUNT</th>
-                <th className="px-2 py-2 text-right">QUANTITY</th>
-                <th className="px-2 py-2 text-right">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {wardCharges.map((row, idx) => (
-                <tr key={row.id} className="border-b">
-                  <td className="px-2 py-2 text-center">
-                    <input type="checkbox" checked={row.checked} onChange={() => toggleWardCharge(idx)} />
-                  </td>
-                  <td className="px-2 py-2">{row.description}</td>
-                  <td className="px-2 py-2 text-right">{formatCurrency(row.amount)}</td>
-                  <td className="px-2 py-2 text-right">{row.quantity}</td>
-                  <td className="px-2 py-2 text-right">{formatCurrency((row.amount||0) * (row.quantity||0))}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-50">
-                <td colSpan={4} className="text-right px-2 py-2 font-semibold">TOTAL</td>
-                <td className="text-right px-2 py-2 font-semibold">{formatCurrency(totalWard())}</td>
-              </tr>
-            </tfoot>
-          </table>
+          {Object.entries(allCharges).map(([category, charges]) => (
+            <div key={category} className="mb-4">
+              <h4 className="font-semibold text-md mb-2">{category}</h4>
+              <table className="min-w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-gray-100 border-b">
+                    <th className="px-2 py-2">&nbsp;</th>
+                    <th className="px-2 py-2">DESCRIPTION</th>
+                    <th className="px-2 py-2 text-right">AMOUNT</th>
+                    <th className="px-2 py-2 text-right">QUANTITY</th>
+                    <th className="px-2 py-2 text-right">TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {charges.map((row, idx) => (
+                    <tr key={row.id} className="border-b">
+                      <td className="px-2 py-2 text-center">
+                        <input type="checkbox" checked={row.checked} onChange={() => toggleCharge(category, idx)} />
+                      </td>
+                      <td className="px-2 py-2">{row.description}</td>
+                      <td className="px-2 py-2 text-right">{formatCurrency(row.amount)}</td>
+                      <td className="px-2 py-2 text-right">
+                        <input
+                          type="number"
+                          value={row.quantity}
+                          onChange={(e) => handleQuantityChange(category, idx, e.target.value)}
+                          className="w-16 text-right"
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-right">{formatCurrency((row.amount||0) * (row.quantity||0))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">

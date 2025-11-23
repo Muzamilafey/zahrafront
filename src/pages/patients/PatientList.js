@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
-import { FaSearch, FaUserPlus, FaEllipsisV, FaUsers, FaUserCheck, FaBed, FaUser, FaFileMedical } from 'react-icons/fa';
+import { FaSearch, FaUserPlus, FaEllipsisV, FaUsers, FaUserCheck, FaBed, FaUser, FaFileMedical, FaEye, FaFileInvoice } from 'react-icons/fa';
 import './PatientList.css';
 
 export default function PatientListPage() {
@@ -149,12 +149,20 @@ export default function PatientListPage() {
                     </span>
                   </td>
                   <td>
-                    <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}`)}>
-                      <FaUser />
-                    </button>
-                    <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/discharge-summary`)}>
-                      <FaFileMedical />
-                    </button>
+                    <div className="action-buttons">
+                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}`)} title="View Details">
+                        <FaEye />
+                      </button>
+                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/profile`)} title="Profile">
+                        <FaUser />
+                      </button>
+                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/discharge-summary`)} title="Discharge Summary">
+                        <FaFileMedical />
+                      </button>
+                      <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/invoice`)} title="Invoice">
+                        <FaFileInvoice />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
