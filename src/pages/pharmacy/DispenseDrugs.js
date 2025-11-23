@@ -28,6 +28,16 @@ export default function DispenseDrugs() {
     fetchPendingRequests();
   }, [fetchPendingRequests]);
 
+  // Listen for real-time pharmacy internal requests (SSE dispatched as window event in AuthContext)
+  useEffect(() => {
+    const handler = (e) => {
+      // refresh list when a new internal request arrives
+      try { fetchPendingRequests(); } catch (err) { /* ignore */ }
+    };
+    window.addEventListener('pharmacy:new-internal-request', handler);
+    return () => window.removeEventListener('pharmacy:new-internal-request', handler);
+  }, [fetchPendingRequests]);
+
   const handleDispense = async (requestId, requestType) => {
     if (!window.confirm('Are you sure you want to mark this request as dispensed?')) {
       return;

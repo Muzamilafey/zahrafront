@@ -80,8 +80,19 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    const onPharmacyNewRequest = (e) => {
+      try {
+        const payload = JSON.parse(e.data || '{}');
+        // dispatch a window event so UI can react (e.g., refresh pending list)
+        try { window.dispatchEvent(new CustomEvent('pharmacy:new-internal-request', { detail: payload })); } catch (err) { /* ignore */ }
+      } catch (err) {
+        console.warn('Invalid pharmacy:new-internal-request payload', err);
+      }
+    };
+
     es.addEventListener('permissionsUpdated', onPermissions);
     es.addEventListener('roleChanged', onRoleChanged);
+    es.addEventListener('pharmacy:new-internal-request', onPharmacyNewRequest);
     es.onerror = (err) => {
       // keep console noise minimal; EventSource will try to reconnect automatically
       console.warn('SSE connection error for notifications', err);
