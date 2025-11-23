@@ -123,7 +123,7 @@ export default function PatientListPage() {
           <thead>
             <tr>
               <th>Patient Name</th>
-              <th>ID</th>
+              <th>Hos ID</th>
               <th>Date</th>
               <th>Diagnosis</th>
               <th>Status</th>
@@ -155,7 +155,7 @@ export default function PatientListPage() {
                         <span className="action-label">View</span>
                       </button>
 
-                      <button className="action-item" onClick={() => navigate(`/patients/${patient._id}/profile`)} title="Profile">
+                      <button className="action-item" onClick={() => navigate(`/patients/${patient._id}`)} title="Profile">
                         <div className="action-icon"><FaUser /></div>
                         <span className="action-label">Profile</span>
                       </button>

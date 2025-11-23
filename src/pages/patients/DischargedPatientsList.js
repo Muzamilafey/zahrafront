@@ -2,109 +2,125 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
+import { FaSearch, FaEllipsisV, FaUsers, FaUserCheck, FaBed, FaEye, FaFileMedical, FaFileInvoice } from 'react-icons/fa';
+import './PatientList.css';
 
 export default function DischargedPatientsList() {
   const { axiosInstance } = useContext(AuthContext);
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
+  const [filteredPatients, setFilteredPatients] = useState([]);
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  const [query, setQuery] = useState('');
+  const [stats, setStats] = useState({ total: 0, discharged: 0, admitted: 0 });
 
   const loadDischargedPatients = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get('/patients/discharged');
-      let list = Array.isArray(res.data) ? res.data : (res.data.patients || []);
-
-      const q = (query || '').toLowerCase().trim();
-      if (q) {
-        list = list.filter((p) => {
-          const name = (p.user?.name || p.name || '').toLowerCase();
-          const hospitalId = String(p.hospitalId || p.mrn || '').toLowerCase();
-          const mrn = String(p.mrn || '').toLowerCase();
-          const email = (p.user?.email || '').toLowerCase();
-          return (
-            name.includes(q) ||
-            hospitalId.includes(q) ||
-            mrn.includes(q) ||
-            email.includes(q)
-          );
-        });
-      }
-
+      const list = Array.isArray(res.data) ? res.data : (res.data.patients || []);
       setPatients(list || []);
+      setFilteredPatients(list || []);
+      setStats({ total: list.length, discharged: list.length, admitted: 0 });
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to load discharged patients', type: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [axiosInstance, query]);
+  }, [axiosInstance]);
+
+  useEffect(() => { loadDischargedPatients(); }, [loadDischargedPatients]);
 
   useEffect(() => {
-    loadDischargedPatients();
-  }, [loadDischargedPatients]);
+    if (!query) { setFilteredPatients(patients); return; }
+    const q = query.toLowerCase().trim();
+    const filtered = patients.filter(p => {
+      const name = (p.user?.name || `${p.firstName || ''} ${p.lastName || ''}`).toLowerCase();
+      const id = String(p.hospitalId || p.mrn || '').toLowerCase();
+      return name.includes(q) || id.includes(q);
+    });
+    setFilteredPatients(filtered);
+  }, [query, patients]);
 
-  const handleViewDischargeSummary = (patientId) => {
-    navigate(`/patients/${patientId}/discharge-summary`);
-  };
+  const StatCard = ({ title, value }) => (
+    <div className="stat-card">
+      <div className="stat-info">
+        <p className="stat-title">{title}</p>
+        <p className="stat-value">{value}</p>
+      </div>
+    </div>
+  );
+
+  const getPatientName = (p) => p.user?.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown';
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Discharged Patients</h2>
+    <div className="patient-list-page">
+      <header className="page-header">
+        <h1>Discharged Patients</h1>
+        <div className="header-actions">
+          <div className="search-bar">
+            <FaSearch className="search-icon" />
+            <input type="text" placeholder="Search discharged patients..." value={query} onChange={e => setQuery(e.target.value)} />
+          </div>
+        </div>
+      </header>
 
-      <div className="mb-4 flex items-center gap-2">
-        <input
-          className="input w-96"
-          placeholder="Search by name, hospital ID, or MRN..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') loadDischargedPatients(); }}
-        />
-        <button className="btn-brand" onClick={() => loadDischargedPatients()}>Search</button>
-        <button className="btn-outline" onClick={() => { setQuery(''); loadDischargedPatients(); }}>Clear</button>
+      <div className="stats-grid">
+        <StatCard title="Total Discharged" value={stats.discharged} />
+        <StatCard title="Total Records" value={stats.total} />
       </div>
 
-      {loading ? (
-        <div className="text-center">Loading discharged patients...</div>
-      ) : patients.length === 0 ? (
-        <div className="text-center text-gray-500">No discharged patients found</div>
-      ) : (
-        <div className="bg-white shadow overflow-hidden rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discharged At</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {patients.map((patient) => (
-                <tr key={patient._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{patient.hospitalId}</div>
-                    <div className="text-sm text-gray-500">{patient.mrn}</div>
+      <div className="patient-list-container">
+        <table className="patient-table">
+          <thead>
+            <tr>
+              <th>Patient Name</th>
+              <th>ID</th>
+              <th>Discharged At</th>
+              <th>Gender</th>
+              <th>Age</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="6" className="text-center">Loading...</td></tr>
+            ) : (
+              filteredPatients.map(p => (
+                <tr key={p._id}>
+                  <td className="patient-name-cell">
+                    <div className="avatar-placeholder" />
+                    {getPatientName(p)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{patient.user?.name || '-'}</div></td>
-                  <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{patient.gender || '-'}</div></td>
-                  <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{patient.age || '-'}</div></td>
-                  <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{patient.user?.phone || '-'}</div></td>
-                  <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{patient.admission?.dischargedAt ? new Date(patient.admission.dischargedAt).toLocaleString() : '-'}</div></td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onClick={() => navigate(`/patients/${patient._id}`)} className="text-brand-600 hover:text-brand-900 mr-4">View Details</button>
-                    <button onClick={() => handleViewDischargeSummary(patient._id)} className="text-green-600 hover:text-green-900">Discharge Summary</button>
+                  <td>{p.mrn || p.hospitalId || 'N/A'}</td>
+                  <td>{p.admission?.dischargedAt ? new Date(p.admission.dischargedAt).toLocaleString() : '-'}</td>
+                  <td>{p.gender || '-'}</td>
+                  <td>{p.age || '-'}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button className="action-item" onClick={() => navigate(`/patients/${p._id}`)} title="View Details">
+                        <div className="action-icon"><FaEye /></div>
+                        <span className="action-label">View</span>
+                      </button>
+
+                      <button className="action-item" onClick={() => navigate(`/patients/${p._id}/discharge-summary`)} title="Discharge Summary">
+                        <div className="action-icon"><FaFileMedical /></div>
+                        <span className="action-label">Discharge</span>
+                      </button>
+
+                      <button className="action-item" onClick={() => navigate(`/patients/${p._id}/invoice`)} title="Invoice">
+                        <div className="action-icon"><FaFileInvoice /></div>
+                        <span className="action-label">Invoice</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
