@@ -247,7 +247,7 @@ export default function Sidebar({ role, onCollapse }) {
     return (
       <div className="relative">
         <aside
-          className="w-16 bg-white border-r h-screen p-2 hidden md:flex md:flex-col md:overflow-y-auto"
+          className="w-16 bg-white border-r p-2 hidden md:flex md:flex-col md:overflow-auto md:min-h-0"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
@@ -336,7 +336,7 @@ export default function Sidebar({ role, onCollapse }) {
   }
 
   return (
-  <aside className="w-64 bg-white border-r h-screen p-4 hidden md:flex flex-col md:overflow-y-auto">
+  <aside className="w-64 bg-white border-r p-4 hidden md:flex flex-col md:overflow-auto md:min-h-0">
       <div className="flex justify-between items-center mb-6">
         <div>
           <div className="text-xl font-bold text-brand-700">CoreCare</div>

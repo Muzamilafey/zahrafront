@@ -4,7 +4,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
 import { FaSearch, FaUserPlus, FaEllipsisV, FaUsers, FaUserCheck, FaBed, FaUser, FaFileMedical, FaEye, FaFileInvoice } from 'react-icons/fa';
 import './PatientList.css';
-
+import { User } from "lucide-react";
 export default function PatientListPage() {
   const { axiosInstance } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -137,7 +137,10 @@ export default function PatientListPage() {
               filteredPatients.map(patient => (
                 <tr key={patient._id}>
                   <td className="patient-name-cell">
-                    <div className="avatar-placeholder"></div>
+                    <div className="avatar-placeholder flex items-center justify-center w-20 h-20 rounded-full bg-blue-100">
+                      <User className="text-blue-600 w-10 h-10" />
+                    </div>
+                    
                     {`${patient.firstName} ${patient.lastName}`}
                   </td>
                   <td>{patient.mrn || 'N/A'}</td>

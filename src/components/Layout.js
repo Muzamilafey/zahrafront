@@ -27,12 +27,12 @@ export default function Layout({ children }){
 
   return (
     <NotificationsProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Topbar user={user} onLogout={logout} />
-        <div className="flex min-h-screen">
+        <div className="flex-1 flex min-h-0">
           <Sidebar role={role} />
           {/* make the right pane a separate scroll container so the sidebar doesn't scroll with content */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto min-h-0">
             <main className="p-6">
               {children}
               <Toasts />
