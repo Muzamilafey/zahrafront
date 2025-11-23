@@ -136,9 +136,15 @@ export default function Sidebar() {
       title: 'Pharmacy',
       defaultCheck: ['admin', 'pharmacist', 'nurse'].includes(user?.role),
       items: [
-        { to: '/dashboard/pharmacy/dispense', label: 'Dispense Drugs', perm: 'dispenseDrugs' },
         { to: '/pharmacy', label: 'Pharmacy Home', perm: 'pharmacy' },
         { to: '/pharmacy/pos', label: 'POS', perm: 'pharmacy' },
+        { to: '/pharmacy/dispense', label: 'Dispense Requests', perm: 'pharmacy' },
+        { to: '/pharmacy/reverse', label: 'Reverse Confirmed', perm: 'pharmacy' },
+        { to: '/pharmacy/injections', label: 'Injections', perm: 'pharmacy' },
+        { to: '/pharmacy/inventory', label: 'Inventory', perm: 'pharmacy' },
+        { to: '/pharmacy/register-drugs', label: 'Register Drugs', perm: 'pharmacy' },
+        { to: '/pharmacy/sales-report', label: 'Transactions', perm: 'pharmacy' },
+        { to: '/pharmacy/edit-group', label: 'Edit Medication Groups', perm: 'pharmacy' },
       ],
     },
   ];
@@ -162,8 +168,8 @@ export default function Sidebar() {
           return visible ? (
             <MenuGroup key={g.id} title={g.title} open={openMenus[g.id]} onToggle={() => toggleMenu(g.id)}>
               {g.items.map(it => {
-                // show item if: admin (bypass), or user has explicit permission granted
-                const showItem = user?.role === 'admin' || hasAccess(it.perm, false);
+                // show item if: admin (bypass), explicit permission, or group's defaultCheck allows it
+                const showItem = user?.role === 'admin' || hasAccess(it.perm, g.defaultCheck);
                 return showItem ? <MenuItem key={it.to} to={it.to}>{it.label}</MenuItem> : null;
               })}
             </MenuGroup>
