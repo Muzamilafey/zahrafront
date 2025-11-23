@@ -18,8 +18,10 @@ export default function POS(){
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [receiptModal, setReceiptModal] = useState({ open: false, html: '', blobUrl: '', isPdf: false });
+  const [receiptModal, setReceiptModal] = useState({ open: false, html: '', blobUrl: '', isPdf: false, id: null });
   const receiptIframeRef = useRef(null);
+  const [lastReceipt, setLastReceipt] = useState(null);
+  const printedReceiptIdsRef = useRef(new Set());
 
   useEffect(()=>{ (async ()=>{
     setLoading(true);
@@ -128,14 +130,18 @@ export default function POS(){
         // Prefer the HTML thermal receipt (authorized request)
         const r = await axiosInstance.get(`/pharmacy/sales/${id}/receipt-html?print=1`, { responseType: 'text' });
         // show receipt in modal instead of opening a new window
-        setReceiptModal({ open: true, html: r.data, blobUrl: '', isPdf: false });
+        const id = Date.now();
+        setReceiptModal({ open: true, html: r.data, blobUrl: '', isPdf: false, id });
+        setLastReceipt({ html: r.data, blobUrl: '', isPdf: false, id });
       }catch(e){
         // fallback: fetch PDF blob and show in modal
         try{
           const pdf = await axiosInstance.get(`/pharmacy/sales/${id}/receipt`, { responseType: 'blob' });
           const blob = new Blob([pdf.data], { type: 'application/pdf' });
           const blobUrl = URL.createObjectURL(blob);
-          setReceiptModal({ open: true, html: '', blobUrl, isPdf: true });
+          const id = Date.now();
+          setReceiptModal({ open: true, html: '', blobUrl, isPdf: true, id });
+          setLastReceipt({ html: '', blobUrl, isPdf: true, id });
         }catch(err){ console.error('Failed to load receipt', err); }
       }
       setCart([]);
@@ -150,20 +156,81 @@ export default function POS(){
     if (receiptModal.blobUrl) {
       try { URL.revokeObjectURL(receiptModal.blobUrl); } catch (e) {}
     }
-    setReceiptModal({ open: false, html: '', blobUrl: '', isPdf: false });
+    setReceiptModal({ open: false, html: '', blobUrl: '', isPdf: false, id: null });
   };
 
   const printReceipt = () => {
     try {
-      const iframe = receiptIframeRef.current;
-      if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
+      // Use a hidden iframe to print the original receipt HTML or PDF so the
+      // print output matches the server-provided receipt formatting.
+      if (!receiptModal) return;
+      const printFrame = document.createElement('iframe');
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = '0';
+      document.body.appendChild(printFrame);
+      if (receiptModal.isPdf && receiptModal.blobUrl) {
+        printFrame.src = receiptModal.blobUrl;
+      } else if (receiptModal.html) {
+        printFrame.srcdoc = receiptModal.html;
       }
+      printFrame.onload = () => {
+        try { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); } catch (err) { console.warn('print failed', err); }
+        setTimeout(() => { try { document.body.removeChild(printFrame); } catch(e) {} }, 500);
+      };
     } catch (err) {
       console.warn('Failed to print receipt from modal', err);
     }
   };
+
+  // Auto-print when modal opens (once per receipt id)
+  useEffect(() => {
+    if (!receiptModal.open || !receiptModal.id) return;
+    if (printedReceiptIdsRef.current.has(receiptModal.id)) return;
+    // mark printed and auto print
+    printedReceiptIdsRef.current.add(receiptModal.id);
+    // delay slightly to allow modal iframe/content to render
+    setTimeout(() => {
+      printReceipt();
+    }, 500);
+  }, [receiptModal]);
+
+  // Simple HTML -> React converter with basic sanitization (no scripts, no event attrs)
+  function parseHtmlToReact(html) {
+    if (!html) return null;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const walk = (node, idx) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.textContent;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return null;
+        const tag = node.tagName.toLowerCase();
+        const allowed = ['div','p','span','strong','b','em','table','thead','tbody','tr','th','td','ul','ol','li','img','br','hr','h1','h2','h3','h4','h5','h6'];
+        if (!allowed.includes(tag)) return node.textContent || null;
+        const children = [];
+        node.childNodes.forEach((n, i) => { const c = walk(n, i); if (c !== null && c !== undefined) children.push(c); });
+        const props = {};
+        if (tag === 'img') {
+          const src = node.getAttribute('src');
+          if (src && (src.startsWith('http') || src.startsWith('data:') || src.startsWith('/'))) props.src = src;
+          const alt = node.getAttribute('alt'); if (alt) props.alt = alt;
+          props.style = { maxWidth: '100%' };
+        }
+        return React.createElement(tag, { key: idx, ...props }, children.length === 0 ? null : children);
+      };
+      const bodyChildren = [];
+      doc.body.childNodes.forEach((n, i) => { const c = walk(n, i); if (c !== null && c !== undefined) bodyChildren.push(c); });
+      return bodyChildren;
+    } catch (err) {
+      console.warn('Failed to parse receipt HTML to React', err);
+      return React.createElement('div', { dangerouslySetInnerHTML: { __html: html } });
+    }
+  }
 
   const handleExitFullscreen = async () => {
     try {
@@ -276,7 +343,24 @@ export default function POS(){
               </ul>
               <div className="mt-4 font-bold">Total: {total.toFixed(2)}</div>
               <div className="mt-4">
-                <button className="btn-modern w-full" onClick={checkout}>Checkout</button>
+                        <button className="btn-modern w-full" onClick={checkout}>Checkout</button>
+                        {/* Last receipt thumbnail */}
+                        {lastReceipt && (
+                          <div className="mt-3 flex items-center gap-3">
+                            <div className="w-40 h-24 border rounded overflow-hidden">
+                              {!lastReceipt.isPdf && lastReceipt.html ? (
+                                <div className="w-full h-full overflow-hidden text-xs p-1">
+                                  {parseHtmlToReact(lastReceipt.html).slice ? parseHtmlToReact(lastReceipt.html).slice(0,1) : parseHtmlToReact(lastReceipt.html)}
+                                </div>
+                              ) : lastReceipt.blobUrl ? (
+                                <iframe title="last-receipt-thumb" src={lastReceipt.blobUrl} className="w-full h-full border-0" />
+                              ) : null}
+                            </div>
+                            <div>
+                              <button className="btn-outline" onClick={() => setReceiptModal({ open: true, html: lastReceipt.html || '', blobUrl: lastReceipt.blobUrl || '', isPdf: !!lastReceipt.isPdf, id: lastReceipt.id })}>View Last Receipt</button>
+                            </div>
+                          </div>
+                        )}
               </div>
             </div>
           )}
@@ -330,7 +414,7 @@ export default function POS(){
             </div>
             <div className="p-4 h-[70vh] overflow-auto">
               {!receiptModal.isPdf && (
-                <iframe ref={receiptIframeRef} title="receipt-html" srcDoc={receiptModal.html} className="w-full h-full border" />
+                <div className="prose max-w-none">{parseHtmlToReact(receiptModal.html)}</div>
               )}
               {receiptModal.isPdf && (
                 <iframe ref={receiptIframeRef} title="receipt-pdf" src={receiptModal.blobUrl} className="w-full h-full border" />
