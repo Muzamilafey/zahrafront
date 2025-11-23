@@ -1,10 +1,15 @@
-import React, { useEffect, useState, useContext, useCallback } from 'react';
+import React, { useEffect, useState, useContext, useCallback, useRef } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useUI } from '../../contexts/UIContext';
 
 export default function POS(){
-  const { axiosInstance } = useContext(AuthContext);
+  const { axiosInstance, logout } = useContext(AuthContext);
   const { showToast } = useUI();
+  const navigate = useNavigate();
+  const containerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fsBlocked, setFsBlocked] = useState(false);
   const [inventory, setInventory] = useState([]);
   const [searchQ, setSearchQ] = useState('');
   const [cart, setCart] = useState([]);
@@ -18,6 +23,40 @@ export default function POS(){
     try{ const res = await axiosInstance.get('/pharmacy/inventory'); setInventory(res.data.drugs || []); }catch(e){ console.error(e); showToast({ message: 'Failed to load inventory', type: 'error' }); }
     setLoading(false);
   })(); }, [axiosInstance, showToast]);
+
+  // Request fullscreen on mount. Note: some browsers require user gesture
+  // for requestFullscreen so this may be blocked; we detect that and show
+  // a close/enter control for the user.
+  useEffect(() => {
+    const el = containerRef.current || document.documentElement;
+    const tryEnter = async () => {
+      try {
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+          setIsFullscreen(true);
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+          setIsFullscreen(true);
+        }
+      } catch (err) {
+        // blocked by browser — show manual control
+        setFsBlocked(true);
+        console.warn('Fullscreen request blocked or failed', err);
+      }
+    };
+    tryEnter();
+
+    const onFsChange = () => {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      setIsFullscreen(!!fsEl);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+    };
+  }, []);
 
   const doSearch = useCallback(async (q) => {
     try{ const res = await axiosInstance.get(`/pharmacy/inventory?q=${encodeURIComponent(q || '')}`); setInventory(res.data.drugs || []); }catch(e){ showToast({ message: 'Search failed', type: 'error' }); }
@@ -83,8 +122,32 @@ export default function POS(){
     }catch(e){ console.error(e); showToast({ message: e?.response?.data?.message || 'Sale failed', type: 'error' }); }
   };
 
+  const handleExitFullscreen = async () => {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+      setIsFullscreen(false);
+    } catch (err) {
+      console.warn('Failed to exit fullscreen', err);
+    }
+  };
+
+  const handleLogout = () => {
+    try { logout(); } catch (e) { console.warn('Logout error', e); }
+    try { navigate('/login', { replace: true }); } catch (e) { window.location.replace('/login'); }
+  };
+
   return (
-    <div className="p-6">
+    <div className="p-6" ref={containerRef}>
+      {/* Top-right controls: close fullscreen and logout (sticky) */}
+      <div className="fixed top-4 right-4 flex gap-2 z-50">
+        { (isFullscreen || fsBlocked) && (
+          <button className="btn-outline" onClick={handleExitFullscreen}>Close Full Screen</button>
+        ) }
+        <button className="btn-danger" onClick={handleLogout}>Logout</button>
+      </div>
       <h1 className="text-2xl font-bold mb-4">Pharmacy POS</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="col-span-2 bg-white rounded p-4 shadow">
