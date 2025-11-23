@@ -157,7 +157,8 @@ export default function PatientDetail(){
   
 
   return (
-    <div className="p-6">
+    <>
+      <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6">
@@ -370,7 +371,9 @@ export default function PatientDetail(){
           </div>
         </div>
       </div>
+      </div>
+      </div>
       <Toast toast={toast} onClose={() => setToast(null)} />
-    </div>
+    </>
   );
 }
