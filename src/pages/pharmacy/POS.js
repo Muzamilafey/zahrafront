@@ -1,13 +1,3 @@
-import React from 'react';
-
-export default function POS(){
-  return (
-    <div className="bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Pharmacy POS</h2>
-      <p className="text-sm text-gray-600">Point-of-sale interface coming soon (stub).</p>
-    </div>
-  );
-}
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
