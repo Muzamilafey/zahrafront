@@ -23,26 +23,9 @@ const InvoicePage = () => {
       if (!id || !axiosInstance) return;
       try {
         const response = await axiosInstance.get(`/billing/patient/${id}`);
-        // Normalize server response shapes: server may return { invoice: {...} } or {...}
-        const raw = response.data || {};
-        const src = raw.invoice || raw.data || raw || {};
-
-        // Build a normalized invoice object with common fallbacks
-        const normalized = {
-          invoiceId: src.invoiceId || src.id || src._id || (src.invoice && src.invoice.id),
-          items: src.items || src.lineItems || src.invoiceItems || src.charges || src.itemsSold || [],
-          patientInfo: src.patientInfo || src.patient || src.patientData || (src.patient && src.patient.user) || {},
-          admissionInfo: src.admissionInfo || src.admission || src.admissionData || {},
-          patientName: src.patientName || (src.patientInfo && (src.patientInfo.name || src.patientInfo.fullName)) || (src.patient && (src.patient.name || src.patient.fullName)) || '',
-          dischargingDoctorName: src.dischargingDoctorName || src.servedBy || src.dischargingDoctor || '',
-          taxRate: src.taxRate ?? src.taxPercentage ?? null,
-          tax: src.tax || src.vat || 0,
-          // keep original raw for debugging if needed
-          _raw: raw,
-        };
-
-        setInvoiceData(normalized);
-        setItemsState(normalized.items || []);
+        const invoice = response.data || {};
+        setInvoiceData(invoice);
+        setItemsState(invoice.items || []);
 
         
       } catch (err) {
@@ -130,16 +113,20 @@ const InvoicePage = () => {
               <div className="font-bold text-xs pr-2">Discharge Date</div>
               <div className="text-xs">: {invoiceData.admissionInfo?.dischargedAt ? new Date(invoiceData.admissionInfo.dischargedAt).toLocaleString() : '................................'}</div>
               <div className="font-bold text-xs pr-2">SHA. No</div>
-              <div className="text-xs">: {invoiceData.patient?.nhifNumber || '................................'}</div>
+              <div className="text-xs">: {invoiceData.nhifNumber || '................................'}</div>
               
               {/* <div className="font-bold text-xs pr-2">Room Type</div>
               <div className="text-xs">: {wardLabel || (typeof invoiceData.admissionInfo?.ward === 'string' ? invoiceData.admissionInfo?.ward : (invoiceData.admissionInfo?.ward?.name || invoiceData.admissionInfo?.ward || '................................'))}</div> */}
               <div className="font-bold text-xs pr-2">Ward / Room / Bed</div>
-              <div className="text-xs">: {[
-                invoiceData.admissionInfo?.ward?.name,
-                invoiceData.admissionInfo?.room?.number,
-                invoiceData.admissionInfo?.bed?.number
-              ].filter(Boolean).join(' / ') || '................................'}</div>
+              <div className="text-xs">: {
+                invoiceData.admissionInfo?.wardCategory === 'General' 
+                ? invoiceData.admissionInfo?.bedNumber
+                : [
+                    invoiceData.admissionInfo?.ward?.name,
+                    invoiceData.admissionInfo?.room?.number,
+                    invoiceData.admissionInfo?.bed?.number
+                  ].filter(Boolean).join(' / ') || '................................'
+              }</div>
               
               {/* <div className="font-bold text-xs pr-2">Co-Consultant</div>
               <div className="text-xs">: {'................................'}</div> */}
