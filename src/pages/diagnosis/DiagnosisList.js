@@ -27,7 +27,7 @@ export default function DiagnosisList(){
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Diagnoses</h2>
-        <Link to="/diagnoses/new" className="btn-brand">Create Diagnosis</Link>
+        <Link to="/lab/tests/new" className="btn-brand">Create Diagnosis</Link>
       </div>
       <div className="bg-white border rounded p-4">
         {list.length === 0 ? (
