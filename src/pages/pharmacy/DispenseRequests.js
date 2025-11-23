@@ -1,10 +1,9 @@
 import React from 'react';
+import DispenseDrugs from './DispenseDrugs';
 
-export default function DispenseRequests(){
-  return (
-    <div className="bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Dispense Drug Requests</h2>
-      <p className="text-sm text-gray-600">List of dispense requests (stub).</p>
-    </div>
-  );
+// Re-export the fully implemented DispenseDrugs component so the
+// Pharmacy layout's `/pharmacy/dispense` route shows real requests
+// and allows confirmation (dispense action) instead of a stub dump page.
+export default function DispenseRequests() {
+  return <DispenseDrugs />;
 }
