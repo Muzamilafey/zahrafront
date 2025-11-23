@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import Toast from '../../components/ui/Toast';
-import { FaSearch, FaUserPlus, FaEllipsisV } from 'react-icons/fa';
+import { FaSearch, FaUserPlus, FaEllipsisV, FaUsers, FaUserCheck, FaBed, FaUser, FaFileMedical } from 'react-icons/fa';
 import './PatientList.css';
 
 export default function PatientListPage() {
@@ -112,10 +112,10 @@ export default function PatientListPage() {
       </header>
 
       <div className="stats-grid">
-        <StatCard title="Total Patients" value={stats.total} icon={<div className="icon-placeholder" />} />
-        <StatCard title="New Patients" value={stats.total} icon={<div className="icon-placeholder" />} />
-        <StatCard title="Discharged" value={stats.discharged} icon={<div className="icon-placeholder" />} />
-        <StatCard title="In-treatment" value={stats.admitted} icon={<div className="icon-placeholder" />} />
+        <StatCard title="Total Patients" value={stats.total} icon={<FaUsers />} />
+        <StatCard title="New Patients" value={stats.total} icon={<FaUserPlus />} />
+        <StatCard title="Discharged" value={stats.discharged} icon={<FaUserCheck />} />
+        <StatCard title="In-treatment" value={stats.admitted} icon={<FaBed />} />
       </div>
 
       <div className="patient-list-container">
@@ -150,7 +150,10 @@ export default function PatientListPage() {
                   </td>
                   <td>
                     <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}`)}>
-                      <FaEllipsisV />
+                      <FaUser />
+                    </button>
+                    <button className="action-btn" onClick={() => navigate(`/patients/${patient._id}/discharge-summary`)}>
+                      <FaFileMedical />
                     </button>
                   </td>
                 </tr>

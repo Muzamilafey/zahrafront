@@ -196,9 +196,9 @@ const DetailedDischargeSummary = () => {
           <section className="border-2 border-black p-2">
             <div className="grid grid-cols-[max-content_1fr_max-content_1fr] gap-x-4 gap-y-1">
               <PatientInfoRow label="Patient Name" value={summary.patientInfo?.name} />
-              <PatientInfoRow label="ID Number" value={summary.patient?.nationalId} />
+              <PatientInfoRow label="ID Number" value={summary.nationalId} />
               <PatientInfoRow label="Admission Date" value={summary.admissionInfo?.admittedAt ? new Date(summary.admissionInfo.admittedAt).toLocaleString() : null} />
-              <PatientInfoRow label="SHA NUMBER" value={summary.patient?.nhifNumber} />
+              <PatientInfoRow label="SHA NUMBER" value={summary.nhifNumber} />
               <PatientInfoRow label="Discharge Date" value={summary.admissionInfo?.dischargedAt ? new Date(summary.admissionInfo.dischargedAt).toLocaleString() : null} />
               <PatientInfoRow label="MRN. No" value={summary.patientInfo?.mrn} />
               <PatientInfoRow label="Age / Gender" value={`${summary.patientInfo?.age || ''} / ${summary.patientInfo?.gender || ''}`} />
