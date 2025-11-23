@@ -10,6 +10,7 @@ export default function POS(){
   const containerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fsBlocked, setFsBlocked] = useState(false);
+  const [overlayActive, setOverlayActive] = useState(false);
   const [inventory, setInventory] = useState([]);
   const [searchQ, setSearchQ] = useState('');
   const [cart, setCart] = useState([]);
@@ -34,9 +35,11 @@ export default function POS(){
         if (el.requestFullscreen) {
           await el.requestFullscreen();
           setIsFullscreen(true);
+          setOverlayActive(true);
         } else if (el.webkitRequestFullscreen) {
           el.webkitRequestFullscreen();
           setIsFullscreen(true);
+          setOverlayActive(true);
         }
       } catch (err) {
         // blocked by browser — show manual control
@@ -48,7 +51,10 @@ export default function POS(){
 
     const onFsChange = () => {
       const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-      setIsFullscreen(!!fsEl);
+      const active = !!fsEl;
+      setIsFullscreen(active);
+      // keep overlay in sync with native fullscreen state
+      setOverlayActive(active);
     };
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
@@ -57,6 +63,30 @@ export default function POS(){
       document.removeEventListener('webkitfullscreenchange', onFsChange);
     };
   }, []);
+
+  const enterOverlayFullscreen = async () => {
+    const el = containerRef.current || document.documentElement;
+    try {
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+        setIsFullscreen(true);
+        setOverlayActive(true);
+        setFsBlocked(false);
+        return;
+      }
+      if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+        setIsFullscreen(true);
+        setOverlayActive(true);
+        setFsBlocked(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Native fullscreen failed, using overlay', err);
+    }
+    setOverlayActive(true); // fallback overlay (not true fullscreen)
+    setFsBlocked(false);
+  };
 
   const doSearch = useCallback(async (q) => {
     try{ const res = await axiosInstance.get(`/pharmacy/inventory?q=${encodeURIComponent(q || '')}`); setInventory(res.data.drugs || []); }catch(e){ showToast({ message: 'Search failed', type: 'error' }); }
@@ -140,13 +170,39 @@ export default function POS(){
   };
 
   return (
-    <div className="p-6" ref={containerRef}>
-      {/* Top-right controls: close fullscreen and logout (sticky) */}
-      <div className="fixed top-4 right-4 flex gap-2 z-50">
-        { (isFullscreen || fsBlocked) && (
-          <button className="btn-outline" onClick={handleExitFullscreen}>Close Full Screen</button>
-        ) }
-        <button className="btn-danger" onClick={handleLogout}>Logout</button>
+    <div className={`p-6 ${overlayActive ? 'fixed inset-0 z-50 bg-white overflow-auto' : ''}`} ref={containerRef}>
+      {/* Left-side vertical toolbar (touch friendly) */}
+      <div className="fixed left-4 top-1/3 flex flex-col gap-3 z-50">
+        {!isFullscreen && fsBlocked && (
+          <button
+            aria-label="Enter Full Screen"
+            title="Enter Full Screen"
+            onClick={enterOverlayFullscreen}
+            className="px-5 py-3 bg-green-600 text-white rounded-full shadow-lg text-lg touch-manipulation"
+          >
+            ⤢
+          </button>
+        )}
+
+        {(isFullscreen || overlayActive) && (
+          <button
+            aria-label="Close Full Screen"
+            title="Close Full Screen"
+            onClick={() => { handleExitFullscreen(); setOverlayActive(false); }}
+            className="px-5 py-3 bg-gray-200 text-gray-800 rounded-full shadow-lg text-lg"
+          >
+            ✕
+          </button>
+        )}
+
+        <button
+          aria-label="Logout"
+          title="Logout"
+          onClick={handleLogout}
+          className="px-5 py-3 bg-red-600 text-white rounded-full shadow-lg text-lg"
+        >
+          ⎋
+        </button>
       </div>
       <h1 className="text-2xl font-bold mb-4">Pharmacy POS</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
