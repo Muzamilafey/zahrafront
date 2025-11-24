@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { FaPrint, FaDownload } from 'react-icons/fa';
+import { FaPrint, FaDownload, FaArrowLeft } from 'react-icons/fa';
 import useHospitalDetails from '../../hooks/useHospitalDetails';
 
 const InvoicePage = () => {
   const { id } = useParams(); // This is the patient ID
   const { axiosInstance } = useContext(AuthContext);
+  const navigate = useNavigate();
   const { hospitalDetails, loading: hospitalDetailsLoading } = useHospitalDetails();
   
   const [invoiceData, setInvoiceData] = useState(null);
@@ -78,16 +79,23 @@ const InvoicePage = () => {
   return (
     <div className="bg-gray-100 font-sans" id="invoice-page">
       <div className="max-w-4xl mx-auto p-4">
-        <div className="flex justify-end items-center gap-2 mb-4 no-print">
-          <div className="text-sm text-gray-600 mr-3">Select charges on the Discharge page to update this invoice.</div>
-          <button onClick={handleGeneratePdf} disabled={pdfLoading} className="btn-modern-outline text-sm">
-            <FaDownload className="mr-2" />
-            {pdfLoading ? 'Generating...' : 'Download'}
-          </button>
-          <button onClick={handlePrint} className="btn-modern-outline text-sm">
-            <FaPrint className="mr-2" />
-            Print
-          </button>
+        <div className="flex justify-between items-center gap-2 mb-4 no-print">
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate(-1)} className="btn-modern-outline text-sm">
+              <FaArrowLeft className="mr-2" /> Back
+            </button>
+            <div className="text-sm text-gray-600 ml-3">Select charges on the Discharge page to update this invoice.</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleGeneratePdf} disabled={pdfLoading} className="btn-modern-outline text-sm">
+              <FaDownload className="mr-2" />
+              {pdfLoading ? 'Generating...' : 'Download'}
+            </button>
+            <button onClick={handlePrint} className="btn-modern-outline text-sm">
+              <FaPrint className="mr-2" />
+              Print
+            </button>
+          </div>
         </div>
 
 

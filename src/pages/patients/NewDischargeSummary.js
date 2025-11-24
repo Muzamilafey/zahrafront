@@ -183,16 +183,60 @@ const NewDischargeSummary = () => {
       const returned = res.data || {};
       // Try to find invoice id from response
       const newInvoiceId = returned.invoiceId || returned.id || (returned.invoice && returned.invoice.id) || invoiceId;
-      alert('Charges saved to invoice successfully');
-      if (newInvoiceId) {
-        // Navigate to likely invoice path
-        navigate(`/billing/${newInvoiceId}`);
-      } else if (returned.link) {
-        window.open(returned.link, '_blank');
-      }
+      // return invoice details so callers can continue the flow
+      return { success: true, invoiceId: newInvoiceId, returned };
     } catch (err) {
       console.error('Failed to save charges to invoice', err);
-      alert('Failed to save charges to invoice. Check console for details.');
+      return { success: false, error: err };
+    }
+  };
+
+  // Combined flow: save charges then discharge
+  const handleConfirmAndDischarge = async (e) => {
+    e && e.preventDefault && e.preventDefault();
+    if (!window.confirm('Confirm: Save selected charges and discharge this patient?')) return;
+
+    // Ensure patient has at least one diagnosis before allowing discharge
+    const patientDiagnoses = patient?.diagnoses || [];
+    if (patientDiagnoses.length === 0) {
+      alert('Cannot discharge patient: no diagnoses have been added. Please add at least one diagnosis before discharging the patient.');
+      navigate(`/patients/${id}/diagnosis`);
+      return;
+    }
+
+    const selectedCharges = {
+      procedures: procedureCharges.filter((c) => c.checked),
+      medications: medicationCharges.filter((c) => c.checked),
+      additional: Object.values(allCharges).flat().filter((c) => c.checked),
+    };
+
+    // Attempt to save charges first
+    const items = buildLineItems();
+    if (items.length) {
+      const saveResult = await saveCharges();
+      if (!saveResult || !saveResult.success) {
+        alert('Failed to save charges. Aborting discharge. Check console for details.');
+        return;
+      }
+      // attach invoice id if available
+      if (saveResult.invoiceId) selectedCharges.invoiceId = saveResult.invoiceId;
+    }
+
+    try {
+      await axiosInstance.post(`/patients/${id}/discharge`, {
+        dischargeDate,
+        dischargeTime,
+        dischargeType,
+        inPatientCaseType,
+        dischargeNotes: summary,
+        charges: selectedCharges,
+      });
+
+      alert('Patient Discharged Successfully');
+      navigate(`/patients/${id}/detailed-discharge-summary`);
+    } catch (err) {
+      console.error('Error discharging patient:', err);
+      alert(err.response?.data?.message || 'Error discharging patient');
     }
   };
 
@@ -289,7 +333,7 @@ const NewDischargeSummary = () => {
         </div>
       </div>
 
-      <form onSubmit={handleDischarge} className="bg-white border border-gray-200 rounded-lg shadow p-6 mb-6">
+      <form onSubmit={handleConfirmAndDischarge} className="bg-white border border-gray-200 rounded-lg shadow p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Discharge Date & Time</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
@@ -398,13 +442,9 @@ const NewDischargeSummary = () => {
           </div>
 
           <div className="text-right">
-            <div className="mb-4">
-              <Link to={`/patients/${id}/detailed-discharge-summary`} className="inline-block mb-2 text-sm text-blue-600 underline">Open Detailed Summary</Link>
-            </div>
             <div className="mb-2">
-              <button type="button" onClick={saveCharges} className="bg-green-600 text-white font-bold py-2 px-4 rounded shadow hover:bg-green-700 mr-2">Save Charges</button>
+              <button type="button" onClick={handleConfirmAndDischarge} className="bg-blue-700 text-white font-bold py-3 px-6 rounded shadow hover:bg-blue-800">Confirm Charges & Discharge</button>
             </div>
-            <button type="submit" className="bg-blue-700 text-white font-bold py-3 px-6 rounded shadow hover:bg-blue-800">Discharge Patient</button>
           </div>
         </div>
       </form>

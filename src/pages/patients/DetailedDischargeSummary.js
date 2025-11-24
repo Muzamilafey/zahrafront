@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { FaPrint, FaDownload, FaFileInvoice, FaEdit } from 'react-icons/fa';
+import { FaPrint, FaDownload, FaFileInvoice, FaEdit, FaArrowLeft } from 'react-icons/fa';
 
 const DetailedDischargeSummary = () => {
   const { id } = useParams(); // This is patientId
@@ -168,19 +168,26 @@ const DetailedDischargeSummary = () => {
         }
       `}</style>
       <div className="max-w-4xl mx-auto">
-        <div className="mb-4 flex justify-end gap-2 print:hidden">
-          <button onClick={handleEdit} className="btn-modern-outline text-xs">
-            <FaEdit /> Edit
-          </button>
-          <button onClick={handleOpenInvoice} className="btn-modern-outline text-xs">
-            <FaFileInvoice /> Open Invoice
-          </button>
-          <button onClick={() => window.print()} className="btn-modern-outline text-xs">
-            <FaPrint /> Print
-          </button>
-          <button onClick={handleDownloadPdf} disabled={isDownloading} className="btn-modern-primary text-xs">
-            <FaDownload /> {isDownloading ? 'Downloading...' : 'Download PDF'}
-          </button>
+        <div className="mb-4 flex justify-between items-center print:hidden">
+          <div>
+            <button onClick={() => navigate(-1)} className="btn-modern-outline text-xs mr-2">
+              <FaArrowLeft /> Back
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleEdit} className="btn-modern-outline text-xs">
+              <FaEdit /> Edit
+            </button>
+            <button onClick={handleOpenInvoice} className="btn-modern-outline text-xs">
+              <FaFileInvoice /> Open Invoice
+            </button>
+            <button onClick={() => window.print()} className="btn-modern-outline text-xs">
+              <FaPrint /> Print
+            </button>
+            <button onClick={handleDownloadPdf} disabled={isDownloading} className="btn-modern-primary text-xs">
+              <FaDownload /> {isDownloading ? 'Downloading...' : 'Download PDF'}
+            </button>
+          </div>
         </div>
 
         <div className="bg-white p-6 border-2 border-black print:shadow-none print:border-none">
