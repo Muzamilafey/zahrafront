@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { FaBell, FaUserCircle, FaCalendarPlus } from 'react-icons/fa';
 import CreateAppointmentModal from './CreateAppointmentModal';
+import Toast from './Toast';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationsContext';
@@ -49,6 +50,7 @@ export default function Topbar({ user, onLogout }) {
   };
 
   const [showCreateModal, setShowCreateModal] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
   const showCreateForRoles = ['admin', 'doctor', 'nurse'];
   const imagePath = '/assets/create-appointment.png';
 
@@ -69,7 +71,13 @@ export default function Topbar({ user, onLogout }) {
               <FaCalendarPlus />
               <span className="text-sm">Create Appointment</span>
             </button>
-            <CreateAppointmentModal open={showCreateModal} onClose={() => setShowCreateModal(false)} imageSrc={imagePath} />
+            <CreateAppointmentModal
+              open={showCreateModal}
+              onClose={() => setShowCreateModal(false)}
+              imageSrc={imagePath}
+              onToast={msg => setToast(msg)}
+            />
+            <Toast toast={toast} onClose={() => setToast(null)} />
           </>
         )}
         <button onClick={openNotifications} className="relative p-2 rounded hover:bg-gray-100">
