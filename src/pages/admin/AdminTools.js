@@ -21,15 +21,15 @@ export default function AdminTools() {
   ];
 
   return (
-    <div className="p-8 bg-gray-900 min-h-screen">
-      <h1 className="text-2xl font-bold text-white mb-8">Admin Tools</h1>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-center">
+    <div className="p-4 sm:p-6 md:p-8 bg-gray-900 min-h-screen">
+      <h1 className="text-xl sm:text-2xl font-bold text-white mb-6 sm:mb-8 text-center">Admin Tools</h1>
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto">
         {navButtons.map((btn) => (
           <Link
             key={btn.label}
             to={btn.link}
-            className={`px-8 py-6 rounded-lg text-white font-bold shadow text-lg transition-all duration-150 hover:scale-105 ${btn.color}`}
-            style={{ minWidth: 180, textAlign: 'center', display: 'block' }}
+            className={`px-4 py-4 sm:px-6 sm:py-6 rounded-lg text-white font-bold shadow text-base sm:text-lg transition-all duration-150 hover:scale-105 ${btn.color}`}
+            style={{ minWidth: 0, textAlign: 'center', display: 'block', wordBreak: 'break-word' }}
           >
             {btn.label}
           </Link>

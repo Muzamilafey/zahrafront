@@ -26,7 +26,7 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
       setQuery('');
       setFilteredPatients([]);
       setSelectedPatient(null);
-      setDoctorId('');
+      // setDoctorId removed (no longer used)
       setAppointmentDate('');
       setAppointmentTime('');
       setToast(null);
