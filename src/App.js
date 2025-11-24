@@ -137,7 +137,7 @@ import PharmacyInventory from './pages/pharmacy/Inventory';
 import PharmacyRegisterDrugs from './pages/pharmacy/RegisterDrugs';
 import PharmacySalesReport from './pages/pharmacy/SalesReport';
 import PharmacyEditGroup from './pages/pharmacy/EditMedicationGroup';
-import SymptomsChecker from "./pages/symptomsChecker/SymptomsChecker";
+import SymptomChecker from "./pages/symptomsChecker/SymptomChecker";
 
 
 function App() {
@@ -366,7 +366,7 @@ function App() {
           <Route path="/dashboard/lab/patient-report" element={<PrivateRoute><Layout><LabPatientReport /></Layout></PrivateRoute>} />
           <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
           <Route path="/lab/results/:requestId" element={<PrivateRoute><Layout><LabResult /></Layout></PrivateRoute>} />
-          <Route path="/symptom-check" element={<SymptomsChecker />} />
+          <Route path="/symptom-check" element={<SymptomChecker />} />
         </Routes>
         </Router>
       </UIProvider>
