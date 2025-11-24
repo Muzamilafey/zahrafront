@@ -115,19 +115,51 @@ export default function AdminDashboard() {
   const [emergencies, setEmergencies] = useState([]);
   const [lowStockDrugs, setLowStockDrugs] = useState([]);
   const [inactiveUsers, setInactiveUsers] = useState([]);
+  const [beds, setBeds] = useState({ total: 0, available: 0, executive: 0, premium: 0, basic: 0 });
+  const [doctors, setDoctors] = useState({ available: 0, leave: 0 });
+  const [patients, setPatients] = useState({ total: 0, change: 0 });
+  const [appointmentsStat, setAppointmentsStat] = useState({ total: 0, change: 0 });
 
   // Pills removed from dashboard. Navigation will be placed in admin/tools page.
   useEffect(() => {
-    // Fetch upcoming appointments
-    axiosInstance.get('/appointments')
-      .then(res => {
-        const now = new Date();
-        const upcoming = (res.data.appointments || []).filter(a => {
-          const s = (a.status || '').toLowerCase();
-          return s !== 'completed' && s !== 'cancelled' && new Date(a.scheduledAt) > now;
-        }).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)).slice(0, 5);
-        setUpcomingAppointments(upcoming);
+    // Fetch beds
+    axiosInstance.get('/wards/beds/summary').then(res => {
+      setBeds({
+        total: res.data.total || 0,
+        available: res.data.available || 0,
+        executive: res.data.executive || 0,
+        premium: res.data.premium || 0,
+        basic: res.data.basic || 0,
       });
+    }).catch(() => setBeds({ total: 0, available: 0, executive: 0, premium: 0, basic: 0 }));
+
+    // Fetch doctors
+    axiosInstance.get('/users?role=doctor').then(res => {
+      const all = res.data.users || [];
+      setDoctors({
+        available: all.filter(d => d.status !== 'leave').length,
+        leave: all.filter(d => d.status === 'leave').length,
+      });
+    }).catch(() => setDoctors({ available: 0, leave: 0 }));
+
+    // Fetch patients
+    axiosInstance.get('/patients').then(res => {
+      // Simulate change percentage for demo
+      setPatients({ total: (res.data.patients || []).length, change: 12 });
+    }).catch(() => setPatients({ total: 0, change: 0 }));
+
+    // Fetch appointments stat
+    axiosInstance.get('/appointments').then(res => {
+      // Simulate change percentage for demo
+      setAppointmentsStat({ total: (res.data.appointments || []).length, change: -11 });
+      // Also set upcoming appointments for main grid
+      const now = new Date();
+      const upcoming = (res.data.appointments || []).filter(a => {
+        const s = (a.status || '').toLowerCase();
+        return s !== 'completed' && s !== 'cancelled' && new Date(a.scheduledAt) > now;
+      }).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)).slice(0, 5);
+      setUpcomingAppointments(upcoming);
+    }).catch(() => setAppointmentsStat({ total: 0, change: 0 }));
 
     // Fetch invoices
     axiosInstance.get('/billing')
@@ -147,11 +179,61 @@ export default function AdminDashboard() {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Pills Navigation removed. Use admin/tools page for navigation. */}
 
-      {/* Bar Chart for New Patients */}
-      <div className="flex justify-start mb-8">
-        <div className="bg-white rounded-xl shadow p-4 mr-8" style={{ width: 300 }}>
-          <h3 className="font-semibold text-center mb-2">NEW PATIENTS</h3>
-          <BarChart data={[{ label: 'LAST MONTH', value: 10 }, { label: 'THIS MONTH', value: 12 }]} height={120} />
+      {/* Stat Cards Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Total Beds */}
+        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">🛏️</span>
+            <span className="font-semibold text-lg">Total Beds</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl font-bold">{beds.total}</span>
+            <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Available</span>
+            <span className="text-lg font-bold text-green-700">{beds.available}</span>
+          </div>
+          <div className="flex gap-6 text-xs text-gray-500 mt-2">
+            <span>{beds.executive} Executive Room</span>
+            <span>{beds.premium} Premium Room</span>
+            <span>{beds.basic} Basic Room</span>
+          </div>
+        </div>
+        {/* Doctors */}
+        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">🩺</span>
+            <span className="font-semibold text-lg">Doctors</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl font-bold">{doctors.available}</span>
+            <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Available</span>
+            <span className="text-lg font-bold text-gray-500">{doctors.leave} Leave</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">Shows the current number of available doctors.</div>
+        </div>
+        {/* Patients */}
+        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">👥</span>
+            <span className="font-semibold text-lg">Patients</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl font-bold">{patients.total}</span>
+            <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">↗ {patients.change}%</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">Displays live updates of patient numbers.</div>
+        </div>
+        {/* Appointments */}
+        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">📅</span>
+            <span className="font-semibold text-lg">Appointment</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl font-bold">{appointmentsStat.total}</span>
+            <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold">↘ {Math.abs(appointmentsStat.change)}%</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">Ensures accurate and current total patient appointment at all times.</div>
         </div>
       </div>
 
