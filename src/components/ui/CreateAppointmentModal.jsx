@@ -78,7 +78,7 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded shadow-lg max-w-2xl w-full mx-4">
+      <div className="relative bg-white rounded shadow-lg max-w-2xl w-full mx-4 flex flex-col justify-center items-center" style={{ margin: 'auto' }}>
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold">
             {step === 'ask' ? 'Is patient already registered?' : 'Search for Patient'}

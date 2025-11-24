@@ -52,11 +52,12 @@ const CreateAppointment = () => {
     setToast(null);
 
     try {
+      // Ensure appointmentDate and appointmentTime are combined correctly
       const payload = {
         ...appointmentDetails,
-        appointmentDate: `${appointmentDetails.appointmentDate}T${appointmentDetails.appointmentTime}:00`,
+        appointmentDate: appointmentDetails.appointmentDate,
+        appointmentTime: appointmentDetails.appointmentTime,
       };
-      
       await axiosInstance.post('/appointments', payload);
       setToast({ message: 'Appointment created successfully!', type: 'success' });
       setTimeout(() => navigate('/dashboard/appointments'), 2000);
