@@ -116,22 +116,7 @@ export default function AdminDashboard() {
   const [lowStockDrugs, setLowStockDrugs] = useState([]);
   const [inactiveUsers, setInactiveUsers] = useState([]);
 
-  // Pills for navigation
-  const pills = [
-    { label: 'ADMIN TOOLS', color: 'bg-cyan-300', link: '/dashboard/admin/tools' },
-    { label: 'USER', color: 'bg-indigo-400', link: '/profile' },
-    { label: 'PATIENTS', color: 'bg-green-400', link: '/dashboard/admin/patients' },
-    { label: 'DOCTORS', color: 'bg-green-400', link: '/dashboard/admin/doctors' },
-    { label: 'LABS', color: 'bg-green-400', link: '/dashboard/admin/labs' },
-    { label: 'FINANCE', color: 'bg-green-400', link: '/dashboard/admin/finance' },
-    { label: 'NURSE', color: 'bg-green-400', link: '/dashboard/admin/nurse' },
-    { label: 'RECEPTIONIST', color: 'bg-blue-400', link: '/dashboard/admin/receptionist' },
-    { label: 'PHARMACY', color: 'bg-green-400', link: '/dashboard/admin/pharmacy' },
-    { label: 'APPOINTMENTS', color: 'bg-indigo-400', link: '/dashboard/admin/appointments' },
-    { label: 'INCOME', color: 'bg-gradient-to-r from-green-400 to-blue-400', link: '/dashboard/admin/income' },
-    { label: 'NO BEDS', color: 'bg-gradient-to-r from-blue-400 to-green-400', link: '/dashboard/admin/nobeds' },
-  ];
-
+  // Pills removed from dashboard. Navigation will be placed in admin/tools page.
   useEffect(() => {
     // Fetch upcoming appointments
     axiosInstance.get('/appointments')
@@ -160,12 +145,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Pills Navigation */}
-      <div className="flex flex-wrap gap-4 justify-center mb-8">
-        {pills.map((pill, idx) => (
-          <a key={pill.label} href={pill.link} className={`px-6 py-2 rounded-full text-white font-bold shadow ${pill.color}`}>{pill.label}</a>
-        ))}
-      </div>
+      {/* Pills Navigation removed. Use admin/tools page for navigation. */}
 
       {/* Bar Chart for New Patients */}
       <div className="flex justify-start mb-8">
