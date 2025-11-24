@@ -252,227 +252,233 @@ export default function AdminDashboard(){
     });
 
     (pharmacySales||[]).forEach(sale=>{
-      return (
-        <>
-          {loading && (
-            <div className="fixed inset-0 bg-black bg-opacity-25 z-50 flex items-center justify-center">
-              <div className="bg-white rounded p-4 flex items-center gap-3 shadow">
-                <svg className="animate-spin h-6 w-6 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                <div>Loading dashboard...</div>
-              </div>
-            </div>
-          )}
+      const created = new Date(sale.createdAt || sale.createdAt);
+      last7.forEach((d, idx)=>{
+        if (created.toDateString() === d.toDateString()) {
+          seriesB[idx] += Number(sale.total || sale.amount || 0);
+        }
+      });
+    });
 
-          <div className="space-y-6">
-            {/* Header / Hero */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-extrabold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-500 mt-1">Overview of hospital activity and quick actions</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:block text-sm text-gray-600">Signed in as <strong className="text-gray-900">{user?.name || user?.role}</strong></div>
-                <ThemeToggle />
-                <button className="btn-outline" onClick={async ()=>{ try{ await logout(); }catch(e){ console.error(e); } }}>Logout</button>
-              </div>
-            </div>
+    return { labels: last7.map(d=>d.toLocaleDateString(undefined,{weekday:'short'})), seriesA, seriesB };
+  }, [invoices, pharmacySales]);
 
-            {/* Top KPI cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white rounded shadow p-4 flex items-center gap-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-500">Patients</div>
-                  <div className="text-xl font-bold text-blue-600">{(stats.patients || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">New registrations: {(computeGrowthVsYesterday((stats.patients||0), Math.max(0, (stats.patients||0)-5))).toFixed(0)}%</div>
-                </div>
-              </div>
+  const finance = useMemo(() => {
+    // totals for the same 7-day window used by revenueSeries
+    const totalInvoices = (revenueSeries.seriesA || []).reduce((s, v) => s + Number(v || 0), 0);
+    const totalPharmacy = (revenueSeries.seriesB || []).reduce((s, v) => s + Number(v || 0), 0);
+    const totalRevenue = totalInvoices + totalPharmacy;
+    // try to detect explicit expense records on invoices if available
+    const expenses = (invoices || []).reduce((s, inv) => {
+      const amt = Number(inv.amount || inv.total || inv.expense || 0) || 0;
+      const isExpense = String(inv.type || '').toLowerCase().includes('expense') || !!inv.isExpense;
+      return s + (isExpense ? amt : 0);
+    }, 0);
+    const net = totalRevenue - expenses;
+    return { totalInvoices, totalPharmacy, totalRevenue, expenses, net };
+  }, [revenueSeries, invoices]);
 
-              <div className="bg-white rounded shadow p-4 flex items-center gap-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z" /></svg>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-500">Appointments</div>
-                  <div className="text-xl font-bold text-blue-600">{(stats.appointments || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">Upcoming: {recentAppointments.length}</div>
-                </div>
-              </div>
+  // appointments by status counts
+  const apptStatusCounts = useMemo(()=>{
+    const counts = {};
+    (appointments||[]).forEach(a=>{
+      const s = a.status || 'unknown';
+      counts[s] = (counts[s] || 0) + 1;
+    });
+    return counts;
+  }, [appointments]);
 
-              <div className="bg-white rounded shadow p-4 flex items-center gap-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"/></svg>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-500">7-day Revenue</div>
-                  <div className="text-xl font-bold text-blue-600">{(finance.totalRevenue || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">Net: {(finance.net || 0).toLocaleString()}</div>
-                </div>
-              </div>
+  // recent appointments within last 24 hours (exclude completed/cancelled)
+  const recentAppointments = useMemo(()=>{
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    return (appointments || [])
+      .filter(a => {
+        if (!a || !a.scheduledAt) return false;
+        const sa = new Date(a.scheduledAt);
+        const s = (a.status || '').toLowerCase();
+        if (s === 'completed' || s === 'cancelled') return false;
+        return sa >= cutoff && sa <= now;
+      })
+      .sort((a,b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
+      .slice(0,3);
+  }, [appointments]);
 
-              <div className="bg-white rounded shadow p-4 flex items-center gap-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h4l3 8 4-16 3 8h4"/></svg>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-500">Pharmacy Sales</div>
-                  <div className="text-xl font-bold text-blue-600">{(pharmacySales.length || 0).toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">Items in inventory: {(drugs.length || 0).toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
+  // average lead time in hours between creation and scheduled time
+  const avgLeadHours = useMemo(()=>{
+    const arr = (appointments||[]).map(a=>{
+      if (!a.createdAt || !a.scheduledAt) return null;
+      const created = new Date(a.createdAt);
+      const sched = new Date(a.scheduledAt);
+      const diffMs = sched - created; // scheduled minus created => lead time
+      return diffMs / (1000*60*60);
+    }).filter(v=>v !== null && !Number.isNaN(v));
+    if (arr.length === 0) return 0;
+    const avg = arr.reduce((s,v)=>s+v,0)/arr.length;
+    return Math.round(avg*10)/10; // 1 decimal
+  }, [appointments]);
 
-            {/* Main content area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white rounded shadow p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-lg">Activity</h3>
-                    <div className="text-sm text-gray-500">Last 7 days</div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-3 bg-gray-50 rounded">
-                      <h4 className="text-sm text-gray-600 mb-2">Revenue Trend</h4>
-                      <LineChart seriesA={revenueSeries.seriesA} seriesB={revenueSeries.seriesB} labels={revenueSeries.labels} />
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded">
-                      <h4 className="text-sm text-gray-600 mb-2">Patient Demographics</h4>
-                      <GroupedBarChart data={barData} categories={["Child","Adult","Elderly"]} />
-                    </div>
-                  </div>
-                </div>
+  const pieItems = useMemo(()=>{
+    const byDept = {};
+    (patients||[]).forEach(p=>{
+      const dept = p.admission?.ward || p.department || 'Other';
+      byDept[dept] = (byDept[dept] || 0) + 1;
+    });
+    const entries = Object.keys(byDept).map((k,i)=>({ label:k, value: byDept[k], color: ['#60A5FA','#34D399','#FBBF24','#F472B6'][i%4] }));
+    // normalize to percentages
+    const total = entries.reduce((s,e)=>s+e.value,0) || 1;
+    return entries.map(e=>({ ...e, value: Math.round((e.value/total)*100) }));
+  }, [patients]);
+  const reports = [
+    'Room Cleaning Needed', 'Equipment Maintenance', 'Medication Restock', 'HVAC System Issue', 'Patient Transport Required'
+  ];
 
-                <div className="bg-white rounded shadow p-4">
-                  <h3 className="font-semibold mb-3">Upcoming Appointments</h3>
-                  <DataTable
-                    columns={[{header:'Name',accessor:'name'},{header:'Date',accessor:'date'},{header:'Time',accessor:'time'},{header:'Doctor',accessor:'doctor'},{header:'Treatment',accessor:'treatment'},{header:'Status',accessor:'status'}]}
-                    data={ (appointments||[])
-                      .filter(a => {
-                        const s = (a.status || '').toLowerCase();
-                        return s !== 'completed' && s !== 'cancelled';
-                      })
-                      .slice(0,12)
-                      .map(a=>({ name: a.patient?.user?.name || '-', date: a.scheduledAt ? new Date(a.scheduledAt).toLocaleDateString() : '-', time: a.scheduledAt ? new Date(a.scheduledAt).toLocaleTimeString() : '-', doctor: a.doctor?.user?.name || '-', treatment: a.reason || a.status, status: a.status })) }
-                  />
-                </div>
-              </div>
+  const loadAppointments = async () => {
+    try {
+      const res = await axiosInstance.get('/appointments');
+      setAppointments(res.data.appointments || []);
+    } catch (e) { console.error(e); }
+  };
 
-              <div className="space-y-6">
-                <div className="bg-white rounded shadow p-4">
-                  <h4 className="font-semibold mb-3">Pharmacy Summary</h4>
-                  <PharmacySalesSummary axiosInstance={axiosInstance} compact />
-                </div>
+  const loadServiceRequests = async () => {
+    try {
+      const res = await axiosInstance.get('/requests');
+      setServiceRequests(res.data.requests || []);
+    } catch (e) { console.error('Failed to load service requests', e); }
+  };
 
-                <div className="bg-white rounded shadow p-4">
-                  <h4 className="font-semibold mb-3">Service Requests</h4>
-                  {serviceRequests.length === 0 ? (<div className="text-sm text-gray-500">No service requests</div>) : (
-                    <div className="space-y-2">
-                      {(serviceRequests || [])
-                        .filter(sr => (sr.status || '').toLowerCase() !== 'completed')
-                        .slice(0,6)
-                        .map(r => (
-                        <div key={r._id} className="p-2 border rounded flex items-start justify-between">
-                          <div>
-                            <div className="font-medium">{r.type} — {r.requestedBy?.name || r.requestedBy?.email || 'Staff'}</div>
-                            <div className="text-xs text-gray-500">{r.details || '-'} {r.ward ? `— Ward: ${r.ward}` : ''}</div>
-                            <div className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleString()}</div>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <div className={`text-xs px-2 py-1 rounded ${r.status==='pending'?'bg-yellow-100 text-yellow-800': r.status==='in_progress' ? 'bg-blue-100 text-blue-800' : r.status==='completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>{r.status}</div>
-                            <div className="flex items-center gap-2">
-                              {r.status !== 'completed' && <button className="text-xs btn-primary" onClick={async ()=>{ try{ await axiosInstance.put(`/requests/${r._id}`, { status: 'completed' }); await loadServiceRequests(); }catch(e){ console.error(e); } }}>Complete</button>}
-                              <button className="text-xs btn-outline" onClick={async ()=>{ try{ await axiosInstance.put(`/requests/${r._id}`, { status: 'cancelled' }); await loadServiceRequests(); }catch(e){ console.error(e); } }}>Cancel</button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+  const loadCoreData = async () => {
+    const start = Date.now();
+    try {
+      setLoading(true);
+      // ensure we have fresh appointments first so stats are accurate
+      const apptsRes = await axiosInstance.get('/appointments');
+      const freshAppts = apptsRes.data.appointments || [];
+      setAppointments(freshAppts);
 
-            {/* Finance Tab */}
-            {activeTab === 'finance' && (
-              <FinanceModule axiosInstance={axiosInstance} user={user} />
-            )}
+      const [pRes, dRes, invRes, drugsRes, salesRes] = await Promise.all([
+        axiosInstance.get('/patients'),
+        axiosInstance.get('/doctors/with-availability'),
+        axiosInstance.get('/billing'),
+        axiosInstance.get('/pharmacy/inventory'),
+        axiosInstance.get('/pharmacy/sales'),
+      ]);
 
-            {/* Assign Modal (kept) */}
-            {assignModalOpen && assigningRequest && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                <div className="bg-white rounded p-4 w-11/12 max-w-md">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-semibold">Assign Request</h4>
-                    <button className="text-sm text-gray-600" onClick={()=>{ setAssignModalOpen(false); setAssigningRequest(null); setSelectedAssignee(''); }}>Close</button>
-                  </div>
-                  <div>
-                    <div className="mb-3">
-                      <label className="text-xs text-gray-500">Role</label>
-                      <select className="input w-full mb-2" value={assignRole} onChange={async e => {
-                        const role = e.target.value; setAssignRole(role); setSelectedAssignee('');
-                        try{
-                          if (role === 'nurse') {
-                            const res = await axiosInstance.get('/nurses/list'); setStaffList(res.data.nurses || []);
-                          } else {
-                            const res = await axiosInstance.get(`/users?role=${role}`); setStaffList(res.data.users || []);
-                          }
-                        }catch(err){ console.error('Failed to load staff for role', role, err); setStaffList([]); }
-                      }}>
-                        <option value="nurse">Nurse</option>
-                        <option value="cleaning">Cleaning</option>
-                        <option value="maintenance">Maintenance</option>
-                      </select>
-                      <label className="text-xs text-gray-500">Assign to</label>
-                      <select className="input w-full" value={selectedAssignee} onChange={e=>setSelectedAssignee(e.target.value)}>
-                        <option value="">-- Select staff --</option>
-                        {staffList.map(n => <option key={n._id} value={n._id}>{n.name} {n.email ? `(${n.email})` : ''}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn-outline" onClick={()=>{ setAssignModalOpen(false); setAssigningRequest(null); setSelectedAssignee(''); }}>Cancel</button>
-                      <button className="btn" onClick={async ()=>{ try{ await axiosInstance.put(`/requests/${assigningRequest._id}`, { assignedTo: selectedAssignee }); setAssignModalOpen(false); setAssigningRequest(null); setSelectedAssignee(''); await loadServiceRequests(); }catch(e){ console.error(e); alert('Failed to assign'); } }}>Assign</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+      setPatients(pRes.data.patients || []);
+      // doctors endpoint returns doctors with availability when called with /with-availability
+      const docs = (dRes.data.doctors || dRes.data || []);
+      setDoctors(docs.map(d => ({ 
+        name: d.user?.name || (d.user && d.user.name) || 'Doctor', 
+        specialties: d.specialties || [],
+        specialty: (d.specialties && d.specialties[0]) || '',
+        available: d.availability ? !!d.availability.available : undefined,
+        availabilityMessage: d.availability ? d.availability.message : ''
+      })));
+  setInvoices(invRes.data.invoices || []);
+  setDrugs(drugsRes.data.drugs || []);
+  setPharmacySales(salesRes.data.sales || []);
 
-            {/* Export modal */}
-            {exportModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={closeExportModal}>
-                <div className="absolute inset-0 bg-black opacity-40" />
-                <div className="relative bg-white rounded p-4 w-full max-w-md mx-4" onClick={(e)=>e.stopPropagation()}>
-                  <h3 className="text-lg font-semibold mb-2">Send appointment PDF to (email)</h3>
-                  <input type="email" className="w-full border rounded p-2 mb-3" placeholder="recipient@example.com" value={exportRecipient} onChange={e=>setExportRecipient(e.target.value)} />
-                  <div className="flex justify-end space-x-2">
-                    <button className="btn-outline" onClick={closeExportModal} disabled={exportLoading}>Cancel</button>
-                    <button className="btn-primary" onClick={sendExportEmail} disabled={exportLoading}>{exportLoading? 'Sending...' : 'Send & Save'}</button>
-                  </div>
-                </div>
-              </div>
-            )}
+      setStats({ patients: (pRes.data.patients || []).length, doctors: docs.length, appointments: freshAppts.length });
+      // load beds from settings
+      try {
+        const bRes = await axiosInstance.get('/admin/settings/beds');
+        setBedsCount(typeof bRes.data.beds === 'number' ? bRes.data.beds : Number(bRes.data.beds || 0));
+      } catch (e) { console.error('Failed to load beds setting', e); }
+      setStats({ patients: (pRes.data.patients || []).length, doctors: docs.length, appointments: freshAppts.length });
+    } catch (e) { console.error('Failed to load core data', e); }
+    finally {
+      // enforce a minimum loading time so the spinner is visible for at least 3s
+      const elapsed = Date.now() - start;
+      const minMs = 3000;
+      if (elapsed < minMs) {
+        await new Promise(resolve => setTimeout(resolve, minMs - elapsed));
+      }
+      setLoading(false);
+    }
+  };
 
-            {exportSuccess && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={()=>setExportSuccess(false)}>
-                <div className="absolute inset-0 bg-black opacity-40" />
-                <div className="relative bg-white rounded p-6 w-full max-w-sm mx-4 text-center" onClick={(e)=>e.stopPropagation()}>
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="w-24 h-24 flex items-center justify-center bg-green-50 rounded-full">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </div>
-                  </div>
-                  <div className="font-semibold text-lg mb-2">Email sent</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      );
+  // fetch counts for user roles
+  const loadRoleCounts = async () => {
+    try {
+      const [doctorsRes, nursesRes, pharmacistsRes, labRes, cleaningRes, maintenanceRes, financeRes] = await Promise.all([
+        axiosInstance.get('/users?role=doctor'),
+        axiosInstance.get('/users?role=nurse'),
+        axiosInstance.get('/users?role=pharmacist'),
+        // lab technicians may be under role 'lab' or 'lab_technician' depending on backend; try 'lab'
+        axiosInstance.get('/users?role=lab'),
+        axiosInstance.get('/users?role=cleaning'),
+        axiosInstance.get('/users?role=maintenance'),
+        axiosInstance.get('/users?role=finance'),
+      ]);
+      const labCount = (labRes.data.users || []).length;
+      const cleaningCount = (cleaningRes.data.users || []).length;
+      const maintenanceCount = (maintenanceRes.data.users || []).length;
+      const nonMedicalCount = cleaningCount + maintenanceCount;
+      // set stats by merging into stats state
+      setStats(s => ({
+        ...s,
+        doctors: (doctorsRes.data.users || []).length,
+        nurses: (nursesRes.data.users || []).length,
+        pharmacists: (pharmacistsRes.data.users || []).length,
+        labTechnicians: labCount,
+        nonMedical: nonMedicalCount,
+        financeWorkers: (financeRes.data.users || []).length,
+      }));
+    } catch (err) { console.error('Failed to load role counts', err); }
+  };
+
+  // helper: compute growth percentage vs yesterday
+  const computeGrowthVsYesterday = (todayCount, yesterdayCount) => {
+    if (yesterdayCount === 0) {
+      if (todayCount === 0) return 0; // no change
+      return 100; // from 0 to something => show 100%
+    }
+    return ((todayCount - yesterdayCount) / Math.abs(yesterdayCount)) * 100;
+  };
+
+  const approveAppointment = async (id) => {
+    try {
+      await axiosInstance.put(`/appointments/${id}`, { status: 'confirmed' });
+      await loadAppointments();
+    } catch (e) { console.error(e); alert(e?.response?.data?.message || 'Failed to approve'); }
+  };
+
+  const declineAppointment = async (id) => {
+    try {
+      await axiosInstance.put(`/appointments/${id}`, { status: 'cancelled' });
+      await loadAppointments();
+    } catch (e) { console.error(e); alert(e?.response?.data?.message || 'Failed to decline'); }
+  };
+
+  // load appointments and core data when admin dashboard mounts
+  React.useEffect(() => {
+    (async ()=>{
+      // load core data (which now also fetches fresh appointments) on mount
+      await loadCoreData();
+  // load role counts (doctors, nurses, pharmacists)
+      await loadRoleCounts();
+      // load service requests for admin
+      if (user?.role === 'admin') await loadServiceRequests();
+    })();
+  }, []);
+
+  const startEditBeds = () => { setBedsDraft(String(bedsCount)); setEditingBeds(true); };
+  const cancelEditBeds = () => { setEditingBeds(false); setBedsDraft(''); };
+  const saveBeds = async () => {
+    const num = Number(bedsDraft);
+    if (Number.isNaN(num) || num < 0) return alert('Please enter a valid number');
+    try {
+      const res = await axiosInstance.put('/admin/settings/beds', { beds: num });
+      setBedsCount(res.data.beds);
+      setEditingBeds(false);
+    } catch (e) { console.error(e); alert(e?.response?.data?.message || 'Failed to update'); }
+  };
+
+  // (summary removed)
+
+  return (
+    <>
+      {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-25 z-50 flex items-center justify-center">
           <div className="bg-white rounded p-4 flex items-center gap-3 shadow">
             <svg className="animate-spin h-6 w-6 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
