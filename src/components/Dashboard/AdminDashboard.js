@@ -108,234 +108,168 @@ function PieChart({ items, size = 160 }) {
 }
 
 
-export default function AdminDashboard() {
-  const { user, axiosInstance } = useContext(AuthContext);
-  const [stats, setStats] = useState({});
-  const [appointments, setAppointments] = useState([]);
+  const { axiosInstance } = useContext(AuthContext);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [emergencies, setEmergencies] = useState([]);
+  const [lowStockDrugs, setLowStockDrugs] = useState([]);
+  const [inactiveUsers, setInactiveUsers] = useState([]);
 
-  // --- Data Fetching ---
-  const loadData = async () => {
-    setLoading(true);
-    const start = Date.now();
-    try {
-      const [
-        pRes, 
-        dRes, 
-        apptsRes,
-        invRes, 
-        nursesRes, 
-        pharmaRes, 
-        labRes,
-        nonMedRes,
-        financeRes
-      ] = await Promise.all([
-        axiosInstance.get('/patients'),
-        axiosInstance.get('/users?role=doctor'),
-        axiosInstance.get('/appointments'),
-        axiosInstance.get('/billing'),
-        axiosInstance.get('/users?role=nurse'),
-        axiosInstance.get('/users?role=pharmacist'),
-        axiosInstance.get('/users?role=lab'),
-        axiosInstance.get('/users?role=cleaning'), // Assuming non-medical roles
-        axiosInstance.get('/users?role=finance'),
-      ]);
-
-      const patientCount = (pRes.data.patients || []).length;
-      const doctorCount = (dRes.data.users || []).length;
-      const appointmentCount = (apptsRes.data.appointments || []).length;
-      const nurseCount = (nursesRes.data.users || []).length;
-      const pharmaCount = (pharmaRes.data.users || []).length;
-      const labCount = (labRes.data.users || []).length;
-      const nonMedCount = (nonMedRes.data.users || []).length;
-      const financeCount = (financeRes.data.users || []).length;
-
-      const totalStaff = doctorCount + nurseCount + pharmaCount + labCount + nonMedCount + financeCount;
-      const totalIncome = (invRes.data.invoices || []).reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
-
-      setStats({
-        patients: patientCount,
-        staff: totalStaff,
-        appointments: appointmentCount,
-        income: totalIncome,
-      });
-
-      setAppointments(apptsRes.data.appointments || []);
-      setInvoices(invRes.data.invoices || []);
-      setPatients(pRes.data.patients || []);
-      setDoctors(dRes.data.users || []); // Assuming /users endpoint returns user objects
-
-    } catch (e) {
-      console.error('Failed to load dashboard data', e);
-    } finally {
-      const elapsed = Date.now() - start;
-      if (elapsed < 1500) {
-        await new Promise(resolve => setTimeout(resolve, 1500 - elapsed));
-      }
-      setLoading(false);
-    }
-  };
+  // Pills for navigation
+  const pills = [
+    { label: 'ADMIN TOOLS', color: 'bg-cyan-300', link: '/dashboard/admin/tools' },
+    { label: 'USER', color: 'bg-indigo-400', link: '/profile' },
+    { label: 'PATIENTS', color: 'bg-green-400', link: '/dashboard/admin/patients' },
+    { label: 'DOCTORS', color: 'bg-green-400', link: '/dashboard/admin/doctors' },
+    { label: 'LABS', color: 'bg-green-400', link: '/dashboard/admin/labs' },
+    { label: 'FINANCE', color: 'bg-green-400', link: '/dashboard/admin/finance' },
+    { label: 'NURSE', color: 'bg-green-400', link: '/dashboard/admin/nurse' },
+    { label: 'RECEPTIONIST', color: 'bg-blue-400', link: '/dashboard/admin/receptionist' },
+    { label: 'PHARMACY', color: 'bg-green-400', link: '/dashboard/admin/pharmacy' },
+    { label: 'APPOINTMENTS', color: 'bg-indigo-400', link: '/dashboard/admin/appointments' },
+    { label: 'INCOME', color: 'bg-gradient-to-r from-green-400 to-blue-400', link: '/dashboard/admin/income' },
+    { label: 'NO BEDS', color: 'bg-gradient-to-r from-blue-400 to-green-400', link: '/dashboard/admin/nobeds' },
+  ];
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Fetch upcoming appointments
+    axiosInstance.get('/appointments')
+      .then(res => {
+        const now = new Date();
+        const upcoming = (res.data.appointments || []).filter(a => {
+          const s = (a.status || '').toLowerCase();
+          return s !== 'completed' && s !== 'cancelled' && new Date(a.scheduledAt) > now;
+        }).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)).slice(0, 5);
+        setUpcomingAppointments(upcoming);
+      });
 
-  // --- Memoized Data for Charts ---
-  const patientStatsChartData = useMemo(() => {
-    const labels = Array.from({ length: 6 }).map((_, i) => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        return d.toLocaleString('default', { month: 'short' });
-      }).reverse();
-  
-    // This is placeholder logic. Replace with actual monthly patient data if available.
-    // For now, it simulates decreasing numbers for past months.
-    return labels.map((label, i) => ({
-      label,
-      value: Math.round((stats.patients || 0) * (1 - (5 - i) * 0.15)),
-    }));
-  }, [stats.patients]);
+    // Fetch invoices
+    axiosInstance.get('/billing')
+      .then(res => setInvoices(res.data.invoices || []));
 
-  const upcomingAppointments = useMemo(() => {
-    return (appointments || [])
-      .filter(a => {
-        const s = (a.status || '').toLowerCase();
-        return s !== 'completed' && s !== 'cancelled' && new Date(a.scheduledAt) > new Date();
-      })
-      .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
-      .slice(0, 5);
-  }, [appointments]);
+    // Fetch emergencies (placeholder endpoint)
+    axiosInstance.get('/emergencies').then(res => setEmergencies(res.data.emergencies || [])).catch(() => setEmergencies([]));
 
-  const patientPieData = useMemo(() => {
-    const byDept = {};
-    (patients || []).forEach(p => {
-      const dept = p.admission?.ward || p.department || 'Outpatient';
-      byDept[dept] = (byDept[dept] || 0) + 1;
-    });
-    return Object.keys(byDept).map((k, i) => ({ 
-      label: k, 
-      value: byDept[k], 
-      color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'][i % 4] 
-    }));
-  }, [patients]);
+    // Fetch low stock drugs (placeholder endpoint)
+    axiosInstance.get('/drugs/low-stock').then(res => setLowStockDrugs(res.data.drugs || [])).catch(() => setLowStockDrugs([]));
 
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
-          <div className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading Dashboard...</div>
-        </div>
-      </div>
-    );
-  }
+    // Fetch inactive users (placeholder endpoint)
+    axiosInstance.get('/users/inactive?days=5').then(res => setInactiveUsers(res.data.users || [])).catch(() => setInactiveUsers([]));
+  }, [axiosInstance]);
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Header */}
-      <header className="flex flex-wrap items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Welcome back, {user?.name || user?.role}!</p>
-        </div>
-        <div className="flex items-center gap-4 mt-4 sm:mt-0">
-          <div className="relative">
-            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 rounded-lg border dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      {/* Top Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <TopStatCard title="Total Patient" value={(stats.patients || 0).toLocaleString()} icon={<UserGroupIcon />} change="+15%" changeColor="text-green-500"/>
-        <TopStatCard title="Staff" value={(stats.staff || 0).toLocaleString()} icon={<BriefcaseIcon />} change="+2" changeColor="text-green-500"/>
-        <TopStatCard title="Appointments" value={(stats.appointments || 0).toLocaleString()} icon={<CalendarDaysIcon />} change="-3%" changeColor="text-red-500"/>
-        <TopStatCard title="Total Income" value={`$${(stats.income || 0).toLocaleString()}`} icon={<BanknotesIcon />} change="+8%" changeColor="text-green-500"/>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Pills Navigation */}
+      <div className="flex flex-wrap gap-4 justify-center mb-8">
+        {pills.map((pill, idx) => (
+          <a key={pill.label} href={pill.link} className={`px-6 py-2 rounded-full text-white font-bold shadow ${pill.color}`}>{pill.label}</a>
+        ))}
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Patient Statistics */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Patient Statistics</h2>
-            <BarChart data={patientStatsChartData} />
-          </div>
-          {/* Upcoming Appointments */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Upcoming Appointments</h2>
-            <div className="space-y-4">
-              {upcomingAppointments.length > 0 ? (
-                upcomingAppointments.map(a => (
-                  <div key={a._id} className="flex items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-blue-600 dark:text-blue-300">
-                      {a.patient?.user?.name ? a.patient.user.name.charAt(0).toUpperCase() : 'P'}
-                    </div>
-                    <div className="ml-4 flex-grow">
-                      <p className="font-semibold text-gray-700 dark:text-gray-200">{a.patient?.user?.name || 'Walk-in Patient'}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Dr. {a.doctor?.user?.name || 'N/A'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-gray-700 dark:text-gray-300">{new Date(a.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{a.reason || 'Check-up'}</p>
-                    </div>
+      {/* Bar Chart for New Patients */}
+      <div className="flex justify-start mb-8">
+        <div className="bg-white rounded-xl shadow p-4 mr-8" style={{ width: 300 }}>
+          <h3 className="font-semibold text-center mb-2">NEW PATIENTS</h3>
+          <BarChart data={[{ label: 'LAST MONTH', value: 10 }, { label: 'THIS MONTH', value: 12 }]} height={120} />
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* UPCOMING APPOINTMENTS */}
+        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
+          <span className="font-bold text-lg mb-2">UPCOMING APPOINTMENTS</span>
+          <div className="flex-1 overflow-y-auto">
+            {upcomingAppointments.length > 0 ? (
+              upcomingAppointments.map(a => (
+                <div key={a._id} className="flex items-center p-2 border-b last:border-b-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
+                    {a.patient?.user?.name ? a.patient.user.name.charAt(0).toUpperCase() : 'P'}
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">No upcoming appointments.</p>
-              )}
-            </div>
+                  <div className="ml-3 flex-grow">
+                    <div className="font-semibold">{a.patient?.user?.name || 'Walk-in Patient'}</div>
+                    <div className="text-xs text-gray-500">Dr. {a.doctor?.user?.name || 'N/A'}</div>
+                  </div>
+                  <div className="text-right text-xs">
+                    {new Date(a.scheduledAt).toLocaleDateString()}<br/>
+                    {new Date(a.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-gray-400 text-center">No upcoming appointments.</div>
+            )}
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-8">
-          {/* Patient Distribution */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Patient Distribution</h2>
-            <div className="flex justify-center my-4">
-                <PieChart items={patientPieData} />
-            </div>
-            <div className="space-y-2">
-                {patientPieData.map(item => (
-                    <div key={item.label} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center">
-                            <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></span>
-                            <span className="text-gray-600 dark:text-gray-300">{item.label}</span>
-                        </div>
-                        <span className="font-semibold text-gray-800 dark:text-white">{item.value}</span>
-                    </div>
-                ))}
-            </div>
+        {/* RECENT TRANSACTIONS ONLY LAST 5 */}
+        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
+          <span className="font-bold text-lg mb-2">RECENT TRANSACTIONS ONLY LAST 5</span>
+          <div className="flex-1 overflow-y-auto">
+            {invoices.slice(-5).reverse().map(inv => (
+              <div key={inv._id} className="flex items-center p-2 border-b last:border-b-0">
+                <div className="font-semibold text-green-600">${inv.amount}</div>
+                <div className="ml-3 flex-grow text-xs">{inv.patient?.user?.name || 'Patient'}<br/>{new Date(inv.createdAt).toLocaleDateString()}</div>
+                <div className="text-xs text-gray-500">{inv.status}</div>
+              </div>
+            ))}
+            {invoices.length === 0 && <div className="text-gray-400 text-center">No transactions.</div>}
           </div>
-          {/* Hospital Staff */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Hospital Staff</h2>
-            <div className="space-y-3">
-              {(doctors || []).slice(0, 4).map(doc => (
-                 <div key={doc._id} className="flex items-center p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300">
-                      {doc.name ? doc.name.charAt(0).toUpperCase() : 'D'}
-                    </div>
-                    <div className="ml-3">
-                        <p className="font-semibold text-gray-700 dark:text-gray-200">{doc.name || 'Doctor'}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{doc.specialty || 'General'}</p>
-                    </div>
-                 </div>
-              ))}
-            </div>
+        </div>
+
+        {/* EMERGENCY BOARD */}
+        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
+          <span className="font-bold text-lg mb-2">EMERGENCY BOARD</span>
+          <div className="flex-1 overflow-y-auto">
+            {emergencies.length > 0 ? (
+              emergencies.map(e => (
+                <div key={e._id} className="text-red-600 font-semibold p-2 border-b last:border-b-0">{e.title || 'Emergency'} - {e.status}</div>
+              ))
+            ) : (
+              <div className="text-red-600 font-semibold">No emergencies reported.</div>
+            )}
+          </div>
+        </div>
+
+        {/* LOW STOCKS DRUGS/MOST SELLING */}
+        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
+          <span className="font-bold text-lg mb-2">LOWS STOCKS DRUGS/MOST SELLING</span>
+          <div className="flex-1 overflow-y-auto">
+            {lowStockDrugs.length > 0 ? (
+              lowStockDrugs.map(d => (
+                <div key={d._id} className="text-yellow-600 p-2 border-b last:border-b-0">{d.name} - {d.stock} left</div>
+              ))
+            ) : (
+              <div className="text-yellow-600">No low stock drugs.</div>
+            )}
+          </div>
+        </div>
+
+        {/* INACTIVE USERS DIDNT LOGIN LAST 5 DAYS AND ABOVE */}
+        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
+          <span className="font-bold text-lg mb-2">INACTIVE USERS DIDNT LOGIN LAST 5 DAYS AND ABOVE</span>
+          <div className="flex-1 overflow-y-auto">
+            {inactiveUsers.length > 0 ? (
+              inactiveUsers.map(u => (
+                <div key={u._id} className="text-gray-600 p-2 border-b last:border-b-0">{u.name} - Last login: {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'N/A'}</div>
+              ))
+            ) : (
+              <div className="text-gray-600">No inactive users.</div>
+            )}
+          </div>
+        </div>
+
+        {/* QUICK LINKS */}
+        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
+          <span className="font-bold text-lg mb-2">QUICK LINKS</span>
+          <div className="flex-1">
+            <ul className="list-disc ml-6">
+              <li><a href="/dashboard/admin/patients" className="text-blue-600 hover:underline">Patients</a></li>
+              <li><a href="/dashboard/admin/doctors" className="text-blue-600 hover:underline">Doctors</a></li>
+              <li><a href="/dashboard/admin/appointments" className="text-blue-600 hover:underline">Appointments</a></li>
+              <li><a href="/dashboard/admin/pharmacy" className="text-blue-600 hover:underline">Pharmacy</a></li>
+              <li><a href="/dashboard/admin/labs" className="text-blue-600 hover:underline">Labs</a></li>
+            </ul>
           </div>
         </div>
       </div>
