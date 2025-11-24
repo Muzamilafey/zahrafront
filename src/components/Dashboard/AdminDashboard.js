@@ -124,12 +124,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     // Fetch beds
     axiosInstance.get('/wards/beds/summary').then(res => {
+      // If the API returns executive, premium, basic, sum them for total
+      const executive = res.data.executive || 0;
+      const premium = res.data.premium || 0;
+      const basic = res.data.basic || 0;
+      const total = executive + premium + basic;
       setBeds({
-        total: res.data.total || 0,
+        total,
         available: res.data.available || 0,
-        executive: res.data.executive || 0,
-        premium: res.data.premium || 0,
-        basic: res.data.basic || 0,
+        executive,
+        premium,
+        basic,
       });
     }).catch(() => setBeds({ total: 0, available: 0, executive: 0, premium: 0, basic: 0 }));
 
