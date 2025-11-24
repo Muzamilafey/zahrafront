@@ -119,17 +119,20 @@ export const AuthProvider = ({ children }) => {
       (error) => Promise.reject(error)
     );
 
-    // Add response interceptor to handle 401 errors
+    // Add response interceptor to handle 401 errors (unauthenticated)
+    // Note: do NOT treat 403 (forbidden) as an expired token — some endpoints
+    // intentionally return 403 for users without that permission. Only clear
+    // auth state on 401 to avoid logging out non-admin users who lack access
+    // to certain admin-only endpoints (eg. notifications, admin APIs).
     instance.interceptors.response.use(
       (response) => response,
       (error) => {
         const status = error.response?.status;
-        if (status === 401 || status === 403) {
+        if (status === 401) {
           console.warn(`[AuthContext] ${status} on ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
-          // If the server responded with 401/403 treat it as invalid/expired token.
+          // If the server responded with 401 treat it as invalid/expired token.
           // Perform a local logout and redirect to login page.
           try {
-            // clear client state (avoid calling logout here because it's defined later)
             setUser(null);
             setAccessToken(null);
             localStorage.removeItem('user');
@@ -143,7 +146,6 @@ export const AuthProvider = ({ children }) => {
           const url = (error.config && error.config.url) ? String(error.config.url) : '';
           const lower = url.toLowerCase();
           if (!lower.includes('/auth/login') && !lower.includes('/auth/refresh')) {
-            // Use replace so browser back doesn't return to protected page
             try { window.location.replace('/login'); } catch (e) { window.location.href = '/login'; }
           }
         }
