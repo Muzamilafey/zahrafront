@@ -19,14 +19,10 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Only reset state when modal is first opened
   useEffect(() => {
-    if (open && step === 'search') {
-      loadPatients();
-    }
-    if (open && step === 'form') {
-      loadDoctors();
-    }
     if (open) {
+      setStep('ask');
       setQuery('');
       setFilteredPatients([]);
       setSelectedPatient(null);
@@ -34,6 +30,15 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
       setAppointmentDate('');
       setAppointmentTime('');
       setToast(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (open && step === 'search') {
+      loadPatients();
+    }
+    if (open && step === 'form') {
+      loadDoctors();
     }
   }, [open, step]);
 
