@@ -21,7 +21,7 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
     if (open) {
       setQuery('');
       setFilteredPatients([]);
-      setToast(null);
+      // Toast is handled by parent
     }
   }, [open, step]);
 
@@ -48,7 +48,9 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
       setPatients(patientData);
       setFilteredPatients(patientData);
     } catch (e) {
-      setToast({ message: 'Failed to load patients', type: 'error' });
+      if (typeof onToast === 'function') {
+        onToast({ message: 'Failed to load patients', type: 'error' });
+      }
     } finally {
       setLoading(false);
     }
