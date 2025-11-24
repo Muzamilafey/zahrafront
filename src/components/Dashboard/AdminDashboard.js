@@ -108,6 +108,7 @@ function PieChart({ items, size = 160 }) {
 }
 
 
+export default function AdminDashboard() {
   const { axiosInstance } = useContext(AuthContext);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [invoices, setInvoices] = useState([]);
