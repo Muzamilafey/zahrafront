@@ -23,6 +23,9 @@
     "lucide-react": "^0.268.0",
     "framer-motion": "^6.5.1"
   },
+  "optionalDependencies": {
+    "recharts": "^3.5.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "dev": "react-scripts start",

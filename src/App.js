@@ -138,6 +138,7 @@ import PharmacyRegisterDrugs from './pages/pharmacy/RegisterDrugs';
 import PharmacySalesReport from './pages/pharmacy/SalesReport';
 import PharmacyEditGroup from './pages/pharmacy/EditMedicationGroup';
 import SymptomChecker from "./pages/symptomsChecker/SymptomChecker";
+import MediguardPage from './pages/mediguard/MediguardPage';
 
 
 function App() {
@@ -367,6 +368,7 @@ function App() {
           <Route path="/dashboard/lab/templates" element={<PrivateRoute><Layout><LabTemplates /></Layout></PrivateRoute>} />
           <Route path="/lab/results/:requestId" element={<PrivateRoute><Layout><LabResult /></Layout></PrivateRoute>} />
           <Route path="/symptom-check" element={<SymptomChecker />} />
+          <Route path="/mediguard-ai" element={<PrivateRoute><Layout><MediguardPage /></Layout></PrivateRoute>} />
         </Routes>
         </Router>
       </UIProvider>
