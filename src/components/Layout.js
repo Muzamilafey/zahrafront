@@ -22,6 +22,16 @@ export default function Layout({ children }){
       socket.on('inventory:low', onInv);
       return () => { socket.off('lab:completed', onLab); socket.off('inventory:low', onInv); };
     }, [socket, addNotification]);
+    
+    // Listen for global forbidden events dispatched by the axios interceptor
+    React.useEffect(() => {
+      const onForbidden = (e) => {
+        const msg = (e && e.detail && e.detail.message) ? e.detail.message : 'You are not authorized to perform this action';
+        addNotification({ type: 'warn', message: msg });
+      };
+      window.addEventListener('app:forbidden', onForbidden);
+      return () => window.removeEventListener('app:forbidden', onForbidden);
+    }, [addNotification]);
     return null;
   }
 

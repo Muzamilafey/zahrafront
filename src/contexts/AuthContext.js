@@ -128,6 +128,13 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       (error) => {
         const status = error.response?.status;
+        // Notify on 403 (forbidden) so UI can show a friendly toast, but do not
+        // clear auth state (403 means user is authenticated but not authorized).
+        if (status === 403) {
+          const message = error.response?.data?.message || 'You are not allowed to perform this action';
+          try { window.dispatchEvent(new CustomEvent('app:forbidden', { detail: { message } })); } catch (e) { /* ignore */ }
+        }
+
         if (status === 401) {
           console.warn(`[AuthContext] ${status} on ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
           // If the server responded with 401 treat it as invalid/expired token.
