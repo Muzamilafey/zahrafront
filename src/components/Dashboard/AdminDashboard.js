@@ -124,19 +124,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     // Fetch beds
     axiosInstance.get('/wards/beds/summary').then(res => {
-      // If the API returns executive, premium, basic, sum them for total
-      const executive = res.data.executive || 0;
-      const premium = res.data.premium || 0;
-      const basic = res.data.basic || 0;
-      const total = executive + premium + basic;
+      // Sum all room types dynamically
+      const roomTypes = res.data.rooms || [];
+      let total = 0;
+      const roomCounts = {};
+      roomTypes.forEach(room => {
+        roomCounts[room.name] = room.beds || 0;
+        total += room.beds || 0;
+      });
       setBeds({
         total,
         available: res.data.available || 0,
-        executive,
-        premium,
-        basic,
+        roomCounts,
       });
-    }).catch(() => setBeds({ total: 0, available: 0, executive: 0, premium: 0, basic: 0 }));
+    }).catch(() => setBeds({ total: 0, available: 0, roomCounts: {} }));
 
     // Fetch doctors
     axiosInstance.get('/users?role=doctor').then(res => {
@@ -197,10 +198,10 @@ export default function AdminDashboard() {
             <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Available</span>
             <span className="text-lg font-bold text-green-700">{beds.available}</span>
           </div>
-          <div className="flex gap-6 text-xs text-gray-500 mt-2">
-            <span>{beds.executive} Executive Room</span>
-            <span>{beds.premium} Premium Room</span>
-            <span>{beds.basic} Basic Room</span>
+          <div className="flex gap-6 text-xs text-gray-500 mt-2 flex-wrap">
+            {beds.roomCounts && Object.entries(beds.roomCounts).map(([name, count]) => (
+              <span key={name}>{count} {name}</span>
+            ))}
           </div>
         </div>
         {/* Doctors */}

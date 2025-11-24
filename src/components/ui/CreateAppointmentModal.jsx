@@ -5,23 +5,35 @@ import Toast from './Toast';
 
 
 export default function CreateAppointmentModal({ open, onClose, imageSrc, onToast }) {
-  const navigate = useNavigate();
   const { axiosInstance } = useContext(AuthContext);
-  const [step, setStep] = useState('ask'); // 'ask' | 'search'
+  const [step, setStep] = useState('ask'); // 'ask' | 'search' | 'form'
   const [query, setQuery] = useState('');
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [doctorId, setDoctorId] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [appointmentTime, setAppointmentTime] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     if (open && step === 'search') {
       loadPatients();
     }
-    // Reset state when modal opens
+    if (open && step === 'form') {
+      loadDoctors();
+    }
     if (open) {
       setQuery('');
       setFilteredPatients([]);
-      // Toast is handled by parent
+      setSelectedPatient(null);
+      setDoctorId('');
+      setAppointmentDate('');
+      setAppointmentTime('');
+      setToast(null);
     }
   }, [open, step]);
 
@@ -56,22 +68,54 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
     }
   };
 
+  const loadDoctors = async () => {
+    setLoading(true);
+    try {
+      const res = await axiosInstance.get('/doctors/list');
+      setDoctors(res.data.doctors || []);
+    } catch (e) {
+      setToast({ message: 'Failed to load doctors', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleYes = () => {
     setStep('search');
   };
 
   const handleNo = () => {
     onClose && onClose();
-    navigate('/patients/register');
+    window.location.href = '/patients/register';
   };
 
   const handleSelectPatient = (patient) => {
-    onClose && onClose();
-    navigate(`/appointments/new?patientId=${patient._id}`);
-    if (onToast) {
+    setSelectedPatient(patient);
+    setStep('form');
+    setToast({ message: `Patient selected: ${patient.firstName} ${patient.lastName}`, type: 'success', duration: 2000 });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setToast(null);
+    try {
+      await axiosInstance.post('/appointments', {
+        patientId: selectedPatient._id,
+        doctorId,
+        appointmentDate,
+        appointmentTime,
+        status: 'scheduled',
+      });
+      setToast({ message: 'Appointment created successfully!', type: 'success' });
       setTimeout(() => {
-        onToast({ message: `Patient selected: ${patient.firstName} ${patient.lastName}`, type: 'success', duration: 2500 });
-      }, 500);
+        setSubmitting(false);
+        onClose && onClose();
+        if (onToast) onToast({ message: 'Appointment created!', type: 'success' });
+      }, 1500);
+    } catch (error) {
+      setToast({ message: 'Failed to create appointment', type: 'error' });
+      setSubmitting(false);
     }
   };
 
@@ -89,13 +133,13 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
         </div>
         {step === 'ask' ? (
           <div className="p-6 text-center">
-            <p className="mb-6 text-sm text-gray-700">If yes, search and select patient to create appointment. If no, navigate to Register Patient page.</p>
+            <p className="mb-6 text-sm text-gray-700"></p>
             <div className="flex items-center justify-center gap-4">
               <button onClick={handleYes} className="px-6 py-3 rounded-full bg-green-500 text-white font-semibold">YES</button>
               <button onClick={handleNo} className="px-6 py-3 rounded-full bg-red-500 text-white font-semibold">NO</button>
             </div>
           </div>
-        ) : (
+        ) : step === 'search' ? (
           <div className="p-6">
             <div className="mb-4">
               <input
@@ -125,14 +169,63 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
             )}
             <div className="mt-4 text-xs text-gray-500 text-center">Select a patient to pre-fill appointment form.</div>
           </div>
-        )}
+        ) : step === 'form' && selectedPatient ? (
+          <form className="p-6 w-full" onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <div className="font-semibold mb-2">Patient: {selectedPatient.firstName} {selectedPatient.lastName} <span className="text-xs text-gray-500">({selectedPatient.mrn || 'N/A'})</span></div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+              <select
+                name="doctorId"
+                value={doctorId}
+                onChange={e => setDoctorId(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+                required
+              >
+                <option value="">-- Select a Doctor --</option>
+                {doctors.map(doc => (
+                  <option key={doc._id} value={doc._id}>{doc.user.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Appointment Date</label>
+              <input
+                type="date"
+                name="appointmentDate"
+                value={appointmentDate}
+                onChange={e => setAppointmentDate(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Appointment Time</label>
+              <input
+                type="time"
+                name="appointmentTime"
+                value={appointmentTime}
+                onChange={e => setAppointmentTime(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+                required
+              />
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                type="submit"
+                className="px-6 py-2 rounded bg-green-600 text-white font-semibold"
+                disabled={submitting || !doctorId || !appointmentDate || !appointmentTime}
+              >
+                {submitting ? 'Creating...' : 'Create Appointment'}
+              </button>
+            </div>
+            {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+          </form>
+        ) : null}
         <div className="p-4 border-t text-center text-xs text-gray-500">
-          <div className="mb-2">Or open the example/guide image below</div>
-          {imageSrc ? (
-            <img src={imageSrc} alt="Create Appointment" className="mx-auto max-h-48 object-contain" />
-          ) : (
-            <a href="/assets/create-appointment.png" target="_blank" rel="noreferrer" className="text-blue-600 underline">Open image</a>
-          )}
+          <div className="mb-2"></div>
+          
         </div>
         {/* Toast handled by parent */}
       </div>
