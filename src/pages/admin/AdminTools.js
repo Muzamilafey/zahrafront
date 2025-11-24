@@ -4,16 +4,20 @@ import { Link } from 'react-router-dom';
 export default function AdminTools() {
 
   const navButtons = [
+    { label: 'MANAGE USERS', color: 'bg-green-500 hover:bg-green-600', link: '/dashboard/admin/users' },
+    { label: 'REGISTER USER', color: 'bg-green-500 hover:bg-green-600', link: '/dashboard/admin/register' },
     { label: 'PATIENTS', color: 'bg-green-500 hover:bg-green-600', link: '/patients' },
-    { label: 'DOCTORS', color: 'bg-green-500 hover:bg-green-600', link: '/doctor' },
+    { label: 'DOCTORS', color: 'bg-green-500 hover:bg-green-600', link: '/dashboard/admin/doctors' },
     { label: 'LABS', color: 'bg-green-500 hover:bg-green-600', link: '/lab' },
-    { label: 'FINANCE', color: 'bg-green-500 hover:bg-green-600', link: '/finance' },
-    { label: 'NURSE', color: 'bg-green-500 hover:bg-green-600', link: '/nurse' },
+    { label: 'FINANCE', color: 'bg-green-500 hover:bg-green-600', link: '/billing' },
+    { label: 'NURSE', color: 'bg-green-500 hover:bg-green-600', link: '/dashboard/admin//nurseassignment' },
     { label: 'PHARMACY', color: 'bg-green-500 hover:bg-green-600', link: '/pharmacy' },
     { label: 'APPOINTMENTS', color: 'bg-blue-800 hover:bg-blue-900', link: '/appointments' },
     { label: 'INCOME', color: 'bg-gradient-to-r from-green-400 to-blue-400 hover:from-green-500 hover:to-blue-500', link: '/billing' },
-    { label: 'NO BEDS', color: 'bg-gradient-to-r from-blue-400 to-green-400 hover:from-blue-500 hover:to-green-500', link: '/wards' },
-    { label: 'CREATE DIAGNOSIS', color: 'bg-purple-600 hover:bg-purple-700', link: '/diagnosis/create' },
+    { label: 'WARDS', color: 'bg-gradient-to-r from-blue-400 to-green-400 hover:from-blue-500 hover:to-green-500', link: '/dashboard/admin//managewards' },
+    { label: 'CREATE DIAGNOSIS', color: 'bg-purple-600 hover:bg-purple-700', link: '/lab/tests/new' },
+    { label: 'MANAGEMENT CHARGES', color: 'bg-green-500 hover:bg-green-600', link: '/dashboard/admin/management-charges' },
+
   ];
 
   return (

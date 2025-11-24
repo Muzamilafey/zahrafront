@@ -12,8 +12,8 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [doctors, setDoctors] = useState([]);
-  const [doctorId, setDoctorId] = useState('');
+  const [consultations, setConsultations] = useState([]);
+  const [consultationId, setConsultationId] = useState('');
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentTime, setAppointmentTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +38,7 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
       loadPatients();
     }
     if (open && step === 'form') {
-      loadDoctors();
+      loadConsultations();
     }
   }, [open, step]);
 
@@ -73,13 +73,13 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
     }
   };
 
-  const loadDoctors = async () => {
+  const loadConsultations = async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get('/doctors/list');
-      setDoctors(res.data.doctors || []);
+      const res = await axiosInstance.get('/consultations');
+      setConsultations(res.data.consultations || []);
     } catch (e) {
-      setToast({ message: 'Failed to load doctors', type: 'error' });
+      setToast({ message: 'Failed to load consultations', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -105,12 +105,14 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
     setSubmitting(true);
     setToast(null);
     try {
+      // Combine date and time to ISO string
+      const scheduledAt = appointmentDate && appointmentTime
+        ? new Date(`${appointmentDate}T${appointmentTime}`).toISOString()
+        : null;
       await axiosInstance.post('/appointments', {
         patientId: selectedPatient._id,
-        doctorId,
-        appointmentDate,
-        appointmentTime,
-        status: 'scheduled',
+        consultationId,
+        scheduledAt,
       });
       setToast({ message: 'Appointment created successfully!', type: 'success' });
       setTimeout(() => {
@@ -180,17 +182,17 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
               <div className="font-semibold mb-2">Patient: {selectedPatient.firstName} {selectedPatient.lastName} <span className="text-xs text-gray-500">({selectedPatient.mrn || 'N/A'})</span></div>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Consultation/Service</label>
               <select
-                name="doctorId"
-                value={doctorId}
-                onChange={e => setDoctorId(e.target.value)}
+                name="consultationId"
+                value={consultationId}
+                onChange={e => setConsultationId(e.target.value)}
                 className="w-full px-3 py-2 border rounded"
                 required
               >
-                <option value="">-- Select a Doctor --</option>
-                {doctors.map(doc => (
-                  <option key={doc._id} value={doc._id}>{doc.user.name}</option>
+                <option value="">-- Select a Consultation/Service --</option>
+                {consultations.map(c => (
+                  <option key={c._id} value={c._id}>{c.name} {c.price ? `- ₦${c.price}` : ''}</option>
                 ))}
               </select>
             </div>
@@ -220,7 +222,7 @@ export default function CreateAppointmentModal({ open, onClose, imageSrc, onToas
               <button
                 type="submit"
                 className="px-6 py-2 rounded bg-green-600 text-white font-semibold"
-                disabled={submitting || !doctorId || !appointmentDate || !appointmentTime}
+                disabled={submitting || !consultationId || !appointmentDate || !appointmentTime}
               >
                 {submitting ? 'Creating...' : 'Create Appointment'}
               </button>
