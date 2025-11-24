@@ -24,6 +24,8 @@ export default function SymptomsChecker() {
     }
 
     setLoading(false);
+    console.log("API result:", res.data);
+
   };
 
   return (
