@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { FaBell, FaUserCircle } from 'react-icons/fa';
+import { FaBell, FaUserCircle, FaCalendarPlus } from 'react-icons/fa';
+import CreateAppointmentModal from './CreateAppointmentModal';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationsContext';
@@ -47,6 +48,10 @@ export default function Topbar({ user, onLogout }) {
     else navigate('/profile');
   };
 
+  const [showCreateModal, setShowCreateModal] = React.useState(false);
+  const showCreateForRoles = ['admin', 'doctor', 'nurse'];
+  const imagePath = '/assets/create-appointment.png';
+
   return (
     <div className="w-full bg-white/80 backdrop-blur py-3 px-4 flex items-center justify-between border-b sticky top-0 z-40">
       <div className="flex items-center gap-4">
@@ -54,6 +59,19 @@ export default function Topbar({ user, onLogout }) {
       </div>
 
       <div className="flex items-center gap-3">
+        {showCreateForRoles.includes(user?.role) && (
+          <>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              title="Create Appointment"
+              className="btn-outline mr-2 hidden sm:inline-flex items-center gap-2"
+            >
+              <FaCalendarPlus />
+              <span className="text-sm">Create Appointment</span>
+            </button>
+            <CreateAppointmentModal open={showCreateModal} onClose={() => setShowCreateModal(false)} imageSrc={imagePath} />
+          </>
+        )}
         <button onClick={openNotifications} className="relative p-2 rounded hover:bg-gray-100">
           <FaBell className="text-gray-700" />
           {count > 0 && (
