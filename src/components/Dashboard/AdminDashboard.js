@@ -115,7 +115,7 @@ export default function AdminDashboard() {
   const [emergencies, setEmergencies] = useState([]);
   const [lowStockDrugs, setLowStockDrugs] = useState([]);
   const [inactiveUsers, setInactiveUsers] = useState([]);
-  const [beds, setBeds] = useState({ total: 0, available: 0, executive: 0, premium: 0, basic: 0 });
+  const [beds, setBeds] = useState({ available: 0, roomCounts: {} });
   const [doctors, setDoctors] = useState({ available: 0, leave: 0 });
   const [patients, setPatients] = useState({ total: 0, change: 0 });
   const [appointmentsStat, setAppointmentsStat] = useState({ total: 0, change: 0 });
@@ -124,20 +124,16 @@ export default function AdminDashboard() {
   useEffect(() => {
     // Fetch beds
     axiosInstance.get('/wards/beds/summary').then(res => {
-      // Sum all room types dynamically
       const roomTypes = res.data.rooms || [];
-      let total = 0;
       const roomCounts = {};
       roomTypes.forEach(room => {
         roomCounts[room.name] = room.beds || 0;
-        total += room.beds || 0;
       });
       setBeds({
-        total,
         available: res.data.available || 0,
         roomCounts,
       });
-    }).catch(() => setBeds({ total: 0, available: 0, roomCounts: {} }));
+    }).catch(() => setBeds({ available: 0, roomCounts: {} }));
 
     // Fetch doctors
     axiosInstance.get('/users?role=doctor').then(res => {
@@ -186,15 +182,15 @@ export default function AdminDashboard() {
       {/* Pills Navigation removed. Use admin/tools page for navigation. */}
 
       {/* Stat Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-8 w-full max-w-6xl mx-auto">
         {/* Total Beds */}
-        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">🛏️</span>
             <span className="font-semibold text-lg">Total Beds</span>
           </div>
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl font-bold">{beds.total}</span>
+            <span className="text-3xl font-bold">{Object.values(beds.roomCounts).reduce((a, b) => a + b, 0)}</span>
             <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Available</span>
             <span className="text-lg font-bold text-green-700">{beds.available}</span>
           </div>
@@ -205,7 +201,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         {/* Doctors */}
-        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">🩺</span>
             <span className="font-semibold text-lg">Doctors</span>
@@ -218,7 +214,7 @@ export default function AdminDashboard() {
           <div className="text-xs text-gray-500 mt-2">Shows the current number of available doctors.</div>
         </div>
         {/* Patients */}
-        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">👥</span>
             <span className="font-semibold text-lg">Patients</span>
@@ -230,7 +226,7 @@ export default function AdminDashboard() {
           <div className="text-xs text-gray-500 mt-2">Displays live updates of patient numbers.</div>
         </div>
         {/* Appointments */}
-        <div className="bg-white rounded-xl shadow p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">📅</span>
             <span className="font-semibold text-lg">Appointment</span>
