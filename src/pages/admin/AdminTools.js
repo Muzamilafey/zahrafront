@@ -4,16 +4,16 @@ import { Link } from 'react-router-dom';
 export default function AdminTools() {
 
   const navButtons = [
-    { label: 'PATIENTS', color: 'bg-green-500', link: '/patients' },
-    { label: 'DOCTORS', color: 'bg-green-500', link: '/doctor' },
-    { label: 'LABS', color: 'bg-green-500', link: '/lab' },
-    { label: 'FINANCE', color: 'bg-green-500', link: '/finance' },
-    { label: 'NURSE', color: 'bg-green-500', link: '/nurse' },
-    { label: 'PHARMACY', color: 'bg-green-500', link: '/pharmacy' },
-    { label: 'APPOINTMENTS', color: 'bg-blue-800', link: '/appointments' },
-    { label: 'INCOME', color: 'bg-gradient-to-r from-green-400 to-blue-400', link: '/billing' },
-    { label: 'NO BEDS', color: 'bg-gradient-to-r from-blue-400 to-green-400', link: '/wards' },
-    { label: 'CREATE DIAGNOSIS', color: 'bg-purple-600', link: '/diagnosis/create' },
+    { label: 'PATIENTS', color: 'bg-green-500 hover:bg-green-600', link: '/patients' },
+    { label: 'DOCTORS', color: 'bg-green-500 hover:bg-green-600', link: '/doctor' },
+    { label: 'LABS', color: 'bg-green-500 hover:bg-green-600', link: '/lab' },
+    { label: 'FINANCE', color: 'bg-green-500 hover:bg-green-600', link: '/finance' },
+    { label: 'NURSE', color: 'bg-green-500 hover:bg-green-600', link: '/nurse' },
+    { label: 'PHARMACY', color: 'bg-green-500 hover:bg-green-600', link: '/pharmacy' },
+    { label: 'APPOINTMENTS', color: 'bg-blue-800 hover:bg-blue-900', link: '/appointments' },
+    { label: 'INCOME', color: 'bg-gradient-to-r from-green-400 to-blue-400 hover:from-green-500 hover:to-blue-500', link: '/billing' },
+    { label: 'NO BEDS', color: 'bg-gradient-to-r from-blue-400 to-green-400 hover:from-blue-500 hover:to-green-500', link: '/wards' },
+    { label: 'CREATE DIAGNOSIS', color: 'bg-purple-600 hover:bg-purple-700', link: '/diagnosis/create' },
   ];
 
   return (
