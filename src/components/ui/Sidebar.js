@@ -51,8 +51,7 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       
-      { to: '/symptom-check', label: 'Symptoms Checker', icon: <FaEnvelope />, perm: 'symptoms' },
-      { to: '/mediguard-ai', label: 'MediGuard AI', icon: <FaEnvelope />, perm: 'manageDiagnoses' },
+      { to: '/symptomate', label: 'Symptomate', icon: <FaEnvelope />, perm: 'symptoms' },
       // Laboratory links for admins
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
       { to: '/lab/requests-inpatient', label: 'Inpatient Requests', icon: <FaFolder />, perm: 'lab' },
