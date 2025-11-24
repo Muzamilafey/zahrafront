@@ -50,6 +50,8 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/pharmacy/edit-group', label: 'Edit Medication Groups', icon: <FaBoxes />, perm: 'inventory' },
       { to: '/dashboard/admin/drugs', label: 'Drugs', icon: <FaPills />, perm: 'drugs' },
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
+      
+      { to: '/symptom-check', label: 'Symptoms Checker', icon: <FaEnvelope />, perm: 'symptoms' },
       // Laboratory links for admins
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
       { to: '/lab/requests-inpatient', label: 'Inpatient Requests', icon: <FaFolder />, perm: 'lab' },
