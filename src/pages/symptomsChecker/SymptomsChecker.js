@@ -19,12 +19,13 @@ export default function SymptomsChecker() {
       });
 
       setResult(res.data);
+      console.log("API result:", res.data);
     } catch (err) {
+      console.error('Symptoms analysis error', err);
       setResult({ error: "Unable to fetch analysis" });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    console.log("API result:", res.data);
 
   };
 
