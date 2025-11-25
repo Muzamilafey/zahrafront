@@ -83,14 +83,7 @@ export default function Topbar({ user, onLogout }) {
         
         {user?.role === 'admin' && (
           <>
-            <button
-              onClick={() => window.open('/', '_blank')}
-              title="Visit Frontend"
-              className="btn-outline hidden sm:inline-flex items-center gap-2"
-            >
-              <FaGlobe />
-              <span className="text-sm">Frontend</span>
-            </button>
+            
             <button
               onClick={() => navigate('/dashboard/admin/messages')}
               title="Messages"

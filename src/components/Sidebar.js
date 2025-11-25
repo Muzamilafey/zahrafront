@@ -12,6 +12,7 @@ export default function Sidebar() {
     admin: false,
     billing: false,
     lab: false,
+    triage: false,
   });
 
   const toggleMenu = (menu) => {
@@ -145,6 +146,15 @@ export default function Sidebar() {
         { to: '/pharmacy/register-drugs', label: 'Register Drugs', perm: 'pharmacy' },
         { to: '/pharmacy/sales-report', label: 'Transactions', perm: 'pharmacy' },
         { to: '/pharmacy/edit-group', label: 'Edit Medication Groups', perm: 'pharmacy' },
+      ],
+    },
+    {
+      id: 'triage',
+      title: 'Triage Management',
+      defaultCheck: ['admin', 'doctor', 'nurse'].includes(user?.role),
+      items: [
+        { to: '/triage', label: 'Triage Assessments', perm: 'triage' },
+        { to: '/triage/history', label: 'Triage History', perm: 'triage' },
       ],
     },
   ];
