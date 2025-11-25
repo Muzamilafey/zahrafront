@@ -232,6 +232,12 @@ export default function AdminDashboard() {
       loadInactive();
   }, [axiosInstance]);
 
+  // Beds counting logic
+  let totalBeds = 0;
+  if (Array.isArray(beds.beds)) {
+    totalBeds = beds.beds.length;
+  }
+
   return (
     <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
       {/* Pills Navigation removed. Use admin/tools page for navigation. */}
@@ -358,8 +364,8 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
           <span className="font-bold text-base sm:text-lg mb-2 truncate">LOW STOCK DRUGS</span>
           <div className="flex-1 overflow-y-auto">
-            {lowStockDrugs.length > 0 ? (
-              lowStockDrugs.map(d => (
+            {lowStockDrugs.filter(d => d.stock < 50).length > 0 ? (
+              lowStockDrugs.filter(d => d.stock < 50).map(d => (
                 <div key={d._id} className="text-yellow-600 p-2 border-b last:border-b-0 text-xs sm:text-sm truncate" title={d.name}>{d.name} - {d.stock} left</div>
               ))
             ) : (
