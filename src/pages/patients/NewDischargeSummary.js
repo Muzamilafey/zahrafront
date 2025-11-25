@@ -26,6 +26,8 @@ const NewDischargeSummary = () => {
   const [procedureCharges, setProcedureCharges] = useState([]);
   const [medicationCharges, setMedicationCharges] = useState([]);
   const [allCharges, setAllCharges] = useState({});
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [showValidationModal, setShowValidationModal] = useState(false);
 
   useEffect(() => {
     if (!id || !axiosInstance) return;
@@ -117,6 +119,50 @@ const NewDischargeSummary = () => {
     fetchPatientAndCharges();
   }, [id, axiosInstance]);
 
+  const validateDischargeRequirements = async () => {
+    const errors = [];
+
+    // 1. Check if patient has at least one diagnosis
+    const patientDiagnoses = patient?.diagnoses || [];
+    if (patientDiagnoses.length === 0) {
+      errors.push('❌ NO DIAGNOSIS: Patient must have at least one diagnosis before discharge');
+    }
+
+    // 2. Check if all lab requests are completed
+    try {
+      const labRes = await axiosInstance.get(`/lab-tests?patientId=${id}`);
+      const labRequests = labRes.data.labTests || labRes.data || [];
+      const pendingLabs = labRequests.filter(lab => 
+        lab.status && String(lab.status).toLowerCase() !== 'completed' && String(lab.status).toLowerCase() !== 'done'
+      );
+      if (pendingLabs.length > 0) {
+        errors.push(`❌ PENDING LAB TESTS: ${pendingLabs.length} lab request(s) not completed by lab. Please mark all lab tests as complete.`);
+      }
+    } catch (err) {
+      console.warn('Could not fetch lab tests:', err);
+    }
+
+    // 3. Check if all prescribed medications are dispensed
+    try {
+      const prescriptionsRes = await axiosInstance.get(`/prescriptions?patientId=${id}`);
+      const prescriptions = prescriptionsRes.data.prescriptions || prescriptionsRes.data || [];
+      const dispensedRes = await axiosInstance.get(`/pharmacy/dispenses?patientId=${id}`);
+      const dispensed = dispensedRes.data.dispenses || dispensedRes.data || [];
+      const dispensedMedicationIds = dispensed.map(d => d.prescriptionId || d.medicationId);
+      
+      const pendingMeds = prescriptions.filter(p => 
+        !dispensedMedicationIds.includes(p._id) && p.status !== 'dispensed'
+      );
+      if (pendingMeds.length > 0) {
+        errors.push(`❌ PENDING MEDICATIONS: ${pendingMeds.length} medication(s) not dispensed by pharmacy. Please dispense all medications.`);
+      }
+    } catch (err) {
+      console.warn('Could not fetch prescriptions/dispensed items:', err);
+    }
+
+    return errors;
+  };
+
   const formatCurrency = (amt) => {
     if (!amt && amt !== 0) return '-';
     return amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -200,11 +246,11 @@ const NewDischargeSummary = () => {
     e && e.preventDefault && e.preventDefault();
     if (!window.confirm('Confirm: Save selected charges and discharge this patient?')) return;
 
-    // Ensure patient has at least one diagnosis before allowing discharge
-    const patientDiagnoses = patient?.diagnoses || [];
-    if (patientDiagnoses.length === 0) {
-      alert('Cannot discharge patient: no diagnoses have been added. Please add at least one diagnosis before discharging the patient.');
-      navigate(`/patients/${id}/diagnosis`);
+    // Run validation checks
+    const errors = await validateDischargeRequirements();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setShowValidationModal(true);
       return;
     }
 
@@ -236,11 +282,15 @@ const NewDischargeSummary = () => {
         charges: selectedCharges,
       });
 
-      alert('Patient Discharged Successfully');
-      navigate(`/patients/${id}/detailed-discharge-summary`);
+      setValidationErrors(['✅ DISCHARGE SUCCESSFUL: Patient has been discharged successfully!']);
+      setShowValidationModal(true);
+      setTimeout(() => {
+        navigate(`/patients/${id}/detailed-discharge-summary`);
+      }, 2000);
     } catch (err) {
       console.error('Error discharging patient:', err);
-      alert(err.response?.data?.message || 'Error discharging patient');
+      setValidationErrors(['❌ DISCHARGE FAILED: ' + (err.response?.data?.message || 'Error discharging patient')]);
+      setShowValidationModal(true);
     }
   };
 
@@ -513,6 +563,60 @@ const NewDischargeSummary = () => {
           </div>
         </div>
       </form>
+      
+      {/* Validation Errors / Success Modal */}
+      {showValidationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold mb-4">
+                {validationErrors.some(e => e.includes('❌')) ? '⚠️ Discharge Requirements Not Met' : '✅ Success'}
+              </h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {validationErrors.map((error, idx) => (
+                  <div key={idx} className="text-sm text-gray-700 p-2 bg-gray-50 rounded border-l-4 border-red-500">
+                    {error}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              {validationErrors.some(e => e.includes('❌')) ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowValidationModal(false);
+                      // Optionally navigate to add diagnosis or other missing requirements
+                      if (validationErrors.some(e => e.includes('NO DIAGNOSIS'))) {
+                        navigate(`/patients/${id}/diagnosis`);
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Fix Issues
+                  </button>
+                  <button
+                    onClick={() => setShowValidationModal(false)}
+                    className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                  >
+                    Close
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowValidationModal(false);
+                    navigate(`/patients/${id}/detailed-discharge-summary`);
+                  }}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Continue
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
