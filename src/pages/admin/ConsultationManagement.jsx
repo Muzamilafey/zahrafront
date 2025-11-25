@@ -8,7 +8,11 @@ export default function ConsultationManagement() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  // Check if user has access
+  useEffect(() => {
+    fetchConsultations();
+  }, [activeTab]);
+
+  // Check if user has access (render access denied for unauthorized users)
   if (!user || !['admin', 'doctor', 'nurse'].includes(user.role)) {
     return (
       <div className="p-6">
@@ -19,10 +23,6 @@ export default function ConsultationManagement() {
       </div>
     );
   }
-
-  useEffect(() => {
-    fetchConsultations();
-  }, [activeTab]);
 
   const fetchConsultations = async () => {
     try {

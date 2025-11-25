@@ -112,7 +112,7 @@ const TriageHistory = ({ patientId }) => {
                         <p className="font-semibold text-gray-800 truncate">{record.reasonForVisit}</p>
                         <div className="flex gap-4 text-sm text-gray-600 mt-1">
                           <span className="flex items-center gap-1">
-                            <FaCalendarDays className="text-gray-400" />
+                            <FaCalendarAlt className="text-gray-400" />
                             {formatDate(record.createdAt)}
                           </span>
                           {record.triageBy?.name && (
