@@ -11,6 +11,9 @@ const DischargeSummary = () => {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [medications, setMedications] = useState([]);
+  const [medLoading, setMedLoading] = useState(true);
+  const [medError, setMedError] = useState('');
 
   // Fetch Patient Data on Load
   useEffect(() => {
@@ -20,6 +23,37 @@ const DischargeSummary = () => {
         const response = await axiosInstance.get(`/patients/${id}`);
         setPatient(response.data.patient);
         setLoading(false);
+        // fetch discharge medications (prescriptions / dispenses)
+        try {
+          setMedLoading(true);
+          // attempt to get dispenses first (pharmacy records)
+          const dispResp = await axiosInstance.get(`/pharmacy/dispenses?patientId=${id}`);
+          if (dispResp.data && Array.isArray(dispResp.data.dispenses) && dispResp.data.dispenses.length) {
+            // normalize to medication items
+            const meds = dispResp.data.dispenses.flatMap(d => (d.items || d.medications || []).map(it => ({
+              description: it.description || it.name || it.drug || 'Unknown',
+              amount: it.price || it.unitPrice || it.amount || 0,
+              quantity: it.quantity || it.qty || 1,
+            })));
+            setMedications(meds);
+          } else {
+            // fallback to prescriptions
+            const presResp = await axiosInstance.get(`/prescriptions?patientId=${id}`);
+            if (presResp.data && Array.isArray(presResp.data.prescriptions)) {
+              const meds = presResp.data.prescriptions.flatMap(p => (p.items || p.drugs || []).map(it => ({
+                description: it.description || it.name || it.drug || 'Unknown',
+                amount: it.price || it.unitPrice || it.amount || 0,
+                quantity: it.quantity || it.qty || 1,
+              })));
+              setMedications(meds);
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to load discharge medications:', err);
+          setMedError('Failed to load discharge medications');
+        } finally {
+          setMedLoading(false);
+        }
       } catch (err) {
         console.error('Failed to load patient data:', err);
         setError('Failed to fetch patient data. You may not have permission to view this patient. Try refreshing or login again');
@@ -69,6 +103,44 @@ const DischargeSummary = () => {
           <p><strong>Room Number:</strong> {patient.admission?.room || 'N/A'}</p>
           <p className="md:col-span-2"><strong>Diagnosis:</strong> {patient.admission?.finalDiagnosis || 'N/A'}</p>
         </div>
+      </div>
+
+      {/* Discharge Medications Section */}
+      <div className="bg-white shadow-lg rounded-xl p-8 mb-6 border border-gray-200">
+        <h3 className="text-2xl font-semibold mb-4 text-gray-700">Discharge Medications</h3>
+        {medLoading && <p className="text-gray-500">Loading medications...</p>}
+        {medError && <p className="text-red-500">{medError}</p>}
+        {!medLoading && medications.length === 0 && <p className="text-gray-500">No discharge medications found.</p>}
+        {!medLoading && medications.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border border-gray-300 p-2 text-left">Description</th>
+                  <th className="border border-gray-300 p-2 text-right">Amount</th>
+                  <th className="border border-gray-300 p-2 text-right">Quantity</th>
+                  <th className="border border-gray-300 p-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medications.map((med, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 p-2">{med.description}</td>
+                    <td className="border border-gray-300 p-2 text-right">{med.amount.toFixed(2)}</td>
+                    <td className="border border-gray-300 p-2 text-right">{med.quantity}</td>
+                    <td className="border border-gray-300 p-2 text-right font-semibold">{(med.amount * med.quantity).toFixed(2)}</td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-50 font-bold">
+                  <td colSpan="3" className="border border-gray-300 p-2 text-right">Grand Total:</td>
+                  <td className="border border-gray-300 p-2 text-right text-lg text-teal-600">
+                    {medications.reduce((sum, med) => sum + (med.amount * med.quantity), 0).toFixed(2)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleDischarge} className="bg-white shadow-lg rounded-xl p-8 border border-gray-200">

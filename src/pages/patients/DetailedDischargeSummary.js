@@ -274,19 +274,20 @@ const DetailedDischargeSummary = () => {
               <table className="w-full text-xs mt-1 border-collapse border border-black">
                 <thead>
                   <tr>
-                    <th className="border border-black p-1 text-left">Medication</th>
-                    <th className="border border-black p-1 text-left">Dose</th>
-                    <th className="border border-black p-1 text-left">Frequency</th>
+                    <th className="border border-black p-1 text-left">Description</th>
+                    <th className="border border-black p-1 text-right">Quantity</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {summary.dischargeMedications.map((med, i) => (
-                    <tr key={i}>
-                      <td className="border border-black p-1">{med.name}</td>
-                      <td className="border border-black p-1">{med.dose}</td>
-                      <td className="border border-black p-1">{med.frequency}</td>
-                    </tr>
-                  ))}
+                  {summary.dischargeMedications.map((med, i) => {
+                    const quantity = parseFloat(med.quantity || 1);
+                    return (
+                      <tr key={i}>
+                        <td className="border border-black p-1">{med.description || med.name || 'N/A'}</td>
+                        <td className="border border-black p-1 text-right">{quantity}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             ) : <p>N/A</p>}
