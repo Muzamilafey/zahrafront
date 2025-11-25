@@ -3,13 +3,13 @@ import { AuthContext } from '../contexts/AuthContext';
 import Toast from '../components/ui/Toast';
 import debounce from '../utils/debounce'; // Import the debounce utility
 
-export default function AdmitPatient() {
+export default function AdmitPatient({ preSelectedPatientId, onAdmitSuccess }) {
   const { axiosInstance } = useContext(AuthContext);
   const [wards, setWards] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [beds, setBeds] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [form, setForm] = useState({ patientId: '', wardId: '', roomId: '', bedId: '', doctorId: '' });
+  const [form, setForm] = useState({ patientId: preSelectedPatientId || '', wardId: '', roomId: '', bedId: '', doctorId: '' });
   const [toast, setToast] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,7 +20,24 @@ export default function AdmitPatient() {
   useEffect(() => {
     loadWards();
     loadDoctors();
-  }, []);
+    // If preSelectedPatientId is provided, load that patient's details
+    if (preSelectedPatientId) {
+      loadPatientDetails(preSelectedPatientId);
+    }
+  }, [preSelectedPatientId]);
+
+  const loadPatientDetails = async (patientId) => {
+    try {
+      const res = await axiosInstance.get(`/patients/${patientId}`);
+      const patient = res.data.patient || res.data;
+      setSelectedPatientDetails(patient);
+      setForm(f => ({ ...f, patientId }));
+      setSearchQuery(`${patient.firstName || ''} ${patient.lastName || ''}`.trim());
+      setShowSearchResults(false);
+    } catch (e) {
+      console.error('Failed to load patient details:', e);
+    }
+  };
 
   // Debounced search function
   const searchPatients = useCallback(
@@ -126,6 +143,10 @@ export default function AdmitPatient() {
       setForm({ patientId: '', wardId: '', roomId: '', bedId: '', doctorId: '' });
       setSearchQuery('');
       setSelectedPatientDetails(null);
+      // Call onAdmitSuccess callback if provided
+      if (onAdmitSuccess) {
+        setTimeout(() => onAdmitSuccess(), 1500);
+      }
     } catch (e) {
       setToast({ message: e?.response?.data?.message || 'Failed to admit patient', type: 'error' });
     }

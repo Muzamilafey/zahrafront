@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import AdmitPatient from '../AdmitPatient';
+import Toast from '../../components/ui/Toast';
 
 const NewDischargeSummary = () => {
   const { id } = useParams();
@@ -10,6 +12,8 @@ const NewDischargeSummary = () => {
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAdmitModal, setShowAdmitModal] = useState(false);
+  const [toast, setToast] = useState(null);
 
   // Discharge form fields
   const [dischargeDate, setDischargeDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -280,6 +284,61 @@ const NewDischargeSummary = () => {
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
   if (!patient) return <div className="text-center p-8">No patient data found.</div>;
 
+  // Check if patient is NOT admitted
+  const isAdmitted = Boolean(
+    patient?.admission?.admittedAt ||
+    (patient?.admission?.status && String(patient.admission.status).toLowerCase() === 'admitted') ||
+    patient?.admission?.admitted
+  );
+
+  if (!isAdmitted) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute top-6 left-6 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+        >
+          ← Back
+        </button>
+        <div className="max-w-3xl w-full text-center">
+          <div className="mb-6">
+            <img src={'/logo1.png'} alt="Hospital Logo" className="mx-auto h-16 mb-2" />
+            <div className="text-xs text-gray-600"></div>
+          </div>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-800">
+            "{patient.user?.name || patient.firstName + ' ' + (patient.lastName || '')}" NOT ADMITTED YET
+          </h2>
+          <button
+            onClick={() => setShowAdmitModal(true)}
+            className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full shadow text-lg mt-8"
+          >
+            ADMIT NOW
+          </button>
+        </div>
+        {showAdmitModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowAdmitModal(false)} />
+            <div className="relative bg-white rounded shadow-lg max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+                <h3 className="text-lg font-semibold">Admit Patient</h3>
+                <button onClick={() => setShowAdmitModal(false)} className="text-gray-600 hover:text-gray-900">Close</button>
+              </div>
+              <div className="p-4">
+                <AdmitPatient preSelectedPatientId={patient._id} onAdmitSuccess={() => {
+                  setShowAdmitModal(false);
+                  setToast({ message: 'Patient admitted successfully!', type: 'success' });
+                  // Refresh patient data
+                  window.location.reload();
+                }} />
+              </div>
+            </div>
+          </div>
+        )}
+        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      </div>
+    );
+  }
+
   // If patient already discharged, show simplified discharged screen (per design)
   const isDischarged = Boolean(
     patient?.admission?.dischargedAt ||
@@ -317,6 +376,12 @@ const NewDischargeSummary = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl bg-gray-50">
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+      >
+        ← Back
+      </button>
       <div className="text-center mb-6">
         <h1 className="text-2xl md:text-3xl font-bold">Confirm any new In-Patient Charges before Discharge</h1>
       </div>
