@@ -67,7 +67,7 @@ const AdminMessages = () => {
     setSendSuccess('');
 
     try {
-      await axiosInstance.post('/api/send-sms', {
+      await axiosInstance.post('/send-sms', {
         phone: phoneNumber.trim(),
         message: messageText.trim()
       });
