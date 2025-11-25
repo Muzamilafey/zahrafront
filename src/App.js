@@ -141,6 +141,8 @@ import PharmacyEditGroup from './pages/pharmacy/EditMedicationGroup';
 import SymptomChecker from "./pages/symptomsChecker/SymptomChecker";
 import MediguardPage from './pages/mediguard/MediguardPage';
 import SymptomateEmbed from './pages/symptomate/SymptomateEmbed';
+import TriageManagement from './pages/admin/TriageManagement';
+import ConsultationManagement from './pages/admin/ConsultationManagement';
 
 
 function App() {
@@ -325,6 +327,13 @@ function App() {
           <Route path="/dashboard/staff" element={<PrivateRoute><Layout><StaffRequests /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse/admissions" element={<PrivateRoute><Layout><NurseAdmissionHistory /></Layout></PrivateRoute>} />
           <Route path="/dashboard/messages" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
+
+          <Route path="/triage" element={<PrivateRoute><Layout><TriageManagement /></Layout></PrivateRoute>} />
+          <Route path="/triage/history" element={<PrivateRoute><Layout><TriageManagement /></Layout></PrivateRoute>} />
+          
+          <Route path="/consultations" element={<PrivateRoute><Layout><ConsultationManagement /></Layout></PrivateRoute>} />
+          <Route path="/consultations/new" element={<PrivateRoute><Layout><ConsultationManagement /></Layout></PrivateRoute>} />
+          <Route path="/consultations/history" element={<PrivateRoute><Layout><ConsultationManagement /></Layout></PrivateRoute>} />
 
           <Route path="*" element={<NotFound />} />
           
