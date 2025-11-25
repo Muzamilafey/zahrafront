@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { FaBell, FaUserCircle, FaCalendarPlus, FaGlobe } from 'react-icons/fa';
+import { FaBell, FaUserCircle, FaCalendarPlus, FaGlobe, FaEnvelope } from 'react-icons/fa';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import Toast from './Toast';
 import { useNavigate } from 'react-router-dom';
@@ -82,14 +82,24 @@ export default function Topbar({ user, onLogout }) {
         )}
         
         {user?.role === 'admin' && (
-          <button
-            onClick={() => window.open('/', '_blank')}
-            title="Visit Frontend"
-            className="btn-outline hidden sm:inline-flex items-center gap-2"
-          >
-            <FaGlobe />
-            <span className="text-sm">Frontend</span>
-          </button>
+          <>
+            <button
+              onClick={() => window.open('/', '_blank')}
+              title="Visit Frontend"
+              className="btn-outline hidden sm:inline-flex items-center gap-2"
+            >
+              <FaGlobe />
+              <span className="text-sm">Frontend</span>
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/admin/messages')}
+              title="Messages"
+              className="btn-outline hidden sm:inline-flex items-center gap-2"
+            >
+              <FaEnvelope />
+              <span className="text-sm">Messages</span>
+            </button>
+          </>
         )}
         
         <button onClick={openNotifications} className="relative p-2 rounded hover:bg-gray-100">

@@ -22,6 +22,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminDoctors from './pages/admin/AdminDoctors';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminNotifications from './pages/admin/AdminNotifications';
+import AdminMessages from './pages/admin/AdminMessages';
 import AdminPatients from './pages/admin/AdminPatients';
 import AdminNurseAssignment from './pages/admin/AdminNurseAssignment';
 import AdminDepartments from './pages/admin/AdminDepartments';
@@ -285,6 +286,7 @@ function App() {
           <Route path="/dashboard/admin/users/:id" element={<PrivateRoute><Layout><AdminUser /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/settings" element={<PrivateRoute><Layout><AdminSettings /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/notifications" element={<PrivateRoute><Layout><AdminNotifications /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/admin/messages" element={<PrivateRoute><Layout><AdminMessages /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/nurseassignment" element={<PrivateRoute><Layout><AdminNurseAssignment /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/departments" element={<PrivateRoute><Layout><AdminDepartments /></Layout></PrivateRoute>} />
           <Route path="/dashboard/admin/consultations" element={<PrivateRoute><Layout><AdminConsultations /></Layout></PrivateRoute>} />
