@@ -158,17 +158,6 @@ export default function Sidebar({ role, onCollapse }) {
     maintenance: [
       { to: '/dashboard/staff', label: 'My Tasks', icon: <FaBoxes /> },
     ],
-    nurse: [
-      { to: '/dashboard/nurse', label: 'Nurse Dashboard', icon: <FaUsers />, perm: 'nurse' },
-      { to: '/dashboard/nurse/admissions', label: 'Admission History', icon: <FaClock />, perm: 'patients' },
-      { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
-      { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
-      { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
-      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
-      { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
-      { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
-      { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
-    ],
   };
 
   // patient related links (shown under a collapsible group)
