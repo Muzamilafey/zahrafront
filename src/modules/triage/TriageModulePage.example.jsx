@@ -11,7 +11,7 @@ import React, { useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { TriageForm, TriageHistory } from '../../modules/triage';
-import { FaArrowLeft, FaFileLines, FaPlus } from 'react-icons/fa6';
+import { FaArrowLeft, FaFileAlt, FaPlus } from 'react-icons/fa';
 
 const TriageModulePage = () => {
   const { patientId } = useParams();
@@ -77,7 +77,7 @@ const TriageModulePage = () => {
               : 'border-transparent text-gray-600 hover:text-gray-800'
           }`}
         >
-          <FaFileLines />
+            <FaFileAlt />
           History
         </button>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import { FaMessage, FaUser, FaClock, FaPaperPlane } from 'react-icons/fa6';
+import { FaEnvelope, FaUser, FaClock, FaPaperPlane } from 'react-icons/fa';
 
 const AdminMessages = () => {
   const { axiosInstance } = useContext(AuthContext);
@@ -87,7 +87,7 @@ const AdminMessages = () => {
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2 mb-2">
-          <FaMessage className="text-blue-600" />
+          <FaEnvelope className="text-blue-600" />
           Messages
         </h1>
         <p className="text-gray-600">Manage staff and patient messages</p>
@@ -261,7 +261,7 @@ const AdminMessages = () => {
             </>
           ) : (
             <div className="p-12 text-center text-gray-500">
-              <FaMessage className="text-4xl mx-auto mb-3 opacity-50" />
+              <FaEnvelope className="text-4xl mx-auto mb-3 opacity-50" />
               <p>Select a message to view details</p>
             </div>
           )}

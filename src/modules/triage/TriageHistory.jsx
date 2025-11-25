@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { TRIAGE_CATEGORIES, formatBP, getBMICategory } from './utils';
-import { FaHistory, FaChevronDown, FaCalendarDays, FaClock, FaUser } from 'react-icons/fa6';
+import { FaHistory, FaChevronDown, FaCalendarAlt, FaClock, FaUser } from 'react-icons/fa';
 
 const TriageHistory = ({ patientId }) => {
   const { axiosInstance } = useContext(AuthContext);
