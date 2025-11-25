@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { calculateBMI, getBMICategory, validateVitals, getRecommendedCategory, TRIAGE_CATEGORIES } from './utils';
-import { FaCalculator, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa6';
+import { FaCalculator, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 
 const TriageForm = ({ patientId, onSuccess, onCancel }) => {
   const { axiosInstance, user } = useContext(AuthContext);
