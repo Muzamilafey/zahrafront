@@ -13,6 +13,7 @@ export default function Sidebar() {
     billing: false,
     lab: false,
     triage: false,
+    consultations: false,
   });
 
   const toggleMenu = (menu) => {
@@ -155,6 +156,16 @@ export default function Sidebar() {
       items: [
         { to: '/triage', label: 'Triage Assessments', perm: 'triage' },
         { to: '/triage/history', label: 'Triage History', perm: 'triage' },
+      ],
+    },
+    {
+      id: 'consultations',
+      title: 'Consultations',
+      defaultCheck: ['admin', 'doctor', 'nurse'].includes(user?.role),
+      items: [
+        { to: '/consultations', label: 'Consultations List', perm: 'consultations' },
+        { to: '/consultations/new', label: 'New Consultation', perm: 'consultations' },
+        { to: '/consultations/history', label: 'Consultation History', perm: 'consultations' },
       ],
     },
   ];

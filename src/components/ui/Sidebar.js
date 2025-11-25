@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope } from 'react-icons/fa';
 
 export default function Sidebar({ role, onCollapse }) {
   const { axiosInstance, user } = useContext(AuthContext);
@@ -133,6 +133,7 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
       { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
+      { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
     ],
     lab: [
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
@@ -163,9 +164,10 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/messages', label: 'Messages', icon: <FaEnvelope />, perm: 'messages' },
       { to: '/appointments', label: 'View Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
       { to: '/dashboard/admin/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
-      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaFolder />, perm: 'consultations' },
+      { to: '/dashboard/admin/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
       { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
+      { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
     ],
   };
 
@@ -237,6 +239,7 @@ export default function Sidebar({ role, onCollapse }) {
   const [labOpen, setLabOpen] = useState(false);
   const [pharmacyOpen, setPharmacyOpen] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
+  const [consultationsOpen, setConsultationsOpen] = useState(false);
   const [admittedCount, setAdmittedCount] = useState(0);
 
   // collect lab-related links (those under /dashboard/lab) and filter by permissions
@@ -245,6 +248,8 @@ export default function Sidebar({ role, onCollapse }) {
   const pharmacyItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/pharmacy') || i.to.startsWith('/dashboard/pharmacy')));
   // collect triage-related links
   const triageItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/triage'));
+  // collect consultation-related links
+  const consultationItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/consultations'));
 
   useEffect(()=>{
     if(role === 'doctor'){
@@ -356,8 +361,27 @@ export default function Sidebar({ role, onCollapse }) {
                   )}
                 </div>
               )}
+              {/* Consultations group in hover overlay */}
+              {consultationItems.length > 0 && (
+                <div>
+                  <button onClick={() => setConsultationsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaStethoscope /></div><div>Consultations</div></div>
+                    <div>{consultationsOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                  </button>
+                  {consultationsOpen && (
+                    <div className="pl-8 flex flex-col">
+                      {consultationItems.map(i => (
+                        <Link key={i.to} to={i.to} onClick={() => setConsultationsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                          <div className="text-sm text-brand-600">{i.icon}</div>
+                          <div className="text-sm">{i.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* remaining items */}
-              {items.filter(i => !patientItems.find(p => p.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to)).map(i => (
+              {items.filter(i => !patientItems.find(p => p.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !triageItems.find(t => t.to === i.to) && !consultationItems.find(c => c.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                   <div className="text-sm text-brand-600">{i.icon}</div>
                   <div className="text-sm">{i.label}</div>
@@ -463,8 +487,28 @@ export default function Sidebar({ role, onCollapse }) {
           </div>
         )}
 
+        {/* Consultations collapsible group */}
+        {consultationItems.length > 0 && (
+          <div>
+            <button onClick={() => setConsultationsOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+              <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaStethoscope /></div><div>Consultations</div></div>
+              <div>{consultationsOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+            </button>
+            {consultationsOpen && (
+              <div className="pl-4 flex flex-col">
+                {consultationItems.map(i => (
+                  <Link key={i.to} to={i.to} onClick={() => setConsultationsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="text-sm text-brand-600">{i.icon}</div>
+                    <div className="text-sm">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* remaining items */}
-        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !triageItems.find(t => t.to === i.to)).map(i => (
+        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !triageItems.find(t => t.to === i.to) && !consultationItems.find(c => c.to === i.to)).map(i => (
           <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
             <div className="text-sm text-brand-600">{i.icon}</div>
             <div className="text-sm">{i.label}</div>
