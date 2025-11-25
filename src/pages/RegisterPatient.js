@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import Toast from '../components/ui/Toast';
+import CreateAppointmentModal from '../components/ui/CreateAppointmentModal.jsx';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaHeartbeat, FaFileInvoiceDollar, FaPlus, FaTrash } from 'react-icons/fa';
 
