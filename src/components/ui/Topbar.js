@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { FaBell, FaUserCircle, FaCalendarPlus } from 'react-icons/fa';
+import { FaBell, FaUserCircle, FaCalendarPlus, FaGlobe } from 'react-icons/fa';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import Toast from './Toast';
 import { useNavigate } from 'react-router-dom';
@@ -80,6 +80,18 @@ export default function Topbar({ user, onLogout }) {
             <Toast toast={toast} onClose={() => setToast(null)} />
           </>
         )}
+        
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => window.open('/', '_blank')}
+            title="Visit Frontend"
+            className="btn-outline hidden sm:inline-flex items-center gap-2"
+          >
+            <FaGlobe />
+            <span className="text-sm">Frontend</span>
+          </button>
+        )}
+        
         <button onClick={openNotifications} className="relative p-2 rounded hover:bg-gray-100">
           <FaBell className="text-gray-700" />
           {count > 0 && (
