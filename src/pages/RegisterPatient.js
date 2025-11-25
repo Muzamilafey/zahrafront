@@ -99,6 +99,7 @@ export default function RegisterPatient() {
   const [hasAllergies, setHasAllergies] = useState(false);
   const [hasChronicConditions, setHasChronicConditions] = useState(false);
   const [showPostRegistrationModal, setShowPostRegistrationModal] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
 
   const loadDoctors = async () => {
     try {
@@ -361,7 +362,7 @@ export default function RegisterPatient() {
               <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-4">
                 <button
                   className="btn-secondary"
-                  onClick={() => navigate(`/appointments/new?patientId=${createdPatient._id}`)}
+                  onClick={() => setShowAppointmentModal(true)}
                 >
                   Create Appointment
                 </button>
@@ -381,6 +382,15 @@ export default function RegisterPatient() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Inline Appointment Modal */}
+        {showAppointmentModal && createdPatient && (
+          <CreateAppointmentModal
+            open={showAppointmentModal}
+            onClose={() => setShowAppointmentModal(false)}
+            patientId={createdPatient._id}
+          />
         )}
         <Toast toast={toast} onClose={() => setToast(null)} />
       </div>
