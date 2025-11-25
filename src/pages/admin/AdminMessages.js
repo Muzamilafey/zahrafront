@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import { FaMessage, FaUser, FaClock } from 'react-icons/fa6';
+import { FaMessage, FaUser, FaClock, FaPaperPlane } from 'react-icons/fa6';
 
 const AdminMessages = () => {
   const { axiosInstance } = useContext(AuthContext);
@@ -10,6 +10,14 @@ const AdminMessages = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  
+  // Send SMS states
+  const [showSendForm, setShowSendForm] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [messageText, setMessageText] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState('');
+  const [sendError, setSendError] = useState('');
 
   useEffect(() => {
     fetchMessages();
@@ -48,9 +56,32 @@ const AdminMessages = () => {
     }
   };
 
-  if (loading) {
-    return <div className="text-center p-8">Loading messages...</div>;
-  }
+  const handleSendSMS = async () => {
+    if (!phoneNumber.trim() || !messageText.trim()) {
+      setSendError('Please enter both phone number and message');
+      return;
+    }
+
+    setSendingMessage(true);
+    setSendError('');
+    setSendSuccess('');
+
+    try {
+      await axiosInstance.post('/api/send-sms', {
+        phone: phoneNumber.trim(),
+        message: messageText.trim()
+      });
+      setSendSuccess('Message sent successfully!');
+      setPhoneNumber('');
+      setMessageText('');
+      setTimeout(() => setSendSuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setSendError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -65,6 +96,89 @@ const AdminMessages = () => {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
           {error}
+        </div>
+      )}
+
+      {/* Send Message Button */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowSendForm(!showSendForm)}
+          className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium transition"
+        >
+          <FaPaperPlane />
+          Send Message
+        </button>
+      </div>
+
+      {/* Send Message Form */}
+      {showSendForm && (
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-bold mb-4">Send SMS Message</h2>
+          
+          {sendSuccess && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {sendSuccess}
+            </div>
+          )}
+          
+          {sendError && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {sendError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="e.g., +254712345678"
+                disabled={sendingMessage}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">Format: +country-code + 10-15 digits</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Message
+              </label>
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Type your message here... (max 160 characters)"
+                disabled={sendingMessage}
+                maxLength={160}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none h-24 disabled:bg-gray-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">{messageText.length}/160 characters</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSendSMS}
+                disabled={sendingMessage || !phoneNumber.trim() || !messageText.trim()}
+                className={`flex-1 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2 ${
+                  sendingMessage || !phoneNumber.trim() || !messageText.trim()
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                <FaPaperPlane />
+                {sendingMessage ? 'Sending...' : 'Send Message'}
+              </button>
+              <button
+                onClick={() => setShowSendForm(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
