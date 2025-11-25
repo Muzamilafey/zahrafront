@@ -17,7 +17,7 @@ import NotFound from './pages/NotFound';
 
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
-import AdminDashboard from './components/Dashboard/AdminDashboard';
+import AdminDashboard from './components/Dashboard/AdminDashboardNew';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminDoctors from './pages/admin/AdminDoctors';
 import AdminSettings from './pages/admin/AdminSettings';
