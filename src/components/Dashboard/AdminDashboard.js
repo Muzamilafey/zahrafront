@@ -119,6 +119,8 @@ export default function AdminDashboard() {
   const [doctors, setDoctors] = useState({ available: 0, leave: 0 });
   const [patients, setPatients] = useState({ total: 0, change: 0 });
   const [appointmentsStat, setAppointmentsStat] = useState({ total: 0, change: 0 });
+  const [editingBeds, setEditingBeds] = useState(false);
+  const [bedsInput, setBedsInput] = useState('0');
 
   // Pills removed from dashboard. Navigation will be placed in admin/tools page.
   useEffect(() => {
@@ -246,20 +248,60 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 w-full">
         {/* Total Beds */}
         <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 flex flex-col">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg sm:text-xl">🛏️</span>
-            <span className="font-semibold text-base sm:text-lg">Total Beds</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-lg sm:text-xl">🛏️</span>
+              <span className="font-semibold text-base sm:text-lg">Total Beds</span>
+            </div>
+            <button
+              onClick={() => {
+                if (editingBeds) {
+                  setEditingBeds(false);
+                } else {
+                  setBedsInput(Object.values(beds.roomCounts).reduce((a, b) => a + b, 0).toString());
+                  setEditingBeds(true);
+                }
+              }}
+              className="text-xs sm:text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              {editingBeds ? 'Done' : 'Edit'}
+            </button>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-            <span className="text-2xl sm:text-3xl font-bold">{Object.values(beds.roomCounts).reduce((a, b) => a + b, 0)}</span>
-            <span className="px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs sm:text-sm font-semibold">Available</span>
-            <span className="text-base sm:text-lg font-bold text-green-700">{beds.available}</span>
-          </div>
-          <div className="flex gap-3 sm:gap-6 text-xs text-gray-500 mt-2 flex-wrap">
-            {beds.roomCounts && Object.entries(beds.roomCounts).map(([name, count]) => (
-              <span key={name}>{count} {name}</span>
-            ))}
-          </div>
+          {editingBeds ? (
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="number"
+                min="0"
+                value={bedsInput}
+                onChange={(e) => setBedsInput(e.target.value)}
+                className="w-20 px-2 py-1 border rounded text-lg font-bold"
+                autoFocus
+              />
+              <button
+                onClick={() => {
+                  const newCount = parseInt(bedsInput) || 0;
+                  setBeds({ ...beds, roomCounts: { 'Total': newCount } });
+                  setEditingBeds(false);
+                }}
+                className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-bold">{Object.values(beds.roomCounts).reduce((a, b) => a + b, 0)}</span>
+              <span className="px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs sm:text-sm font-semibold">Available</span>
+              <span className="text-base sm:text-lg font-bold text-green-700">{beds.available}</span>
+            </div>
+          )}
+          {!editingBeds && (
+            <div className="flex gap-3 sm:gap-6 text-xs text-gray-500 mt-2 flex-wrap">
+              {beds.roomCounts && Object.entries(beds.roomCounts).map(([name, count]) => (
+                <span key={name}>{count} {name}</span>
+              ))}
+            </div>
+          )}
         </div>
         {/* Doctors */}
         <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 flex flex-col">
