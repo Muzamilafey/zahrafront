@@ -125,14 +125,32 @@ export default function AdminDashboard() {
     // Fetch beds
     axiosInstance.get('/wards/beds/summary').then(res => {
       const roomTypes = res.data.rooms || [];
-      const roomCounts = {};
-      roomTypes.forEach(room => {
-        roomCounts[room.name] = room.beds || 0;
-      });
-      setBeds({
-        available: res.data.available || 0,
-        roomCounts,
-      });
+        const body = res.data || {};
+        const roomCounts = {};
+        // Case A: rooms is an array of { name, beds: <number> }
+        if (Array.isArray(body.rooms)) {
+          body.rooms.forEach(room => {
+            if (room && room.name) {
+              if (Array.isArray(room.beds)) {
+                roomCounts[room.name] = room.beds.length;
+              } else {
+                roomCounts[room.name] = Number(room.beds || 0);
+              }
+            }
+          });
+        }
+        // Case B: API returns beds array directly
+        if (Array.isArray(body.beds) && Object.keys(roomCounts).length === 0) {
+          // count beds per room name if present on each bed
+          body.beds.forEach(b => {
+            const rn = (b.room && b.room.name) || (b.roomName) || 'General';
+            roomCounts[rn] = (roomCounts[rn] || 0) + 1;
+          });
+        }
+        setBeds({
+          available: Number(body.available || 0),
+          roomCounts,
+        });
     }).catch(() => setBeds({ available: 0, roomCounts: {} }));
 
     // Fetch doctors
@@ -174,90 +192,127 @@ export default function AdminDashboard() {
     axiosInstance.get('/drugs/low-stock').then(res => setLowStockDrugs(res.data.drugs || [])).catch(() => setLowStockDrugs([]));
 
     // Fetch inactive users (placeholder endpoint)
-    axiosInstance.get('/users/inactive?days=5').then(res => setInactiveUsers(res.data.users || [])).catch(() => setInactiveUsers([]));
+      // Fetch all staff users and recent audit logs, then compute last login per user
+      const loadInactive = async () => {
+        try {
+          // fetch non-patient users
+          const usersRes = await axiosInstance.get('/users?role=all');
+          const usersList = (usersRes.data.users || []).filter(u => u.role !== 'patient');
+
+          // fetch recent audit logs (notifications endpoint) and filter login actions
+          const logsRes = await axiosInstance.get('/notifications/recent');
+          const logs = logsRes.data.notifications || [];
+
+          // build map of last login timestamp per user
+          const lastLoginMap = {};
+          logs.forEach(l => {
+            if (l.action === 'login' && l.user && l.user._id) {
+              const cur = lastLoginMap[l.user._id];
+              const t = new Date(l.createdAt).getTime();
+              if (!cur || t > cur) lastLoginMap[l.user._id] = t;
+            }
+          });
+
+          // Now compute inactive users: those whose last login is older than 5 days OR have no login entry
+          const FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          const inactive = usersList.filter(u => {
+            const last = lastLoginMap[u._id];
+            if (!last) return true; // never logged in -> consider inactive
+            return (now - last) >= FIVE_DAYS;
+          }).map(u => ({ ...u, lastLogin: lastLoginMap[u._id] ? new Date(lastLoginMap[u._id]).toISOString() : null }));
+
+          setInactiveUsers(inactive);
+        } catch (err) {
+          console.error('Failed to load inactive users by login logs', err);
+          setInactiveUsers([]);
+        }
+      };
+
+      loadInactive();
   }, [axiosInstance]);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
       {/* Pills Navigation removed. Use admin/tools page for navigation. */}
 
       {/* Stat Cards Row */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-8 w-full max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 w-full">
         {/* Total Beds */}
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">🛏️</span>
-            <span className="font-semibold text-lg">Total Beds</span>
+            <span className="text-lg sm:text-xl">🛏️</span>
+            <span className="font-semibold text-base sm:text-lg">Total Beds</span>
           </div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl font-bold">{Object.values(beds.roomCounts).reduce((a, b) => a + b, 0)}</span>
-            <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Available</span>
-            <span className="text-lg font-bold text-green-700">{beds.available}</span>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-bold">{Object.values(beds.roomCounts).reduce((a, b) => a + b, 0)}</span>
+            <span className="px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs sm:text-sm font-semibold">Available</span>
+            <span className="text-base sm:text-lg font-bold text-green-700">{beds.available}</span>
           </div>
-          <div className="flex gap-6 text-xs text-gray-500 mt-2 flex-wrap">
+          <div className="flex gap-3 sm:gap-6 text-xs text-gray-500 mt-2 flex-wrap">
             {beds.roomCounts && Object.entries(beds.roomCounts).map(([name, count]) => (
               <span key={name}>{count} {name}</span>
             ))}
           </div>
         </div>
         {/* Doctors */}
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">🩺</span>
-            <span className="font-semibold text-lg">Doctors</span>
+            <span className="text-lg sm:text-xl">🧑‍⚕️</span>
+            <span className="font-semibold text-base sm:text-lg">Doctors</span>
           </div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl font-bold">{doctors.available}</span>
-            <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">Available</span>
-            <span className="text-lg font-bold text-gray-500">{doctors.leave} Leave</span>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-bold">{doctors.available}</span>
+            <span className="px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs sm:text-sm font-semibold">Available</span>
+            <span className="text-base sm:text-lg font-bold text-gray-500">{doctors.leave} Leave</span>
           </div>
-          <div className="text-xs text-gray-500 mt-2">Shows the current number of available doctors.</div>
+          <div className="text-xs sm:text-sm text-gray-500 mt-2">Shows the current number of available doctors.</div>
         </div>
         {/* Patients */}
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">👥</span>
-            <span className="font-semibold text-lg">Patients</span>
+            <span className="text-lg sm:text-xl">👥</span>
+            <span className="font-semibold text-base sm:text-lg">Patients</span>
           </div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl font-bold">{patients.total}</span>
-            <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">↗ {patients.change}%</span>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-bold">{patients.total}</span>
+            <span className="px-2 sm:px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs sm:text-sm font-semibold">↗ {patients.change}%</span>
           </div>
-          <div className="text-xs text-gray-500 mt-2">Displays live updates of patient numbers.</div>
+          <div className="text-xs sm:text-sm text-gray-500 mt-2">Displays live updates of patient numbers.</div>
         </div>
         {/* Appointments */}
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">📅</span>
-            <span className="font-semibold text-lg">Appointment</span>
+            <span className="text-lg sm:text-xl">📅</span>
+            <span className="font-semibold text-base sm:text-lg">Appointment</span>
           </div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl font-bold">{appointmentsStat.total}</span>
-            <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold">↘ {Math.abs(appointmentsStat.change)}%</span>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-bold">{appointmentsStat.total}</span>
+            <span className="px-2 sm:px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs sm:text-sm font-semibold">↘ {Math.abs(appointmentsStat.change)}%</span>
           </div>
-          <div className="text-xs text-gray-500 mt-2">Ensures accurate and current total patient appointment at all times.</div>
+          <div className="text-xs sm:text-sm text-gray-500 mt-2">Ensures accurate and current total patient appointment at all times.</div>
         </div>
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6">
         {/* UPCOMING APPOINTMENTS */}
-        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
-          <span className="font-bold text-lg mb-2">UPCOMING APPOINTMENTS</span>
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
+          <span className="font-bold text-base sm:text-lg mb-2">UPCOMING APPOINTMENTS</span>
           <div className="flex-1 overflow-y-auto">
             {upcomingAppointments.length > 0 ? (
               upcomingAppointments.map(a => (
-                <div key={a._id} className="flex items-center p-2 border-b last:border-b-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
+                <div key={a._id} className="flex items-start sm:items-center p-2 border-b last:border-b-0 gap-2">
+                  <div className="w-7 sm:w-8 h-7 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 flex-shrink-0 text-xs sm:text-sm">
                     {a.patient?.user?.name ? a.patient.user.name.charAt(0).toUpperCase() : 'P'}
                   </div>
-                  <div className="ml-3 flex-grow">
-                    <div className="font-semibold">{a.patient?.user?.name || 'Walk-in Patient'}</div>
-                    <div className="text-xs text-gray-500">Dr. {a.doctor?.user?.name || 'N/A'}</div>
+                  <div className="flex-grow min-w-0">
+                    <div className="font-semibold text-xs sm:text-sm truncate">{a.patient?.user?.name || 'Walk-in Patient'}</div>
+                    <div className="text-xs text-gray-500 truncate">Dr. {a.doctor?.user?.name || 'N/A'}</div>
                   </div>
-                  <div className="text-right text-xs">
-                    {new Date(a.scheduledAt).toLocaleDateString()}<br/>
-                    {new Date(a.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="text-right text-xs flex-shrink-0">
+                    <div>{new Date(a.scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                    <div>{new Date(a.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>
               ))
@@ -268,14 +323,17 @@ export default function AdminDashboard() {
         </div>
 
         {/* RECENT TRANSACTIONS ONLY LAST 5 */}
-        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
-          <span className="font-bold text-lg mb-2">RECENT TRANSACTIONS ONLY LAST 5</span>
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
+          <span className="font-bold text-base sm:text-lg mb-2 truncate">RECENT TRANSACTIONS</span>
           <div className="flex-1 overflow-y-auto">
             {invoices.slice(-5).reverse().map(inv => (
-              <div key={inv._id} className="flex items-center p-2 border-b last:border-b-0">
-                <div className="font-semibold text-green-600">${inv.amount}</div>
-                <div className="ml-3 flex-grow text-xs">{inv.patient?.user?.name || 'Patient'}<br/>{new Date(inv.createdAt).toLocaleDateString()}</div>
-                <div className="text-xs text-gray-500">{inv.status}</div>
+              <div key={inv._id} className="flex items-start sm:items-center p-2 border-b last:border-b-0 gap-2">
+                <div className="font-semibold text-green-600 text-xs sm:text-sm flex-shrink-0">${inv.amount}</div>
+                <div className="flex-grow min-w-0 text-xs">
+                  <div className="truncate">{inv.patient?.user?.name || 'Patient'}</div>
+                  <div className="text-gray-500 text-xs">{new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                </div>
+                <div className="text-xs text-gray-500 flex-shrink-0">{inv.status}</div>
               </div>
             ))}
             {invoices.length === 0 && <div className="text-gray-400 text-center">No transactions.</div>}
@@ -283,12 +341,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* EMERGENCY BOARD */}
-        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
-          <span className="font-bold text-lg mb-2">EMERGENCY BOARD</span>
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
+          <span className="font-bold text-base sm:text-lg mb-2">EMERGENCY BOARD</span>
           <div className="flex-1 overflow-y-auto">
             {emergencies.length > 0 ? (
               emergencies.map(e => (
-                <div key={e._id} className="text-red-600 font-semibold p-2 border-b last:border-b-0">{e.title || 'Emergency'} - {e.status}</div>
+                <div key={e._id} className="text-red-600 font-semibold p-2 border-b last:border-b-0 text-xs sm:text-sm">{e.title || 'Emergency'} - {e.status}</div>
               ))
             ) : (
               <div className="text-red-600 font-semibold">No emergencies reported.</div>
@@ -297,12 +355,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* LOW STOCKS DRUGS/MOST SELLING */}
-        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
-          <span className="font-bold text-lg mb-2">LOWS STOCKS DRUGS/MOST SELLING</span>
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
+          <span className="font-bold text-base sm:text-lg mb-2 truncate">LOW STOCK DRUGS</span>
           <div className="flex-1 overflow-y-auto">
             {lowStockDrugs.length > 0 ? (
               lowStockDrugs.map(d => (
-                <div key={d._id} className="text-yellow-600 p-2 border-b last:border-b-0">{d.name} - {d.stock} left</div>
+                <div key={d._id} className="text-yellow-600 p-2 border-b last:border-b-0 text-xs sm:text-sm truncate" title={d.name}>{d.name} - {d.stock} left</div>
               ))
             ) : (
               <div className="text-yellow-600">No low stock drugs.</div>
@@ -311,12 +369,15 @@ export default function AdminDashboard() {
         </div>
 
         {/* INACTIVE USERS DIDNT LOGIN LAST 5 DAYS AND ABOVE */}
-        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
-          <span className="font-bold text-lg mb-2">INACTIVE USERS DIDNT LOGIN LAST 5 DAYS AND ABOVE</span>
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
+          <span className="font-bold text-base sm:text-lg mb-2 truncate">INACTIVE USERS (5+ DAYS)</span>
           <div className="flex-1 overflow-y-auto">
             {inactiveUsers.length > 0 ? (
               inactiveUsers.map(u => (
-                <div key={u._id} className="text-gray-600 p-2 border-b last:border-b-0">{u.name} - Last login: {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'N/A'}</div>
+                <div key={u._id} className="text-gray-600 p-2 border-b last:border-b-0 text-xs sm:text-sm" title={u.name}>
+                  <div className="truncate font-semibold">{u.name}</div>
+                  <div className="text-xs text-gray-500">Last: {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}</div>
+                </div>
               ))
             ) : (
               <div className="text-gray-600">No inactive users.</div>
@@ -325,15 +386,15 @@ export default function AdminDashboard() {
         </div>
 
         {/* QUICK LINKS */}
-        <div className="col-span-1 bg-white rounded-xl shadow p-6 min-h-[180px] flex flex-col">
-          <span className="font-bold text-lg mb-2">QUICK LINKS</span>
+        <div className="bg-white rounded-xl shadow p-3 sm:p-4 md:p-6 min-h-[160px] sm:min-h-[180px] flex flex-col">
+          <span className="font-bold text-base sm:text-lg mb-2">QUICK LINKS</span>
           <div className="flex-1">
-            <ul className="list-disc ml-6">
-              <li><a href="/dashboard/admin/patients" className="text-blue-600 hover:underline">Patients</a></li>
-              <li><a href="/dashboard/admin/doctors" className="text-blue-600 hover:underline">Doctors</a></li>
-              <li><a href="/dashboard/admin/appointments" className="text-blue-600 hover:underline">Appointments</a></li>
-              <li><a href="/dashboard/admin/pharmacy" className="text-blue-600 hover:underline">Pharmacy</a></li>
-              <li><a href="/dashboard/admin/labs" className="text-blue-600 hover:underline">Labs</a></li>
+            <ul className="list-disc ml-4 sm:ml-6 space-y-1">
+              <li><a href="/dashboard/admin/patients" className="text-blue-600 hover:underline text-xs sm:text-sm">Patients</a></li>
+              <li><a href="/dashboard/admin/doctors" className="text-blue-600 hover:underline text-xs sm:text-sm">Doctors</a></li>
+              <li><a href="/dashboard/admin/appointments" className="text-blue-600 hover:underline text-xs sm:text-sm">Appointments</a></li>
+              <li><a href="/dashboard/admin/pharmacy" className="text-blue-600 hover:underline text-xs sm:text-sm">Pharmacy</a></li>
+              <li><a href="/dashboard/admin/labs" className="text-blue-600 hover:underline text-xs sm:text-sm">Labs</a></li>
             </ul>
           </div>
         </div>
