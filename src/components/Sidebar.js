@@ -168,6 +168,16 @@ export default function Sidebar() {
         { to: '/consultations/history', label: 'Consultation History', perm: 'consultations' },
       ],
     },
+    // Registration group for dedicated registration users
+    {
+      id: 'registration',
+      title: 'Registration',
+      defaultCheck: user?.role === 'patient_registration',
+      items: [
+        { to: '/dashboard/registration', label: 'Registration Dashboard', perm: 'overview' },
+        { to: '/patients/register', label: 'Register Patient', perm: 'registerPatient' },
+      ],
+    },
   ];
 
   return (

@@ -45,6 +45,7 @@ import PharmacistDashboard from './components/Dashboard/PharmacistDashboard';
 import POS from './pages/pharmacy/POS';
 import FinanceDashboard from './components/Dashboard/FinanceDashboard';
 import ReceptionistDashboard from './components/Dashboard/ReceptionistDashboard';
+import PatientRegistrationDashboard from './components/Dashboard/PatientRegistrationDashboard';
 import NurseDashboard from './components/Dashboard/NurseDashboard';
 import NurseAdmissionHistory from './pages/nurse/NurseAdmissionHistory';
 import LabDashboard from './pages/lab/LabDashboard';
@@ -323,6 +324,7 @@ function App() {
           <Route path="/dashboard/finance/refunds" element={<PrivateRoute><Layout><Refunds /></Layout></PrivateRoute>} />
           <Route path="/dashboard/reception/appointments" element={<PrivateRoute><Layout><ReceptionAppointments /></Layout></PrivateRoute>} />
           <Route path="/dashboard/reception" element={<PrivateRoute><Layout><ReceptionistDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/registration" element={<PrivateRoute><Layout><PatientRegistrationDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse" element={<PrivateRoute><Layout><NurseDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/staff" element={<PrivateRoute><Layout><StaffRequests /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse/admissions" element={<PrivateRoute><Layout><NurseAdmissionHistory /></Layout></PrivateRoute>} />
@@ -409,6 +411,8 @@ function DashboardRouter() {
       return <Layout><ReceptionistDashboard /></Layout>;
     case 'nurse':
       return <Layout><NurseDashboard /></Layout>;
+    case 'patient_registration':
+      return <Layout><PatientRegistrationDashboard /></Layout>;
     case 'cleaning':
       return <Layout><StaffRequests /></Layout>;
     case 'maintenance':
