@@ -13,8 +13,9 @@ export default function MaternityDashboard() {
       try {
         setLoading(true);
         const res = await axiosInstance.get('/maternity/dashboard');
-        setStats(res.data.stats);
-        setCases(res.data.recentCases);
+        // backend returns { total, recent }
+        setStats({ total: res.data.total || 0, inProgress: 0 });
+        setCases(res.data.recent || []);
       } catch (err) {
         setError(err?.response?.data?.message || 'Failed to fetch maternity dashboard');
       } finally {
@@ -55,17 +56,17 @@ export default function MaternityDashboard() {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Patient</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Expected Delivery</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trimester</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Registration Date</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Registered</th>
               </tr>
             </thead>
             <tbody>
               {cases.length > 0 ? (
                 cases.map((matCase) => (
                   <tr key={matCase._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm">{matCase.patientName}</td>
-                    <td className="px-6 py-3 text-sm">{new Date(matCase.expectedDeliveryDate).toLocaleDateString()}</td>
-                    <td className="px-6 py-3 text-sm">{matCase.trimester}</td>
-                    <td className="px-6 py-3 text-sm">{new Date(matCase.registrationDate).toLocaleDateString()}</td>
+                    <td className="px-6 py-3 text-sm">{matCase.user?.name || `${matCase.firstName} ${matCase.lastName}`}</td>
+                    <td className="px-6 py-3 text-sm">{new Date(matCase.maternity?.expectedDeliveryDate).toLocaleDateString()}</td>
+                    <td className="px-6 py-3 text-sm">{matCase.maternity?.trimester || '—'}</td>
+                    <td className="px-6 py-3 text-sm">{new Date(matCase.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))
               ) : (

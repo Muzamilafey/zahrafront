@@ -7,7 +7,7 @@ const ROLES = [
 
 export default function RegisterUser() {
   const { axiosInstance, user } = useContext(AuthContext);
-  const [form, setForm] = useState({ email: '', name: '', role: '', password: '', specialties: '' });
+  const [form, setForm] = useState({ email: '', name: '', role: '', password: '', specialties: '', phone: '', department: '', position: '', salary: '', employeeId: '' });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -34,9 +34,21 @@ export default function RegisterUser() {
       if (form.role === 'doctor' && form.specialties.trim()) {
         payload.specialties = form.specialties.split(',').map(s => s.trim());
       }
-      const res = await axiosInstance.post('/users/register', payload);
+      // If creating an employee/staff record, call employee registration endpoint so we can save salary/position
+      let res;
+      if (form.role && !['patient', 'patient_registration'].includes(form.role)) {
+        // include employee specific fields
+        payload.phone = form.phone || undefined;
+        payload.department = form.department || undefined;
+        payload.position = form.position || undefined;
+        if (form.salary) payload.salary = Number(form.salary);
+        if (form.employeeId) payload.employeeId = form.employeeId;
+        res = await axiosInstance.post('/employees/register', payload);
+      } else {
+        res = await axiosInstance.post('/users/register', payload);
+      }
       setMessage('User registered successfully!');
-      setForm({ email: '', name: '', role: '', password: '', specialties: '' });
+      setForm({ email: '', name: '', role: '', password: '', specialties: '', phone: '', department: '', position: '', salary: '', employeeId: '' });
     } catch (err) {
       setMessage(err?.response?.data?.message || 'Registration failed');
     } finally {
@@ -68,6 +80,31 @@ export default function RegisterUser() {
             <label className="block text-sm">Specialties (comma separated)</label>
             <input className="input w-full" name="specialties" value={form.specialties} onChange={handleChange} />
           </div>
+        )}
+        {/* Employee fields shown for staff roles */}
+        {!['patient', 'patient_registration'].includes(form.role) && form.role && (
+          <>
+            <div>
+              <label className="block text-sm">Phone</label>
+              <input className="input w-full" name="phone" value={form.phone} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-sm">Employee ID (optional)</label>
+              <input className="input w-full" name="employeeId" value={form.employeeId} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-sm">Position / Profession</label>
+              <input className="input w-full" name="position" value={form.position} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-sm">Department</label>
+              <input className="input w-full" name="department" value={form.department} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-sm">Salary</label>
+              <input className="input w-full" name="salary" value={form.salary} onChange={handleChange} type="number" />
+            </div>
+          </>
         )}
         <div>
           <label className="block text-sm">Password</label>

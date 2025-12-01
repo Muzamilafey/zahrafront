@@ -13,8 +13,11 @@ export default function PayrollDashboard() {
       try {
         setLoading(true);
         const res = await axiosInstance.get('/payroll/dashboard');
-        setStats(res.data.stats);
-        setPayrolls(res.data.recentPayrolls);
+        // backend returns { pending, approved, totalSalaries }
+        setStats({ processed: res.data.approved || 0, pending: res.data.pending || 0, totalPaid: res.data.totalSalaries || 0 });
+        // fetch recent payroll records separately
+        const listRes = await axiosInstance.get('/payroll');
+        setPayrolls(listRes.data.payrolls || []);
       } catch (err) {
         setError(err?.response?.data?.message || 'Failed to fetch payroll dashboard');
       } finally {
@@ -66,9 +69,9 @@ export default function PayrollDashboard() {
               {payrolls.length > 0 ? (
                 payrolls.map((payroll) => (
                   <tr key={payroll._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm">{payroll.employeeName}</td>
+                    <td className="px-6 py-3 text-sm">{payroll.employee?.name || payroll.employeeName || '—'}</td>
                     <td className="px-6 py-3 text-sm">{payroll.month}/{payroll.year}</td>
-                    <td className="px-6 py-3 text-sm">₹{payroll.netSalary.toLocaleString()}</td>
+                    <td className="px-6 py-3 text-sm">₹{(payroll.netSalary || payroll.netSalary === 0) ? Number(payroll.netSalary).toLocaleString() : (payroll.net || '—')}</td>
                     <td className="px-6 py-3 text-sm">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${
                         payroll.status === 'approved' ? 'bg-green-100 text-green-800' :

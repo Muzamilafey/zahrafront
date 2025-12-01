@@ -13,8 +13,9 @@ export default function OutpatientDashboard() {
       try {
         setLoading(true);
         const res = await axiosInstance.get('/outpatient/dashboard');
-        setStats(res.data.stats);
-        setVisits(res.data.recentVisits);
+        // backend returns { total, recent }
+        setStats({ total: res.data.total || 0, today: 0 });
+        setVisits(res.data.recent || []);
       } catch (err) {
         setError(err?.response?.data?.message || 'Failed to fetch outpatient dashboard');
       } finally {
@@ -53,25 +54,25 @@ export default function OutpatientDashboard() {
             <thead className="bg-gray-100 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Patient</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Visit Type</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Diagnosis</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">MRN</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Registered</th>
               </tr>
             </thead>
             <tbody>
               {visits.length > 0 ? (
-                visits.map((visit) => (
-                  <tr key={visit._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm">{visit.patientName}</td>
-                    <td className="px-6 py-3 text-sm">{visit.visitType}</td>
-                    <td className="px-6 py-3 text-sm">{visit.diagnosis}</td>
-                    <td className="px-6 py-3 text-sm">{new Date(visit.date).toLocaleDateString()}</td>
+                visits.map((p) => (
+                  <tr key={p._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="px-6 py-3 text-sm">{p.user?.name || `${p.firstName} ${p.lastName}`}</td>
+                    <td className="px-6 py-3 text-sm">{p.mrn}</td>
+                    <td className="px-6 py-3 text-sm">{p.phonePrimary}</td>
+                    <td className="px-6 py-3 text-sm">{new Date(p.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                    No outpatient visits found
+                    No outpatient patients found
                   </td>
                 </tr>
               )}

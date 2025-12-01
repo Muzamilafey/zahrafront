@@ -13,8 +13,9 @@ export default function MortuaryDashboard() {
       try {
         setLoading(true);
         const res = await axiosInstance.get('/mortuary/dashboard');
-        setStats(res.data.stats);
-        setAdmissions(res.data.recentAdmissions);
+        // backend returns { admitted, released, recent }
+        setStats({ current: res.data.admitted || 0, released: res.data.released || 0 });
+        setAdmissions(res.data.recent || []);
       } catch (err) {
         setError(err?.response?.data?.message || 'Failed to fetch mortuary dashboard');
       } finally {

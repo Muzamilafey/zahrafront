@@ -13,8 +13,9 @@ export default function RadiologyDashboard() {
       try {
         setLoading(true);
         const res = await axiosInstance.get('/radiology/dashboard');
-        setStats(res.data.stats);
-        setRequests(res.data.recentRequests);
+        // backend returns { pending, completed, recent }
+        setStats({ pending: res.data.pending || 0, completed: res.data.completed || 0 });
+        setRequests(res.data.recent || []);
       } catch (err) {
         setError(err?.response?.data?.message || 'Failed to fetch radiology dashboard');
       } finally {
@@ -62,7 +63,7 @@ export default function RadiologyDashboard() {
               {requests.length > 0 ? (
                 requests.map((req) => (
                   <tr key={req._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm">{req.patientName}</td>
+                    <td className="px-6 py-3 text-sm">{req.patient?.user?.name || `${req.patient?.firstName || ''} ${req.patient?.lastName || ''}`.trim() || '—'}</td>
                     <td className="px-6 py-3 text-sm">{req.testName}</td>
                     <td className="px-6 py-3 text-sm">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${
