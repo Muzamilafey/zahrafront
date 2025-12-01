@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
+import { AuthContext } from '../../contexts/AuthContext';
 
 export default function EmployeesPage() {
+  const { axiosInstance } = useContext(AuthContext);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

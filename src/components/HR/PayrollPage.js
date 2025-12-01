@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { DollarSign, Users, TrendingUp } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
+import { AuthContext } from '../../contexts/AuthContext';
 
 export default function PayrollPage() {
+  const { axiosInstance } = useContext(AuthContext);
   const [payrollData, setPayrollData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [payroll, setPayroll] = useState([

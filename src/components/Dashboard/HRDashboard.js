@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Clock, Users, DollarSign, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
 
 export default function HRDashboard() {
+  const { axiosInstance } = useContext(AuthContext);
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
