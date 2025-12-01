@@ -1,25 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Plus, Trash2, CheckCircle } from 'lucide-react';
+import { AuthContext } from '../../contexts/AuthContext';
 
 export default function HiringPage() {
-  const [jobOpenings, setJobOpenings] = useState([
-    { id: 1, title: 'Senior Developer', department: 'IT', applicants: 12, status: 'Open', posted: '2024-01-10' },
-    { id: 2, title: 'HR Manager', department: 'Human Resources', applicants: 8, status: 'Open', posted: '2024-01-15' },
-  ]);
+  const { axiosInstance } = useContext(AuthContext);
+  const [jobOpenings, setJobOpenings] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ title: '', department: '', salary: '' });
+  const [formData, setFormData] = useState({ title: '', department: '', salaryRange: '', description: '' });
+
+  useEffect(() => {
+    fetchJobOpenings();
+  }, []);
+
+  const fetchJobOpenings = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get('/jobs');
+      setJobOpenings(res.data.jobs || []);
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+      setJobOpenings([
+        { _id: 1, title: 'Senior Developer', department: 'IT', applicants: 12, status: 'Open', posted: '2024-01-10' },
+        { _id: 2, title: 'HR Manager', department: 'Human Resources', applicants: 8, status: 'Open', posted: '2024-01-15' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const today = new Date().toISOString().split('T')[0];
-    setJobOpenings([...jobOpenings, { id: jobOpenings.length + 1, ...formData, applicants: 0, status: 'Open', posted: today }]);
-    setFormData({ title: '', department: '', salary: '' });
-    setShowForm(false);
+    try {
+      await axiosInstance.post('/jobs', {
+        ...formData,
+        status: 'Open'
+      });
+      setFormData({ title: '', department: '', salaryRange: '', description: '' });
+      setShowForm(false);
+      fetchJobOpenings();
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Error posting job');
+    }
+  };
+
+  const handleDeleteJob = async (id) => {
+    if (window.confirm('Are you sure you want to delete this job posting?')) {
+      try {
+        await axiosInstance.delete(`/jobs/${id}`);
+        fetchJobOpenings();
+      } catch (err) {
+        alert(err?.response?.data?.message || 'Error deleting job');
+      }
+    }
   };
 
   return (
@@ -60,9 +98,10 @@ export default function HiringPage() {
               <option value="Human Resources">Human Resources</option>
               <option value="Finance">Finance</option>
               <option value="Operations">Operations</option>
-              <option value="Sales">Sales</option>
+              <option value="Medical">Medical</option>
             </select>
-            <input name="salary" value={formData.salary} onChange={handleChange} placeholder="Salary Range" className="border border-gray-300 rounded-lg px-4 py-2" />
+            <input name="salaryRange" value={formData.salaryRange} onChange={handleChange} placeholder="Salary Range" className="border border-gray-300 rounded-lg px-4 py-2" />
+            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Job Description" className="border border-gray-300 rounded-lg px-4 py-2 col-span-2" />
             <div className="col-span-2 flex gap-2">
               <button type="submit" className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Post Job</button>
               <button type="button" onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
@@ -84,11 +123,11 @@ export default function HiringPage() {
             </tr>
           </thead>
           <tbody>
-            {jobOpenings.map(job => (
-              <tr key={job.id} className="border-b border-gray-100 hover:bg-gray-50">
+            {jobOpenings && jobOpenings.length > 0 ? jobOpenings.map(job => (
+              <tr key={job._id || job.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 font-medium text-gray-900">{job.title}</td>
                 <td className="py-4 px-6 text-gray-600">{job.department}</td>
-                <td className="py-4 px-6 text-center font-medium">{job.applicants}</td>
+                <td className="py-4 px-6 text-center font-medium">{job.applicants || 0}</td>
                 <td className="py-4 px-6 text-gray-600">{job.posted}</td>
                 <td className="py-4 px-6">
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -96,10 +135,14 @@ export default function HiringPage() {
                   </span>
                 </td>
                 <td className="py-4 px-6 flex justify-center">
-                  <button className="p-2 hover:bg-red-100 rounded-lg text-red-600"><Trash2 size={18} /></button>
+                  <button onClick={() => handleDeleteJob(job._id || job.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600"><Trash2 size={18} /></button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="6" className="py-8 px-6 text-center text-gray-500">No job openings</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

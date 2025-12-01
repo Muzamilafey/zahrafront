@@ -82,22 +82,26 @@ export default function PayrollPage() {
             </tr>
           </thead>
           <tbody>
-            {payroll.map(emp => (
-              <tr key={emp.id} className="border-b border-gray-100 hover:bg-gray-50">
+            {payroll && payroll.length > 0 ? payroll.map(emp => (
+              <tr key={emp._id || emp.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="py-4 px-6 font-medium text-gray-900">{emp.name}</td>
                 <td className="py-4 px-6 text-gray-600">{emp.position}</td>
-                <td className="py-4 px-6 text-right font-medium">₦{emp.salary.toLocaleString()}</td>
-                <td className={`py-4 px-6 text-right font-medium ${emp.bonusDeductions > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ₦{emp.bonusDeductions.toLocaleString()}
+                <td className="py-4 px-6 text-right font-medium">₦{(emp.salary || 0).toLocaleString()}</td>
+                <td className={`py-4 px-6 text-right font-medium ${(emp.bonusDeductions || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ₦{(emp.bonusDeductions || 0).toLocaleString()}
                 </td>
-                <td className="py-4 px-6 text-right font-bold text-gray-900">₦{emp.netSalary.toLocaleString()}</td>
+                <td className="py-4 px-6 text-right font-bold text-gray-900">₦{(emp.netSalary || 0).toLocaleString()}</td>
                 <td className="py-4 px-6">
                   <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${emp.status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {emp.status}
                   </span>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="6" className="py-8 px-6 text-center text-gray-500">No payroll records</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
