@@ -20,10 +20,7 @@ export default function HiringPage() {
       setJobOpenings(res.data.jobs || []);
     } catch (err) {
       console.error('Error fetching jobs:', err);
-      setJobOpenings([
-        { _id: 1, title: 'Senior Developer', department: 'IT', applicants: 12, status: 'Open', posted: '2024-01-10' },
-        { _id: 2, title: 'HR Manager', department: 'Human Resources', applicants: 8, status: 'Open', posted: '2024-01-15' },
-      ]);
+      setJobOpenings([]);
     } finally {
       setLoading(false);
     }

@@ -23,12 +23,8 @@ export default function ExpensesPage() {
       setTotalExpenses(data.reduce((sum, e) => sum + (e.amount || 0), 0));
     } catch (err) {
       console.error('Error fetching expenses:', err);
-      const mockData = [
-        { _id: 1, category: 'Office Supplies', amount: 5000, date: '2024-01-15', description: 'Printer paper and ink', status: 'Approved' },
-        { _id: 2, category: 'Travel', amount: 25000, date: '2024-01-16', description: 'Client meeting travel', status: 'Pending' },
-      ];
-      setExpenses(mockData);
-      setTotalExpenses(30000);
+      setExpenses([]);
+      setTotalExpenses(0);
     } finally {
       setLoading(false);
     }
@@ -70,6 +66,17 @@ export default function ExpensesPage() {
       fetchExpenses();
     } catch (err) {
       alert(err?.response?.data?.message || 'Error rejecting expense');
+    }
+  };
+
+  const handleDeleteExpense = async (id) => {
+    if (window.confirm('Delete this expense record?')) {
+      try {
+        await axiosInstance.delete(`/expenses/${id}`);
+        fetchExpenses();
+      } catch (err) {
+        alert(err?.response?.data?.message || 'Error deleting expense');
+      }
     }
   };
 
@@ -159,6 +166,7 @@ export default function ExpensesPage() {
                       <button onClick={() => handleReject(exp._id || exp.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Reject"><XCircle size={18} /></button>
                     </>
                   )}
+                  <button onClick={() => handleDeleteExpense(exp._id || exp.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Delete"><Trash2 size={18} /></button>
                 </td>
               </tr>
             )) : (

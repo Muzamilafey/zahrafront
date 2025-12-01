@@ -6,10 +6,7 @@ export default function PayrollPage() {
   const { axiosInstance } = useContext(AuthContext);
   const [payrollData, setPayrollData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [payroll, setPayroll] = useState([
-    { id: 1, name: 'John Doe', position: 'Developer', salary: 150000, bonusDeductions: -5000, netSalary: 145000, status: 'Paid' },
-    { id: 2, name: 'Jane Smith', position: 'Manager', salary: 200000, bonusDeductions: 10000, netSalary: 210000, status: 'Pending' },
-  ]);
+  const [payroll, setPayroll] = useState([]);
 
   useEffect(() => {
     const fetchPayroll = async () => {

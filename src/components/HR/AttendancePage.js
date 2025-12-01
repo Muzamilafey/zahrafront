@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Calendar, Clock, CheckCircle, Plus } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, Plus, Edit, Trash2 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function AttendancePage() {
@@ -29,12 +29,8 @@ export default function AttendancePage() {
       setStats({ present, absent, late });
     } catch (err) {
       console.error('Error fetching attendance:', err);
-      setAttendanceData([
-        { _id: 1, employeeId: 'EMP001', name: 'John Doe', checkIn: '09:05', checkOut: '18:30', status: 'Present' },
-        { _id: 2, employeeId: 'EMP002', name: 'Jane Smith', checkIn: '09:00', checkOut: '17:45', status: 'Present' },
-        { _id: 3, employeeId: 'EMP003', name: 'Mike Johnson', checkIn: null, checkOut: null, status: 'Absent' },
-      ]);
-      setStats({ present: 2, absent: 1, late: 0 });
+      setAttendanceData([]);
+      setStats({ present: 0, absent: 0, late: 0 });
     } finally {
       setLoading(false);
     }
@@ -55,6 +51,23 @@ export default function AttendancePage() {
     } catch (err) {
       alert(err?.response?.data?.message || 'Error recording attendance');
     }
+  };
+
+  const handleDeleteAttendance = async (id) => {
+    if (window.confirm('Delete this attendance record?')) {
+      try {
+        await axiosInstance.delete(`/attendance/${id}`);
+        fetchAttendance();
+      } catch (err) {
+        alert(err?.response?.data?.message || 'Error deleting record');
+      }
+    }
+  };
+
+  const handleEditAttendance = (record) => {
+    setSelectedEmployee(record.employeeId);
+    setCheckInData({ checkIn: record.checkIn || '', checkOut: record.checkOut || '' });
+    setShowCheckIn(true);
   };
 
   return (
@@ -135,6 +148,7 @@ export default function AttendancePage() {
               <th className="text-left py-3 px-6 font-medium text-gray-700">Check In</th>
               <th className="text-left py-3 px-6 font-medium text-gray-700">Check Out</th>
               <th className="text-left py-3 px-6 font-medium text-gray-700">Status</th>
+              <th className="text-center py-3 px-6 font-medium text-gray-700">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -152,10 +166,14 @@ export default function AttendancePage() {
                     {record.status}
                   </span>
                 </td>
+                <td className="py-4 px-6 flex justify-center gap-2">
+                  <button onClick={() => handleEditAttendance(record)} className="p-2 hover:bg-blue-100 rounded-lg text-blue-600" title="Edit"><Edit size={18} /></button>
+                  <button onClick={() => handleDeleteAttendance(record._id || record.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Delete"><Trash2 size={18} /></button>
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan="4" className="py-8 px-6 text-center text-gray-500">No attendance records</td>
+                <td colSpan="5" className="py-8 px-6 text-center text-gray-500">No attendance records</td>
               </tr>
             )}
           </tbody>

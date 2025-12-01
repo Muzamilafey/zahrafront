@@ -20,10 +20,7 @@ export default function LeavesPage() {
       setLeaves(res.data.leaves || []);
     } catch (err) {
       console.error('Error fetching leaves:', err);
-      setLeaves([
-        { _id: 1, employeeName: 'John Doe', type: 'Sick Leave', from: '2024-01-15', to: '2024-01-17', days: 3, status: 'Approved' },
-        { _id: 2, employeeName: 'Jane Smith', type: 'Annual Leave', from: '2024-01-20', to: '2024-02-05', days: 17, status: 'Pending' },
-      ]);
+      setLeaves([]);
     } finally {
       setLoading(false);
     }
@@ -69,6 +66,17 @@ export default function LeavesPage() {
       fetchLeaves();
     } catch (err) {
       alert(err?.response?.data?.message || 'Error rejecting leave');
+    }
+  };
+
+  const handleDeleteLeave = async (id) => {
+    if (window.confirm('Delete this leave request?')) {
+      try {
+        await axiosInstance.delete(`/leaves/${id}`);
+        fetchLeaves();
+      } catch (err) {
+        alert(err?.response?.data?.message || 'Error deleting leave');
+      }
     }
   };
 
@@ -142,6 +150,7 @@ export default function LeavesPage() {
                       <button onClick={() => handleReject(leave._id || leave.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Reject"><XCircle size={18} /></button>
                     </>
                   )}
+                  <button onClick={() => handleDeleteLeave(leave._id || leave.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Delete"><Trash2 size={18} /></button>
                 </td>
               </tr>
             )) : (
