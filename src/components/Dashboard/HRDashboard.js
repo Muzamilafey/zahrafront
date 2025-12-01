@@ -1,29 +1,36 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, Clock, Users, DollarSign, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import axiosInstance from '../../api/axiosInstance';
+import { Link } from 'react-router-dom';
 
 export default function HRDashboard() {
-  const { axiosInstance } = useContext(AuthContext);
+  const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [summary, setSummary] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', position: '', department: '', salary: '', employeeId: '', gender: '', employmentType: 'full-time', startDate: '' });
-  const [registering, setRegistering] = useState(false);
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState(null);
+  const [employees, setEmployees] = useState([]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchDashboard = async () => {
       try {
         setLoading(true);
         const res = await axiosInstance.get('/employees/dashboard');
-        setSummary(res.data);
+        setDashboard(res.data);
+
+        // Fetch recent employees
+        const empRes = await axiosInstance.get('/employees?limit=10');
+        setEmployees(empRes.data.employees || []);
+
+        setError(null);
       } catch (err) {
-        setError(err?.response?.data?.message || 'Failed to load HR dashboard');
+        setError(err?.response?.data?.message || 'Failed to fetch HR dashboard');
+        console.error('HR Dashboard error:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetch();
-  }, [axiosInstance]);
+
+    fetchDashboard();
+  }, []);
 
   const handleChange = e => {
     const { name, value } = e.target;
