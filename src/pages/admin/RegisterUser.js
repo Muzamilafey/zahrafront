@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const ROLES = [
-  'admin', 'doctor', 'pharmacist', 'finance', 'receptionist', 'nurse', 'lab_technician', 'cleaning', 'maintenance', 'patient', 'patient_registration'
+  'admin', 'doctor', 'pharmacist', 'finance', 'receptionist', 'nurse', 'lab_technician', 'cleaning', 'maintenance', 'patient', 'patient_registration', 'radiologist', 'mortician', 'hr'
 ];
 
 export default function RegisterUser() {

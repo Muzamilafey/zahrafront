@@ -48,6 +48,12 @@ import ReceptionistDashboard from './components/Dashboard/ReceptionistDashboard'
 import PatientRegistrationDashboard from './components/Dashboard/PatientRegistrationDashboard';
 import NurseDashboard from './components/Dashboard/NurseDashboard';
 import NurseAdmissionHistory from './pages/nurse/NurseAdmissionHistory';
+import OutpatientDashboard from './components/Dashboard/OutpatientDashboard';
+import MaternityDashboard from './components/Dashboard/MaternityDashboard';
+import RadiologyDashboard from './components/Dashboard/RadiologyDashboard';
+import MortuaryDashboard from './components/Dashboard/MortuaryDashboard';
+import EmployeeDashboard from './components/Dashboard/EmployeeDashboard';
+import PayrollDashboard from './components/Dashboard/PayrollDashboard';
 import LabDashboard from './pages/lab/LabDashboard';
 import LabQueue from './pages/lab/LabQueue';
 import LabRequests from './pages/lab/LabRequests';
@@ -326,6 +332,12 @@ function App() {
           <Route path="/dashboard/reception" element={<PrivateRoute><Layout><ReceptionistDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/registration" element={<PrivateRoute><Layout><PatientRegistrationDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse" element={<PrivateRoute><Layout><NurseDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/outpatient" element={<PrivateRoute><Layout><OutpatientDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/maternity" element={<PrivateRoute><Layout><MaternityDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/radiology" element={<PrivateRoute><Layout><RadiologyDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/mortuary" element={<PrivateRoute><Layout><MortuaryDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/employees" element={<PrivateRoute><Layout><EmployeeDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/payroll" element={<PrivateRoute><Layout><PayrollDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/staff" element={<PrivateRoute><Layout><StaffRequests /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse/admissions" element={<PrivateRoute><Layout><NurseAdmissionHistory /></Layout></PrivateRoute>} />
           <Route path="/dashboard/messages" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
@@ -413,6 +425,12 @@ function DashboardRouter() {
       return <Layout><NurseDashboard /></Layout>;
     case 'patient_registration':
       return <Layout><PatientRegistrationDashboard /></Layout>;
+    case 'radiologist':
+      return <Layout><RadiologyDashboard /></Layout>;
+    case 'mortician':
+      return <Layout><MortuaryDashboard /></Layout>;
+    case 'hr':
+      return <Layout><PayrollDashboard /></Layout>;
     case 'cleaning':
       return <Layout><StaffRequests /></Layout>;
     case 'maintenance':

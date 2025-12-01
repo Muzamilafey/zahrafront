@@ -14,6 +14,13 @@ export default function Sidebar() {
     lab: false,
     triage: false,
     consultations: false,
+    registration: false,
+    outpatient: false,
+    maternity: false,
+    radiology: false,
+    mortuary: false,
+    employees: false,
+    payroll: false,
   });
 
   const toggleMenu = (menu) => {
@@ -178,7 +185,60 @@ export default function Sidebar() {
         { to: '/patients/register', label: 'Register Patient', perm: 'registerPatient' },
       ],
     },
-  ];
+    // Outpatient group
+    {
+      id: 'outpatient',
+      title: 'Outpatient Services',
+      defaultCheck: ['doctor', 'receptionist', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', perm: 'outpatient' },
+      ],
+    },
+    // Maternity group
+    {
+      id: 'maternity',
+      title: 'Maternity Services',
+      defaultCheck: ['doctor', 'nurse', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/maternity', label: 'Maternity Dashboard', perm: 'maternity' },
+      ],
+    },
+    // Radiology group
+    {
+      id: 'radiology',
+      title: 'Radiology',
+      defaultCheck: ['radiologist', 'doctor', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/radiology', label: 'Radiology Dashboard', perm: 'radiology' },
+      ],
+    },
+    // Mortuary group
+    {
+      id: 'mortuary',
+      title: 'Mortuary Services',
+      defaultCheck: ['mortician', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/mortuary', label: 'Mortuary Dashboard', perm: 'mortuary' },
+      ],
+    },
+    // Employee Management group
+    {
+      id: 'employees',
+      title: 'Employee Management',
+      defaultCheck: ['hr', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/employees', label: 'Employees', perm: 'employees' },
+      ],
+    },
+    // Payroll group
+    {
+      id: 'payroll',
+      title: 'Payroll',
+      defaultCheck: ['hr', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/payroll', label: 'Payroll Dashboard', perm: 'payroll' },
+      ],
+    },
 
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col overflow-auto">
