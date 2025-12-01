@@ -54,6 +54,7 @@ import RadiologyDashboard from './components/Dashboard/RadiologyDashboard';
 import MortuaryDashboard from './components/Dashboard/MortuaryDashboard';
 import EmployeeDashboard from './components/Dashboard/EmployeeDashboard';
 import PayrollDashboard from './components/Dashboard/PayrollDashboard';
+import HRDashboard from './components/Dashboard/HRDashboard';
 import LabDashboard from './pages/lab/LabDashboard';
 import LabQueue from './pages/lab/LabQueue';
 import LabRequests from './pages/lab/LabRequests';
@@ -338,6 +339,7 @@ function App() {
           <Route path="/dashboard/mortuary" element={<PrivateRoute><Layout><MortuaryDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/employees" element={<PrivateRoute><Layout><EmployeeDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/payroll" element={<PrivateRoute><Layout><PayrollDashboard /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr" element={<PrivateRoute><Layout><HRDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/staff" element={<PrivateRoute><Layout><StaffRequests /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse/admissions" element={<PrivateRoute><Layout><NurseAdmissionHistory /></Layout></PrivateRoute>} />
           <Route path="/dashboard/messages" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
@@ -430,7 +432,7 @@ function DashboardRouter() {
     case 'mortician':
       return <Layout><MortuaryDashboard /></Layout>;
     case 'hr':
-      return <Layout><PayrollDashboard /></Layout>;
+      return <Layout><HRDashboard /></Layout>;
     case 'cleaning':
       return <Layout><StaffRequests /></Layout>;
     case 'maintenance':
