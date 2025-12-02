@@ -257,10 +257,7 @@ export default function Sidebar({ role, onCollapse }) {
     { to: '/dashboard/expenses', label: 'Expenses', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
     { to: '/dashboard/hiring', label: 'Hiring', icon: <FaUserPlus />, perm: 'humanResource' },
     { to: '/dashboard/payroll', label: 'Payroll', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
-    // Mortuary pages grouped under Human Resource collapse
-    { to: '/dashboard/mortuary', label: 'Mortuary Dashboard', icon: <FaBriefcase />, perm: 'mortuary' },
-    { to: '/mortuary/register', label: 'Register Body', icon: <FaBriefcase />, perm: 'mortuary' },
-    { to: '/mortuary/fees', label: 'Service Fees', icon: <FaBriefcase />, perm: 'mortuary' },
+    // mortuary links removed from HR group - shown under a dedicated Mortuary collapse
   ] : [];
 
   useEffect(() => {
@@ -392,7 +389,25 @@ export default function Sidebar({ role, onCollapse }) {
                   )}
                 </div>
               )}
-              {/* Mortuary pages are now part of Human Resource collapse */}
+              {/* Mortuary group in hover overlay */}
+              {mortuaryItems.length > 0 && (
+                <div>
+                  <button onClick={() => setMortuaryOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaBriefcase /></div><div>Mortuary</div></div>
+                    <div>{mortuaryOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                  </button>
+                  {mortuaryOpen && (
+                    <div className="pl-8 flex flex-col">
+                      {mortuaryItems.map(i => (
+                        <Link key={i.to} to={i.to} onClick={() => setMortuaryOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                          <div className="text-sm text-brand-600">{i.icon}</div>
+                          <div className="text-sm">{i.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Human Resource group in hover overlay */}
               {hrItems.length > 0 && (
                 <div>

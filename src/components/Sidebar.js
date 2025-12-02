@@ -214,7 +214,16 @@ export default function Sidebar() {
       ],
     },
     // Mortuary group
-    // Mortuary moved under Human Resource collapse
+    {
+      id: 'mortuary',
+      title: 'Mortuary Services',
+      defaultCheck: ['mortician', 'admin'].includes(user?.role),
+      items: [
+        { to: '/dashboard/mortuary', label: 'Mortuary Dashboard', perm: 'mortuary' },
+        { to: '/mortuary/register', label: 'Register Body', perm: 'mortuary' },
+        { to: '/mortuary/fees', label: 'Service Fees', perm: 'mortuary' },
+      ],
+    },
     // Employee Management group
     {
       id: 'employees',
@@ -246,10 +255,7 @@ export default function Sidebar() {
         { to: '/dashboard/expenses', label: 'Expenses', perm: 'humanResource' },
         { to: '/dashboard/hiring', label: 'Hiring', perm: 'humanResource' },
         { to: '/dashboard/payroll', label: 'Payroll', perm: 'humanResource' },
-        // Mortuary pages grouped under HR
-        { to: '/dashboard/mortuary', label: 'Mortuary Dashboard', perm: 'mortuary' },
-        { to: '/mortuary/register', label: 'Register Body', perm: 'mortuary' },
-        { to: '/mortuary/fees', label: 'Service Fees', perm: 'mortuary' },
+        // mortuary items removed from HR group; shown under standalone Mortuary group
       ],
     },
 
