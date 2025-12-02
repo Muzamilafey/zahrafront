@@ -94,14 +94,14 @@ export default function HRAnalytics() {
         <KPICard icon={FaUsers} title="Male Employees" value={data.maleEmployees} color="blue" />
         <KPICard icon={FaUsers} title="Female Employees" value={data.femaleEmployees} color="pink" />
         <KPICard icon={FaCalendarAlt} title="Attendance Rate" value={data.attendanceRate} unit="%" color="green" />
-        <KPICard icon={FaTrendingUp} title="Avg Performance" value={data.performanceAverage} unit="/100" color="yellow" />
+        <KPICard icon={FaArrowUp} title="Avg Performance" value={data.performanceAverage} unit="/100" color="yellow" />
         <KPICard icon={FaMoneyBillWave} title="Monthly Payroll" value={`KES ${(data.payrollCost / 1000).toFixed(0)}K`} color="purple" />
       </div>
 
       {/* Secondary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <KPICard icon={FaCalendarAlt} title="Approved Leaves" value={data.leaveUsage} color="blue" />
-        <KPICard icon={FaTrendingUp} title="Turnover Rate" value={data.turnoverRate} color="red" />
+        <KPICard icon={FaArrowUp} title="Turnover Rate" value={data.turnoverRate} color="red" />
         <KPICard icon={FaUsers} title="Pending Recruitments" value={data.recruitmentsInProgress} color="orange" />
       </div>
 
