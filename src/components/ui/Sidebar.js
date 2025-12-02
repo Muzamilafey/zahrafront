@@ -554,7 +554,25 @@ export default function Sidebar({ role, onCollapse }) {
           </div>
         )}
 
-        {/* Mortuary pages are shown under Human Resource collapse now */}
+        {/* Mortuary collapsible group */}
+        {mortuaryItems.length > 0 && (
+          <div>
+            <button onClick={() => setMortuaryOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+              <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaBriefcase /></div><div>Mortuary</div></div>
+              <div>{mortuaryOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+            </button>
+            {mortuaryOpen && (
+              <div className="pl-4 flex flex-col">
+                {mortuaryItems.map(i => (
+                  <Link key={i.to} to={i.to} onClick={() => setMortuaryOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="text-sm text-brand-600">{i.icon}</div>
+                    <div className="text-sm">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Human Resource collapsible group */}
         {hrItems.length > 0 && (
@@ -577,7 +595,7 @@ export default function Sidebar({ role, onCollapse }) {
         )}
 
         {/* remaining items */}
-        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !triageItems.find(t => t.to === i.to) && !consultationItems.find(c => c.to === i.to)).map(i => (
+        {items.filter(i => !patientItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !triageItems.find(t => t.to === i.to) && !consultationItems.find(c => c.to === i.to) && !mortuaryItems.find(m => m.to === i.to) && !hrItems.find(h => h.to === i.to)).map(i => (
           <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
             <div className="text-sm text-brand-600">{i.icon}</div>
             <div className="text-sm">{i.label}</div>
