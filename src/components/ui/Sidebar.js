@@ -61,6 +61,7 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/lab/visits-report', label: 'Visits Report', icon: <FaCalendarAlt />, perm: 'lab' },
       { to: '/lab/prices', label: 'Lab Tests Prices', icon: <FaFileInvoiceDollar />, perm: 'lab' },
       { to: '/lab/templates', label: 'Lab Templates', icon: <FaFolder />, perm: 'lab' },
+      { to: '/dashboard/mortuary', label: 'Mortuary', icon: <FaBriefcase />, perm: 'mortuary' },
       { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
       { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
     ],

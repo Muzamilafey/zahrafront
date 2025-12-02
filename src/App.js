@@ -52,6 +52,8 @@ import OutpatientDashboard from './components/Dashboard/OutpatientDashboard';
 import MaternityDashboard from './components/Dashboard/MaternityDashboard';
 import RadiologyDashboard from './components/Dashboard/RadiologyDashboard';
 import MortuaryDashboard from './components/Dashboard/MortuaryDashboard';
+import RegisterBody from './components/mortuary/RegisterBody';
+import FeesPage from './components/mortuary/FeesPage';
 import EmployeeDashboard from './components/Dashboard/EmployeeDashboard';
 import PayrollDashboard from './components/Dashboard/PayrollDashboard';
 import HRDashboard from './components/Dashboard/HRDashboard';
@@ -343,6 +345,8 @@ function App() {
           <Route path="/dashboard/maternity" element={<PrivateRoute><Layout><MaternityDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/radiology" element={<PrivateRoute><Layout><RadiologyDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/mortuary" element={<PrivateRoute><Layout><MortuaryDashboard /></Layout></PrivateRoute>} />
+          <Route path="/mortuary/register" element={<PrivateRoute><Layout><RegisterBody /></Layout></PrivateRoute>} />
+          <Route path="/mortuary/fees" element={<PrivateRoute><Layout><FeesPage /></Layout></PrivateRoute>} />
           <Route path="/dashboard/employees" element={<PrivateRoute><Layout><EmployeeDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/payroll" element={<PrivateRoute><Layout><PayrollDashboard /></Layout></PrivateRoute>} />
           <Route path="/dashboard/hr" element={<PrivateRoute><Layout><HRDashboard /></Layout></PrivateRoute>} />
