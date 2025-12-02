@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Plus, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
+import ConfirmModal from '../ui/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
+import { useState as useLocalState } from 'react';
 
 export default function LeavesPage() {
   const { axiosInstance } = useContext(AuthContext);
@@ -67,32 +70,38 @@ export default function LeavesPage() {
   };
 
   const handleApprove = async (id) => {
-    try {
-      await axiosInstance.put(`/leaves/${id}/approve`, { status: 'Approved' });
-      fetchLeaves();
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Error approving leave');
-    }
+    setConfirm({ open: true, id, action: 'approve' });
   };
 
   const handleReject = async (id) => {
-    try {
-      await axiosInstance.put(`/leaves/${id}/reject`, { status: 'Rejected' });
-      fetchLeaves();
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Error rejecting leave');
-    }
+    setConfirm({ open: true, id, action: 'reject' });
   };
 
   const handleDeleteLeave = async (id) => {
-    if (window.confirm('Delete this leave request?')) {
-      try {
+    setConfirm({ open: true, id, action: 'delete' });
+  };
+
+  const [confirm, setConfirm] = useLocalState({ open: false, id: null, action: null });
+  const showToast = useToast();
+
+  const runConfirm = async () => {
+    const { id, action } = confirm;
+    try {
+      if (action === 'approve') {
+        await axiosInstance.put(`/leaves/${id}/approve`, { status: 'Approved' });
+        showToast('success', 'Leave approved');
+      } else if (action === 'reject') {
+        await axiosInstance.put(`/leaves/${id}/reject`, { status: 'Rejected' });
+        showToast('success', 'Leave rejected');
+      } else if (action === 'delete') {
         await axiosInstance.delete(`/leaves/${id}`);
-        fetchLeaves();
-      } catch (err) {
-        alert(err?.response?.data?.message || 'Error deleting leave');
+        showToast('success', 'Leave deleted');
       }
+      fetchLeaves();
+    } catch (err) {
+      showToast('error', err?.response?.data?.message || 'Error processing request');
     }
+    setConfirm({ open: false, id: null, action: null });
   };
 
   return (
@@ -176,6 +185,7 @@ export default function LeavesPage() {
           </tbody>
         </table>
       </div>
+      <ConfirmModal isOpen={confirm.open} title={confirm.action === 'delete' ? 'Delete Leave' : confirm.action === 'approve' ? 'Approve Leave' : 'Reject Leave'} message={confirm.action === 'delete' ? 'Delete this leave request?' : confirm.action === 'approve' ? 'Approve this leave request?' : 'Reject this leave request?'} onConfirm={runConfirm} onCancel={() => setConfirm({ open: false, id: null, action: null })} />
     </div>
   );
 }

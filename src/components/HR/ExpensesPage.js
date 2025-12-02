@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Plus, DollarSign, TrendingUp, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
+import ConfirmModal from '../ui/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
+import { useState as useLocalState } from 'react';
 
 export default function ExpensesPage() {
   const { axiosInstance } = useContext(AuthContext);
@@ -52,32 +55,38 @@ export default function ExpensesPage() {
   };
 
   const handleApprove = async (id) => {
-    try {
-      await axiosInstance.put(`/expenses/${id}/approve`, { status: 'Approved' });
-      fetchExpenses();
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Error approving expense');
-    }
+    setConfirm({ open: true, id, action: 'approve' });
   };
 
   const handleReject = async (id) => {
-    try {
-      await axiosInstance.put(`/expenses/${id}/reject`, { status: 'Rejected' });
-      fetchExpenses();
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Error rejecting expense');
-    }
+    setConfirm({ open: true, id, action: 'reject' });
   };
 
   const handleDeleteExpense = async (id) => {
-    if (window.confirm('Delete this expense record?')) {
-      try {
+    setConfirm({ open: true, id, action: 'delete' });
+  };
+
+  const [confirm, setConfirm] = useLocalState({ open: false, id: null, action: null });
+  const showToast = useToast();
+
+  const runConfirm = async () => {
+    const { id, action } = confirm;
+    try {
+      if (action === 'approve') {
+        await axiosInstance.put(`/expenses/${id}/approve`, { status: 'Approved' });
+        showToast('success', 'Expense approved');
+      } else if (action === 'reject') {
+        await axiosInstance.put(`/expenses/${id}/reject`, { status: 'Rejected' });
+        showToast('success', 'Expense rejected');
+      } else if (action === 'delete') {
         await axiosInstance.delete(`/expenses/${id}`);
-        fetchExpenses();
-      } catch (err) {
-        alert(err?.response?.data?.message || 'Error deleting expense');
+        showToast('success', 'Expense deleted');
       }
+      fetchExpenses();
+    } catch (err) {
+      showToast('error', err?.response?.data?.message || 'Error processing request');
     }
+    setConfirm({ open: false, id: null, action: null });
   };
 
   return (
@@ -177,6 +186,7 @@ export default function ExpensesPage() {
           </tbody>
         </table>
       </div>
+      <ConfirmModal isOpen={confirm.open} title={confirm.action === 'delete' ? 'Delete Expense' : confirm.action === 'approve' ? 'Approve Expense' : 'Reject Expense'} message={confirm.action === 'delete' ? 'Delete this expense record?' : confirm.action === 'approve' ? 'Approve this expense?' : 'Reject this expense?'} onConfirm={runConfirm} onCancel={() => setConfirm({ open: false, id: null, action: null })} />
     </div>
   );
 }

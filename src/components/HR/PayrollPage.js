@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { DollarSign, Users, TrendingUp, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useState as useLocalState } from 'react';
+import ConfirmModal from '../ui/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function PayrollPage() {
   const { axiosInstance } = useContext(AuthContext);
@@ -35,23 +39,35 @@ export default function PayrollPage() {
   };
 
   const handleDeletePayroll = async (employeeId) => {
-    if (!window.confirm('Delete this payroll entry?')) return;
-    try {
-      await axiosInstance.delete(`/payroll/${employeeId}`);
-      const res = await axiosInstance.get('/payroll');
-      setPayroll(res.data.payroll || []);
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Error deleting payroll entry');
-    }
+    setConfirm({ open: true, id: employeeId, action: 'deletePayroll' });
   };
 
   const handleEditPayroll = (employee) => {
     // Navigate to employees page with edit query param (EmployeesPage handles edit if present)
     try {
-      window.location.href = `/employees?editId=${employee._id || employee.id}`;
+      navigate(`/employees?editId=${employee._id || employee.id}`);
     } catch (err) {
       console.error('Navigation error', err);
     }
+  };
+
+  // confirm modal state
+  const [confirm, setConfirm] = useLocalState({ open: false, id: null, action: null });
+  const navigate = useNavigate();
+  const showToast = useToast();
+
+  const runConfirm = async () => {
+    if (confirm.action === 'deletePayroll') {
+      try {
+        await axiosInstance.delete(`/payroll/${confirm.id}`);
+        const res = await axiosInstance.get('/payroll');
+        setPayroll(res.data.payroll || []);
+        showToast('success', 'Payroll entry deleted');
+      } catch (err) {
+        showToast('error', err?.response?.data?.message || 'Error deleting payroll entry');
+      }
+    }
+    setConfirm({ open: false, id: null, action: null });
   };
 
   const totalSalaries = payroll.reduce((sum, p) => sum + p.netSalary, 0);
@@ -142,6 +158,7 @@ export default function PayrollPage() {
           </tbody>
         </table>
       </div>
+      <ConfirmModal isOpen={confirm.open} title="Delete Payroll Entry" message="Are you sure you want to delete this payroll entry?" onConfirm={runConfirm} onCancel={() => setConfirm({ open: false, id: null, action: null })} />
     </div>
   );
 }

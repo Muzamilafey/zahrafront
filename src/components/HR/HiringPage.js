@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Plus, Trash2, CheckCircle, Edit } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
+import ConfirmModal from '../ui/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
+import { useState as useLocalState } from 'react';
 
 export default function HiringPage() {
   const { axiosInstance } = useContext(AuthContext);
@@ -47,19 +50,28 @@ export default function HiringPage() {
   };
 
   const handleDeleteJob = async (id) => {
-    if (window.confirm('Are you sure you want to delete this job posting?')) {
-      try {
-        await axiosInstance.delete(`/jobs/${id}`);
-        fetchJobOpenings();
-      } catch (err) {
-        alert(err?.response?.data?.message || 'Error deleting job');
-      }
-    }
+    setConfirm({ open: true, id, action: 'deleteJob' });
   };
 
   const handleEditJob = (job) => {
     setFormData({ title: job.title || '', department: job.department || '', salaryRange: job.salaryRange || '', description: job.description || '' });
     setShowForm(true);
+  };
+
+  const [confirm, setConfirm] = useLocalState({ open: false, id: null, action: null });
+  const showToast = useToast();
+
+  const runConfirm = async () => {
+    try {
+      if (confirm.action === 'deleteJob') {
+        await axiosInstance.delete(`/jobs/${confirm.id}`);
+        showToast('success', 'Job deleted');
+      }
+      fetchJobOpenings();
+    } catch (err) {
+      showToast('error', err?.response?.data?.message || 'Error processing request');
+    }
+    setConfirm({ open: false, id: null, action: null });
   };
 
   return (
@@ -149,6 +161,7 @@ export default function HiringPage() {
           </tbody>
         </table>
       </div>
+      <ConfirmModal isOpen={confirm.open} title="Delete Job" message="Are you sure you want to delete this job posting?" onConfirm={runConfirm} onCancel={() => setConfirm({ open: false, id: null, action: null })} />
     </div>
   );
 }

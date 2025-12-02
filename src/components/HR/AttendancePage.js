@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Calendar, Clock, CheckCircle, Plus, Edit, Trash2 } from 'lucide-react';
+import ConfirmModal from '../ui/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
+import { useState as useLocalState } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function AttendancePage() {
   const { axiosInstance } = useContext(AuthContext);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState([]);
-  const [employeesList, setEmployeesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ present: 0, absent: 0, late: 0 });
   const [showCheckIn, setShowCheckIn] = useState(false);
@@ -16,6 +18,8 @@ export default function AttendancePage() {
   useEffect(() => {
     fetchAttendance();
   }, [selectedDate]);
+
+  const [employeesList, setEmployeesList] = useState([]);
 
   useEffect(() => {
     fetchEmployeesList();
@@ -69,20 +73,29 @@ export default function AttendancePage() {
   };
 
   const handleDeleteAttendance = async (id) => {
-    if (window.confirm('Delete this attendance record?')) {
-      try {
-        await axiosInstance.delete(`/attendance/${id}`);
-        fetchAttendance();
-      } catch (err) {
-        alert(err?.response?.data?.message || 'Error deleting record');
-      }
-    }
+    setConfirm({ open: true, id, action: 'deleteAttendance' });
   };
 
   const handleEditAttendance = (record) => {
     setSelectedEmployee(record.employeeId);
     setCheckInData({ checkIn: record.checkIn || '', checkOut: record.checkOut || '' });
     setShowCheckIn(true);
+  };
+
+  const [confirm, setConfirm] = useLocalState({ open: false, id: null, action: null });
+  const showToast = useToast();
+
+  const runConfirm = async () => {
+    try {
+      if (confirm.action === 'deleteAttendance') {
+        await axiosInstance.delete(`/attendance/${confirm.id}`);
+        showToast('success', 'Attendance record deleted');
+      }
+      fetchAttendance();
+    } catch (err) {
+      showToast('error', err?.response?.data?.message || 'Error processing request');
+    }
+    setConfirm({ open: false, id: null, action: null });
   };
 
   return (
@@ -194,6 +207,7 @@ export default function AttendancePage() {
           </tbody>
         </table>
       </div>
+      <ConfirmModal isOpen={confirm.open} title="Delete Attendance" message="Delete this attendance record?" onConfirm={runConfirm} onCancel={() => setConfirm({ open: false, id: null, action: null })} />
     </div>
   );
 }
