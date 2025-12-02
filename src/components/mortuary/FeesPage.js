@@ -22,7 +22,7 @@ export default function FeesPage(){
   };
 
   const remove = async (id)=>{
-    if(!confirm('Delete this service?')) return;
+    if (!window.confirm('Delete this service?')) return;
     try{ await axiosInstance.delete(`/mortuary/fees/${id}`); await load(); }catch(e){ alert('Delete failed'); }
   };
 
