@@ -247,7 +247,7 @@ export default function Sidebar({ role, onCollapse }) {
   // collect consultation-related links
   const consultationItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/consultations'));
   // collect mortuary-related links
-  const mortuaryItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/dashboard/mortuary') || i.to.startsWith('/mortuary')));
+  const mortuaryItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/dashboard/mortuary') || i.to === '/mortuary/register' || i.to === '/mortuary/fees'));
   // collect HR-related links for admin users
   const hrItems = user?.role === 'admin' ? [
     { to: '/dashboard/hr', label: 'HR Dashboard', icon: <FaBriefcase />, perm: 'humanResource' },
