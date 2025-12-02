@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope, FaBriefcase } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope, FaBriefcase, FaTrendingUp, FaBook, FaExclamationTriangle, FaFileAlt, FaChartBar, FaBell } from 'react-icons/fa';
 
 export default function Sidebar({ role, onCollapse }) {
   const { axiosInstance, user } = useContext(AuthContext);
@@ -251,13 +251,18 @@ export default function Sidebar({ role, onCollapse }) {
   // collect HR-related links for admin users
   const hrItems = user?.role === 'admin' ? [
     { to: '/dashboard/hr', label: 'HR Dashboard', icon: <FaBriefcase />, perm: 'humanResource' },
-    { to: '/dashboard/employees', label: 'Employees', icon: <FaUsers />, perm: 'humanResource' },
-    { to: '/dashboard/attendance', label: 'Attendance', icon: <FaClock />, perm: 'humanResource' },
-    { to: '/dashboard/leaves', label: 'Leaves', icon: <FaCalendarAlt />, perm: 'humanResource' },
-    { to: '/dashboard/expenses', label: 'Expenses', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
-    { to: '/dashboard/hiring', label: 'Hiring', icon: <FaUserPlus />, perm: 'humanResource' },
-    { to: '/dashboard/payroll', label: 'Payroll', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
-    // mortuary links removed from HR group - shown under a dedicated Mortuary collapse
+    { to: '/dashboard/hr/employees', label: 'Employee Management', icon: <FaUsers />, perm: 'humanResource' },
+    { to: '/dashboard/hr/recruitment', label: 'Recruitment', icon: <FaUserPlus />, perm: 'humanResource' },
+    { to: '/dashboard/hr/attendance', label: 'Attendance', icon: <FaClock />, perm: 'humanResource' },
+    { to: '/dashboard/hr/leaves', label: 'Leave Management', icon: <FaCalendarAlt />, perm: 'humanResource' },
+    { to: '/dashboard/hr/payroll', label: 'Payroll', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
+    { to: '/dashboard/hr/performance', label: 'Performance', icon: <FaTrendingUp />, perm: 'humanResource' },
+    { to: '/dashboard/hr/training', label: 'Training', icon: <FaBook />, perm: 'humanResource' },
+    { to: '/dashboard/hr/assets', label: 'Asset Management', icon: <FaBoxes />, perm: 'humanResource' },
+    { to: '/dashboard/hr/disciplinary', label: 'Disciplinary', icon: <FaExclamationTriangle />, perm: 'humanResource' },
+    { to: '/dashboard/hr/documents', label: 'Documents', icon: <FaFileAlt />, perm: 'humanResource' },
+    { to: '/dashboard/hr/analytics', label: 'Analytics', icon: <FaChartBar />, perm: 'humanResource' },
+    { to: '/dashboard/hr/notifications', label: 'Notifications', icon: <FaBell />, perm: 'humanResource' },
   ] : [];
 
   useEffect(() => {

@@ -249,15 +249,21 @@ export default function Sidebar() {
       defaultCheck: user?.role === 'admin',
       items: [
         { to: '/dashboard/hr', label: 'HR Dashboard', perm: 'humanResource' },
-        { to: '/dashboard/employees', label: 'Employees', perm: 'humanResource' },
-        { to: '/dashboard/attendance', label: 'Attendance', perm: 'humanResource' },
-        { to: '/dashboard/leaves', label: 'Leaves', perm: 'humanResource' },
-        { to: '/dashboard/expenses', label: 'Expenses', perm: 'humanResource' },
-        { to: '/dashboard/hiring', label: 'Hiring', perm: 'humanResource' },
-        { to: '/dashboard/payroll', label: 'Payroll', perm: 'humanResource' },
-        // mortuary items removed from HR group; shown under standalone Mortuary group
+        { to: '/dashboard/hr/employees', label: 'Employee Management', perm: 'humanResource' },
+        { to: '/dashboard/hr/recruitment', label: 'Recruitment', perm: 'humanResource' },
+        { to: '/dashboard/hr/attendance', label: 'Attendance', perm: 'humanResource' },
+        { to: '/dashboard/hr/leaves', label: 'Leave Management', perm: 'humanResource' },
+        { to: '/dashboard/hr/payroll', label: 'Payroll', perm: 'humanResource' },
+        { to: '/dashboard/hr/performance', label: 'Performance', perm: 'humanResource' },
+        { to: '/dashboard/hr/training', label: 'Training', perm: 'humanResource' },
+        { to: '/dashboard/hr/assets', label: 'Asset Management', perm: 'humanResource' },
+        { to: '/dashboard/hr/disciplinary', label: 'Disciplinary Actions', perm: 'humanResource' },
+        { to: '/dashboard/hr/documents', label: 'Documents', perm: 'humanResource' },
+        { to: '/dashboard/hr/analytics', label: 'Analytics', perm: 'humanResource' },
+        { to: '/dashboard/hr/notifications', label: 'Notifications', perm: 'humanResource' },
       ],
     },
+  ];
 
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col overflow-auto">

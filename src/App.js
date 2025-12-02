@@ -63,6 +63,18 @@ import LeavesPage from './components/HR/LeavesPage';
 import ExpensesPage from './components/HR/ExpensesPage';
 import PayrollPage from './components/HR/PayrollPage';
 import HiringPage from './components/HR/HiringPage';
+import EmployeeManagement from './components/HR/EmployeeManagement';
+import RecruitmentModule from './components/HR/RecruitmentModule';
+import PayrollManagement from './components/HR/PayrollManagement';
+import TrainingDevelopment from './components/HR/TrainingDevelopment';
+import Performance from './components/HR/Performance';
+import AssetManagement from './components/HR/AssetManagement';
+import DisciplinaryActions from './components/HR/DisciplinaryActions';
+import DocumentManagement from './components/HR/DocumentManagement';
+import AttendanceManagement from './components/HR/AttendanceManagement';
+import LeaveManagement from './components/HR/LeaveManagement';
+import HRAnalytics from './components/HR/HRAnalytics';
+import NotificationsSystem from './components/HR/NotificationsSystem';
 import LabDashboard from './pages/lab/LabDashboard';
 import LabQueue from './pages/lab/LabQueue';
 import LabRequests from './pages/lab/LabRequests';
@@ -356,6 +368,18 @@ function App() {
           <Route path="/hr/expenses" element={<PrivateRoute><Layout><ExpensesPage /></Layout></PrivateRoute>} />
           <Route path="/hr/payroll" element={<PrivateRoute><Layout><PayrollPage /></Layout></PrivateRoute>} />
           <Route path="/hr/hiring" element={<PrivateRoute><Layout><HiringPage /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/employees" element={<PrivateRoute><Layout><EmployeeManagement /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/recruitment" element={<PrivateRoute><Layout><RecruitmentModule /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/payroll" element={<PrivateRoute><Layout><PayrollManagement /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/training" element={<PrivateRoute><Layout><TrainingDevelopment /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/performance" element={<PrivateRoute><Layout><Performance /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/assets" element={<PrivateRoute><Layout><AssetManagement /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/disciplinary" element={<PrivateRoute><Layout><DisciplinaryActions /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/documents" element={<PrivateRoute><Layout><DocumentManagement /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/attendance" element={<PrivateRoute><Layout><AttendanceManagement /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/leaves" element={<PrivateRoute><Layout><LeaveManagement /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/analytics" element={<PrivateRoute><Layout><HRAnalytics /></Layout></PrivateRoute>} />
+          <Route path="/dashboard/hr/notifications" element={<PrivateRoute><Layout><NotificationsSystem /></Layout></PrivateRoute>} />
           <Route path="/dashboard/staff" element={<PrivateRoute><Layout><StaffRequests /></Layout></PrivateRoute>} />
           <Route path="/dashboard/nurse/admissions" element={<PrivateRoute><Layout><NurseAdmissionHistory /></Layout></PrivateRoute>} />
           <Route path="/dashboard/messages" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
