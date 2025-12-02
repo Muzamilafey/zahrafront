@@ -234,6 +234,7 @@ export default function Sidebar({ role, onCollapse }) {
   const [pharmacyOpen, setPharmacyOpen] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
   const [consultationsOpen, setConsultationsOpen] = useState(false);
+  const [mortuaryOpen, setMortuaryOpen] = useState(false);
   const [hrOpen, setHrOpen] = useState(false);
   const [admittedCount, setAdmittedCount] = useState(0);
 
@@ -245,6 +246,8 @@ export default function Sidebar({ role, onCollapse }) {
   const triageItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/triage'));
   // collect consultation-related links
   const consultationItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/consultations'));
+  // collect mortuary-related links
+  const mortuaryItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/dashboard/mortuary') || i.to.startsWith('/mortuary')));
   // collect HR-related links for admin users
   const hrItems = user?.role === 'admin' ? [
     { to: '/dashboard/hr', label: 'HR Dashboard', icon: <FaBriefcase />, perm: 'humanResource' },
@@ -377,6 +380,25 @@ export default function Sidebar({ role, onCollapse }) {
                     <div className="pl-8 flex flex-col">
                       {consultationItems.map(i => (
                         <Link key={i.to} to={i.to} onClick={() => setConsultationsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                          <div className="text-sm text-brand-600">{i.icon}</div>
+                          <div className="text-sm">{i.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Mortuary group in hover overlay */}
+              {mortuaryItems.length > 0 && (
+                <div>
+                  <button onClick={() => setMortuaryOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaBriefcase /></div><div>Mortuary</div></div>
+                    <div>{mortuaryOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                  </button>
+                  {mortuaryOpen && (
+                    <div className="pl-8 flex flex-col">
+                      {mortuaryItems.map(i => (
+                        <Link key={i.to} to={i.to} onClick={() => setMortuaryOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                           <div className="text-sm text-brand-600">{i.icon}</div>
                           <div className="text-sm">{i.label}</div>
                         </Link>
@@ -522,6 +544,26 @@ export default function Sidebar({ role, onCollapse }) {
               <div className="pl-4 flex flex-col">
                 {consultationItems.map(i => (
                   <Link key={i.to} to={i.to} onClick={() => setConsultationsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="text-sm text-brand-600">{i.icon}</div>
+                    <div className="text-sm">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Mortuary collapsible group */}
+        {mortuaryItems.length > 0 && (
+          <div>
+            <button onClick={() => setMortuaryOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+              <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaBriefcase /></div><div>Mortuary</div></div>
+              <div>{mortuaryOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+            </button>
+            {mortuaryOpen && (
+              <div className="pl-4 flex flex-col">
+                {mortuaryItems.map(i => (
+                  <Link key={i.to} to={i.to} onClick={() => setMortuaryOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                     <div className="text-sm text-brand-600">{i.icon}</div>
                     <div className="text-sm">{i.label}</div>
                   </Link>

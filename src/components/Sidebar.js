@@ -220,6 +220,8 @@ export default function Sidebar() {
       defaultCheck: ['mortician', 'admin'].includes(user?.role),
       items: [
         { to: '/dashboard/mortuary', label: 'Mortuary Dashboard', perm: 'mortuary' },
+        { to: '/mortuary/register', label: 'Register Body', perm: 'mortuary' },
+        { to: '/mortuary/fees', label: 'Service Fees', perm: 'mortuary' },
       ],
     },
     // Employee Management group
