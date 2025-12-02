@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope, FaBriefcase, FaTrendingUp, FaBook, FaExclamationTriangle, FaFileAlt, FaChartBar, FaBell } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope, FaBriefcase, FaArrowUp, FaBook, FaExclamationTriangle, FaFileAlt, FaChartBar, FaBell } from 'react-icons/fa';
 
 export default function Sidebar({ role, onCollapse }) {
   const { axiosInstance, user } = useContext(AuthContext);
@@ -256,7 +256,7 @@ export default function Sidebar({ role, onCollapse }) {
     { to: '/dashboard/hr/attendance', label: 'Attendance', icon: <FaClock />, perm: 'humanResource' },
     { to: '/dashboard/hr/leaves', label: 'Leave Management', icon: <FaCalendarAlt />, perm: 'humanResource' },
     { to: '/dashboard/hr/payroll', label: 'Payroll', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
-    { to: '/dashboard/hr/performance', label: 'Performance', icon: <FaTrendingUp />, perm: 'humanResource' },
+    { to: '/dashboard/hr/performance', label: 'Performance', icon: <FaArrowUp />, perm: 'humanResource' },
     { to: '/dashboard/hr/training', label: 'Training', icon: <FaBook />, perm: 'humanResource' },
     { to: '/dashboard/hr/assets', label: 'Asset Management', icon: <FaBoxes />, perm: 'humanResource' },
     { to: '/dashboard/hr/disciplinary', label: 'Disciplinary', icon: <FaExclamationTriangle />, perm: 'humanResource' },

@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { FaChartBar, FaUsers, FaTrendingUp, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaArrowUp, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
 
 export default function HRAnalytics() {
   const { axiosInstance } = useContext(AuthContext);
