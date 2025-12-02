@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { FaBarChart, FaUsers, FaTrendingUp, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaTrendingUp, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
 
 export default function HRAnalytics() {
   const { axiosInstance } = useContext(AuthContext);
@@ -85,7 +85,7 @@ export default function HRAnalytics() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-        <FaBarChart /> HR Analytics & KPIs
+        <FaChartBar /> HR Analytics & KPIs
       </h1>
 
       {/* Main KPIs Grid */}
