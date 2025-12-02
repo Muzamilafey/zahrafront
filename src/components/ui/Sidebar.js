@@ -254,12 +254,14 @@ export default function Sidebar({ role, onCollapse }) {
     { to: '/dashboard/hiring', label: 'Hiring', icon: <FaUserPlus />, perm: 'humanResource' },
     { to: '/dashboard/payroll', label: 'Payroll', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
   ] : [];
-    if(role === 'doctor'){
-      (async ()=>{
-        try{
+
+  useEffect(() => {
+    if (role === 'doctor') {
+      (async () => {
+        try {
           const res = await axiosInstance.get('/patients/admitted');
           setAdmittedCount((res.data.patients || []).length || 0);
-        }catch(e){ /* ignore */ }
+        } catch (e) { /* ignore */ }
       })();
     }
   }, [role]);
