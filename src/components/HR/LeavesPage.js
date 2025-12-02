@@ -5,12 +5,17 @@ import { AuthContext } from '../../contexts/AuthContext';
 export default function LeavesPage() {
   const { axiosInstance } = useContext(AuthContext);
   const [leaves, setLeaves] = useState([]);
+  const [employeesList, setEmployeesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ employeeId: '', type: 'Annual Leave', from: '', to: '', days: '', reason: '' });
 
   useEffect(() => {
     fetchLeaves();
+  }, []);
+
+  useEffect(() => {
+    fetchEmployeesList();
   }, []);
 
   const fetchLeaves = async () => {
@@ -48,6 +53,16 @@ export default function LeavesPage() {
       fetchLeaves();
     } catch (err) {
       alert(err?.response?.data?.message || 'Error submitting leave request');
+    }
+  };
+
+  const fetchEmployeesList = async () => {
+    try {
+      const res = await axiosInstance.get('/employees?limit=1000');
+      setEmployeesList(res.data.employees || []);
+    } catch (err) {
+      console.error('Error fetching employees list:', err);
+      setEmployeesList([]);
     }
   };
 
@@ -98,9 +113,9 @@ export default function LeavesPage() {
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
             <select name="employeeId" value={formData.employeeId} onChange={handleChange} className="border border-gray-300 rounded-lg px-4 py-2" required>
               <option value="">Select Employee</option>
-              <option value="EMP001">John Doe</option>
-              <option value="EMP002">Jane Smith</option>
-              <option value="EMP003">Mike Johnson</option>
+              {employeesList.map(emp => (
+                <option key={emp._id} value={emp._id}>{emp.name}</option>
+              ))}
             </select>
             <select name="type" value={formData.type} onChange={handleChange} className="border border-gray-300 rounded-lg px-4 py-2">
               <option value="Annual Leave">Annual Leave</option>

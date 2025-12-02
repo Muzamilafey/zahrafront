@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Plus, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Edit } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function HiringPage() {
@@ -57,6 +57,11 @@ export default function HiringPage() {
     }
   };
 
+  const handleEditJob = (job) => {
+    setFormData({ title: job.title || '', department: job.department || '', salaryRange: job.salaryRange || '', description: job.description || '' });
+    setShowForm(true);
+  };
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-8">
@@ -69,20 +74,20 @@ export default function HiringPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-2xl font-bold text-gray-900">{jobOpenings.length}</div>
-          <div className="text-sm text-gray-600">Job Openings</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-2xl font-bold text-gray-900">{jobOpenings.reduce((sum, j) => sum + j.applicants, 0)}</div>
-          <div className="text-sm text-gray-600">Total Applicants</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-2xl font-bold text-gray-900">{Math.round(jobOpenings.reduce((sum, j) => sum + j.applicants, 0) / jobOpenings.length)}</div>
-          <div className="text-sm text-gray-600">Avg Applicants/Job</div>
-        </div>
-      </div>
+          <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="text-2xl font-bold text-gray-900">{jobOpenings.length}</div>
+              <div className="text-sm text-gray-600">Job Openings</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="text-2xl font-bold text-gray-900">{jobOpenings.reduce((sum, j) => sum + (j.applicants || 0), 0)}</div>
+              <div className="text-sm text-gray-600">Total Applicants</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="text-2xl font-bold text-gray-900">{jobOpenings.length ? Math.round(jobOpenings.reduce((sum, j) => sum + (j.applicants || 0), 0) / jobOpenings.length) : 0}</div>
+              <div className="text-sm text-gray-600">Avg Applicants/Job</div>
+            </div>
+          </div>
 
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -131,8 +136,9 @@ export default function HiringPage() {
                     <CheckCircle size={16} className="mr-1" /> {job.status}
                   </span>
                 </td>
-                <td className="py-4 px-6 flex justify-center">
-                  <button onClick={() => handleDeleteJob(job._id || job.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600"><Trash2 size={18} /></button>
+                <td className="py-4 px-6 flex justify-center gap-2">
+                  <button onClick={() => handleEditJob(job)} className="p-2 hover:bg-blue-100 rounded-lg text-blue-600" title="Edit"><Edit size={18} /></button>
+                  <button onClick={() => handleDeleteJob(job._id || job.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Delete"><Trash2 size={18} /></button>
                 </td>
               </tr>
             )) : (

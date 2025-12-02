@@ -48,7 +48,7 @@ export default function HRDashboard() {
       <div className="grid grid-cols-3 gap-6 mb-8">
         <div className="col-span-2">
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Hello, John Doe</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Hello, {dashboard?.user?.name || 'HR'}</h2>
             <div className="grid grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-gray-900">{dashboard?.total || 0}</div>
@@ -56,14 +56,14 @@ export default function HRDashboard() {
                 <div className="text-xs text-green-600 mt-1">+1 from last day</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900">80%</div>
+                <div className="text-3xl font-bold text-gray-900">{dashboard?.attendanceRate ? `${dashboard.attendanceRate}%` : '—'}</div>
                 <div className="text-sm text-gray-600">Attendance Rate</div>
-                <div className="text-xs text-red-600 mt-1">-10% from last day</div>
+                <div className="text-xs text-red-600 mt-1">{dashboard?.attendanceDeltaText || ''}</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900">₦30 Mil</div>
+                <div className="text-3xl font-bold text-gray-900">{dashboard?.expensesTotal ? `₦${Number(dashboard.expensesTotal).toLocaleString()}` : '—'}</div>
                 <div className="text-sm text-gray-600">Expenses</div>
-                <div className="text-xs text-green-600 mt-1">+30% from last day</div>
+                <div className="text-xs text-green-600 mt-1">{dashboard?.expensesDeltaText || ''}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-gray-900">{dashboard?.newHiresThisMonth || 0}</div>

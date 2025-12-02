@@ -6,6 +6,7 @@ export default function AttendancePage() {
   const { axiosInstance } = useContext(AuthContext);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [employeesList, setEmployeesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ present: 0, absent: 0, late: 0 });
   const [showCheckIn, setShowCheckIn] = useState(false);
@@ -15,6 +16,10 @@ export default function AttendancePage() {
   useEffect(() => {
     fetchAttendance();
   }, [selectedDate]);
+
+  useEffect(() => {
+    fetchEmployeesList();
+  }, []);
 
   const fetchAttendance = async () => {
     try {
@@ -50,6 +55,16 @@ export default function AttendancePage() {
       fetchAttendance();
     } catch (err) {
       alert(err?.response?.data?.message || 'Error recording attendance');
+    }
+  };
+
+  const fetchEmployeesList = async () => {
+    try {
+      const res = await axiosInstance.get('/employees?limit=1000');
+      setEmployeesList(res.data.employees || []);
+    } catch (err) {
+      console.error('Error fetching employees list:', err);
+      setEmployeesList([]);
     }
   };
 
@@ -112,9 +127,9 @@ export default function AttendancePage() {
           <div className="grid grid-cols-3 gap-4">
             <select value={selectedEmployee} onChange={e => setSelectedEmployee(e.target.value)} className="border border-gray-300 rounded-lg px-4 py-2">
               <option value="">Select Employee</option>
-              <option value="EMP001">John Doe</option>
-              <option value="EMP002">Jane Smith</option>
-              <option value="EMP003">Mike Johnson</option>
+              {employeesList.map(emp => (
+                <option key={emp._id} value={emp._id}>{emp.name}</option>
+              ))}
             </select>
             <input type="time" value={checkInData.checkIn} onChange={e => setCheckInData({...checkInData, checkIn: e.target.value})} placeholder="Check In" className="border border-gray-300 rounded-lg px-4 py-2" />
             <input type="time" value={checkInData.checkOut} onChange={e => setCheckInData({...checkInData, checkOut: e.target.value})} placeholder="Check Out" className="border border-gray-300 rounded-lg px-4 py-2" />

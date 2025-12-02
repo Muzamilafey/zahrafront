@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { DollarSign, Users, TrendingUp } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export default function PayrollPage() {
@@ -21,6 +21,38 @@ export default function PayrollPage() {
     };
     fetchPayroll();
   }, []);
+
+  const handleMarkPaid = async (employeeId) => {
+    try {
+      // attempt to mark payroll as paid for an employee
+      await axiosInstance.post('/payroll/approve', { employeeId });
+      // refetch payroll list if there's an endpoint
+      const res = await axiosInstance.get('/payroll');
+      setPayroll(res.data.payroll || []);
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Error marking as paid');
+    }
+  };
+
+  const handleDeletePayroll = async (employeeId) => {
+    if (!window.confirm('Delete this payroll entry?')) return;
+    try {
+      await axiosInstance.delete(`/payroll/${employeeId}`);
+      const res = await axiosInstance.get('/payroll');
+      setPayroll(res.data.payroll || []);
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Error deleting payroll entry');
+    }
+  };
+
+  const handleEditPayroll = (employee) => {
+    // Navigate to employees page with edit query param (EmployeesPage handles edit if present)
+    try {
+      window.location.href = `/employees?editId=${employee._id || employee.id}`;
+    } catch (err) {
+      console.error('Navigation error', err);
+    }
+  };
 
   const totalSalaries = payroll.reduce((sum, p) => sum + p.netSalary, 0);
   const totalEmployees = payroll.length;
@@ -52,7 +84,7 @@ export default function PayrollPage() {
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-100 rounded-lg"><TrendingUp className="text-purple-600" size={28} /></div>
             <div>
-              <div className="text-2xl font-bold text-gray-900">₦{Math.round(totalSalaries / totalEmployees).toLocaleString()}</div>
+              <div className="text-2xl font-bold text-gray-900">₦{totalEmployees ? Math.round(totalSalaries / totalEmployees).toLocaleString() : '0'}</div>
               <div className="text-sm text-gray-600">Average Salary</div>
             </div>
           </div>
@@ -76,6 +108,7 @@ export default function PayrollPage() {
               <th className="text-right py-3 px-6 font-medium text-gray-700">Bonus/Deductions</th>
               <th className="text-right py-3 px-6 font-medium text-gray-700">Net Salary</th>
               <th className="text-left py-3 px-6 font-medium text-gray-700">Status</th>
+              <th className="text-center py-3 px-6 font-medium text-gray-700">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -93,10 +126,17 @@ export default function PayrollPage() {
                     {emp.status}
                   </span>
                 </td>
+                <td className="py-4 px-6 flex justify-center gap-2">
+                  {emp.status !== 'Paid' && (
+                    <button onClick={() => handleMarkPaid(emp._id || emp.id)} className="p-2 hover:bg-green-100 rounded-lg text-green-600" title="Mark Paid"><CheckCircle size={18} /></button>
+                  )}
+                  <button onClick={() => handleEditPayroll(emp)} className="p-2 hover:bg-blue-100 rounded-lg text-blue-600" title="Edit"><Edit size={18} /></button>
+                  <button onClick={() => handleDeletePayroll(emp._id || emp.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600" title="Delete"><Trash2 size={18} /></button>
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan="6" className="py-8 px-6 text-center text-gray-500">No payroll records</td>
+                <td colSpan="7" className="py-8 px-6 text-center text-gray-500">No payroll records</td>
               </tr>
             )}
           </tbody>
