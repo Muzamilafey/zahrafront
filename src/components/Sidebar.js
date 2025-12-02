@@ -21,6 +21,7 @@ export default function Sidebar() {
     mortuary: false,
     employees: false,
     payroll: false,
+    humanResource: false,
   });
 
   const toggleMenu = (menu) => {
@@ -237,6 +238,21 @@ export default function Sidebar() {
       defaultCheck: ['hr', 'admin'].includes(user?.role),
       items: [
         { to: '/dashboard/payroll', label: 'Payroll Dashboard', perm: 'payroll' },
+      ],
+    },
+    // Human Resource group
+    {
+      id: 'humanResource',
+      title: 'Human Resource',
+      defaultCheck: user?.role === 'admin',
+      items: [
+        { to: '/dashboard/hr', label: 'HR Dashboard', perm: 'humanResource' },
+        { to: '/dashboard/employees', label: 'Employees', perm: 'humanResource' },
+        { to: '/dashboard/attendance', label: 'Attendance', perm: 'humanResource' },
+        { to: '/dashboard/leaves', label: 'Leaves', perm: 'humanResource' },
+        { to: '/dashboard/expenses', label: 'Expenses', perm: 'humanResource' },
+        { to: '/dashboard/hiring', label: 'Hiring', perm: 'humanResource' },
+        { to: '/dashboard/payroll', label: 'Payroll', perm: 'humanResource' },
       ],
     },
 

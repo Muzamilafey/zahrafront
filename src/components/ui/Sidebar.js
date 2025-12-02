@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaCalendarAlt, FaPills, FaFileInvoiceDollar, FaUserPlus, FaFolder, FaClock, FaBoxes, FaEnvelope, FaBars, FaChevronLeft, FaCog, FaChevronDown, FaChevronUp, FaClipboard, FaStethoscope, FaBriefcase } from 'react-icons/fa';
 
 export default function Sidebar({ role, onCollapse }) {
   const { axiosInstance, user } = useContext(AuthContext);
@@ -233,6 +233,7 @@ export default function Sidebar({ role, onCollapse }) {
   const [pharmacyOpen, setPharmacyOpen] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
   const [consultationsOpen, setConsultationsOpen] = useState(false);
+  const [hrOpen, setHrOpen] = useState(false);
   const [admittedCount, setAdmittedCount] = useState(0);
 
   // collect lab-related links (those under /dashboard/lab) and filter by permissions
@@ -243,8 +244,16 @@ export default function Sidebar({ role, onCollapse }) {
   const triageItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/triage'));
   // collect consultation-related links
   const consultationItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/consultations'));
-
-  useEffect(()=>{
+  // collect HR-related links for admin users
+  const hrItems = user?.role === 'admin' ? [
+    { to: '/dashboard/hr', label: 'HR Dashboard', icon: <FaBriefcase />, perm: 'humanResource' },
+    { to: '/dashboard/employees', label: 'Employees', icon: <FaUsers />, perm: 'humanResource' },
+    { to: '/dashboard/attendance', label: 'Attendance', icon: <FaClock />, perm: 'humanResource' },
+    { to: '/dashboard/leaves', label: 'Leaves', icon: <FaCalendarAlt />, perm: 'humanResource' },
+    { to: '/dashboard/expenses', label: 'Expenses', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
+    { to: '/dashboard/hiring', label: 'Hiring', icon: <FaUserPlus />, perm: 'humanResource' },
+    { to: '/dashboard/payroll', label: 'Payroll', icon: <FaFileInvoiceDollar />, perm: 'humanResource' },
+  ] : [];
     if(role === 'doctor'){
       (async ()=>{
         try{
@@ -373,6 +382,25 @@ export default function Sidebar({ role, onCollapse }) {
                   )}
                 </div>
               )}
+              {/* Human Resource group in hover overlay */}
+              {hrItems.length > 0 && (
+                <div>
+                  <button onClick={() => setHrOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaBriefcase /></div><div>Human Resource</div></div>
+                    <div>{hrOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                  </button>
+                  {hrOpen && (
+                    <div className="pl-8 flex flex-col">
+                      {hrItems.map(i => (
+                        <Link key={i.to} to={i.to} onClick={() => setHrOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                          <div className="text-sm text-brand-600">{i.icon}</div>
+                          <div className="text-sm">{i.label}</div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* remaining items */}
               {items.filter(i => !patientItems.find(p => p.to === i.to) && !pharmacyItems.find(p => p.to === i.to) && !labItems.find(l => l.to === i.to) && !triageItems.find(t => t.to === i.to) && !consultationItems.find(c => c.to === i.to)).map(i => (
                 <Link key={i.to} to={i.to} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
@@ -491,6 +519,26 @@ export default function Sidebar({ role, onCollapse }) {
               <div className="pl-4 flex flex-col">
                 {consultationItems.map(i => (
                   <Link key={i.to} to={i.to} onClick={() => setConsultationsOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                    <div className="text-sm text-brand-600">{i.icon}</div>
+                    <div className="text-sm">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Human Resource collapsible group */}
+        {hrItems.length > 0 && (
+          <div>
+            <button onClick={() => setHrOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+              <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaBriefcase /></div><div>Human Resource</div></div>
+              <div>{hrOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+            </button>
+            {hrOpen && (
+              <div className="pl-4 flex flex-col">
+                {hrItems.map(i => (
+                  <Link key={i.to} to={i.to} onClick={() => setHrOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
                     <div className="text-sm text-brand-600">{i.icon}</div>
                     <div className="text-sm">{i.label}</div>
                   </Link>
