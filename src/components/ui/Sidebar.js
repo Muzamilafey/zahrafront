@@ -251,6 +251,7 @@ export default function Sidebar({ role, onCollapse }) {
   const [triageOpen, setTriageOpen] = useState(false);
   const [consultationsOpen, setConsultationsOpen] = useState(false);
   const [mortuaryOpen, setMortuaryOpen] = useState(false);
+  const [outpatientOpen, setOutpatientOpen] = useState(false);
   const [hrOpen, setHrOpen] = useState(false);
   const [admittedCount, setAdmittedCount] = useState(0);
 
@@ -262,6 +263,8 @@ export default function Sidebar({ role, onCollapse }) {
   const triageItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/triage'));
   // collect consultation-related links
   const consultationItems = items.filter(i => typeof i.to === 'string' && i.to.startsWith('/consultations'));
+  // collect outpatient-related links (opd and outpatient dashboard)
+  const outpatientItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/opd') || i.to.startsWith('/dashboard/outpatient')));
   // collect mortuary-related links
   const mortuaryItems = items.filter(i => typeof i.to === 'string' && (i.to.startsWith('/dashboard/mortuary') || i.to === '/mortuary/register' || i.to === '/mortuary/fees'));
   // collect HR-related links for admin users
@@ -372,25 +375,44 @@ export default function Sidebar({ role, onCollapse }) {
                   )}\
                 </div>
               )}
-              {/* Triage group in hover overlay */}
-              {triageItems.length > 0 && (
-                <div>
-                  <button onClick={() => setTriageOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
-                    <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaClipboard /></div><div>Triage</div></div>
-                    <div>{triageOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
-                  </button>
-                  {triageOpen && (
-                    <div className="pl-8 flex flex-col">
-                      {triageItems.map(i => (
-                        <Link key={i.to} to={i.to} onClick={() => setTriageOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
-                          <div className="text-sm text-brand-600">{i.icon}</div>
-                          <div className="text-sm">{i.label}</div>
-                        </Link>
-                      ))}
+                  {/* Outpatient group in hover overlay */}
+                  {outpatientItems.length > 0 && (
+                    <div>
+                      <button onClick={() => setOutpatientOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                        <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaStethoscope /></div><div>Outpatient</div></div>
+                        <div>{outpatientOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                      </button>
+                      {outpatientOpen && (
+                        <div className="pl-8 flex flex-col">
+                          {outpatientItems.map(i => (
+                            <Link key={i.to} to={i.to} onClick={() => setOutpatientOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                              <div className="text-sm text-brand-600">{i.icon}</div>
+                              <div className="text-sm">{i.label}</div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
+                  {/* Triage group in hover overlay */}
+                  {triageItems.length > 0 && (
+                    <div>
+                      <button onClick={() => setTriageOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
+                        <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaClipboard /></div><div>Triage</div></div>
+                        <div>{triageOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
+                      </button>
+                      {triageOpen && (
+                        <div className="pl-8 flex flex-col">
+                          {triageItems.map(i => (
+                            <Link key={i.to} to={i.to} onClick={() => setTriageOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
+                              <div className="text-sm text-brand-600">{i.icon}</div>
+                              <div className="text-sm">{i.label}</div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
               {/* Consultations group in hover overlay */}
               {consultationItems.length > 0 && (
                 <div>
