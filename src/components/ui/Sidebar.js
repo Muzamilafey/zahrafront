@@ -64,11 +64,23 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/dashboard/mortuary', label: 'Mortuary', icon: <FaBriefcase />, perm: 'mortuary' },
       { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
       { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
+      // Outpatient links
+      { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', icon: <FaStethoscope />, perm: 'outpatient' },
+      { to: '/opd/register', label: 'Register Visit', icon: <FaUserPlus />, perm: 'outpatient' },
+      { to: '/opd/triage', label: 'Triage / Vitals', icon: <FaClipboard />, perm: 'triage' },
+      { to: '/opd/consultation', label: 'Consultation', icon: <FaStethoscope />, perm: 'consultations' },
+      { to: '/opd/prescription', label: 'Prescriptions', icon: <FaPills />, perm: 'prescriptions' },
+      { to: '/opd/queue', label: 'OPD Queue', icon: <FaClock />, perm: 'outpatient' },
+      { to: '/opd/billing', label: 'OPD Billing', icon: <FaFileInvoiceDollar />, perm: 'billing' },
     ],
     doctor: [
         { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
         { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
       { to: '/dashboard/doctor/appointments', label: 'Appointments', icon: <FaCalendarAlt />, perm: 'appointments' },
+      // Outpatient quick links for doctors
+      { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', icon: <FaStethoscope />, perm: 'outpatient' },
+      { to: '/opd/consultation', label: 'Consultation', icon: <FaStethoscope />, perm: 'consultations' },
+      { to: '/opd/queue', label: 'OPD Queue', icon: <FaClock />, perm: 'outpatient' },
       { to: '/dashboard/doctor/admitpatient', label: 'Admit Patient', icon: <FaUserPlus />, perm: 'patients' },
       { to: '/dashboard/doctor/admitted', label: 'Admitted Patients', icon: <FaUsers />, perm: 'patients' },
       { to: '/dashboard/doctor/patients', label: 'Patients', icon: <FaUsers />, perm: 'patients' },
@@ -139,6 +151,10 @@ export default function Sidebar({ role, onCollapse }) {
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
       { to: '/triage', label: 'Triage Assessments', icon: <FaClipboard />, perm: 'triage' },
       { to: '/consultations', label: 'Consultations', icon: <FaStethoscope />, perm: 'consultations' },
+      // Outpatient quick links for nurses
+      { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', icon: <FaStethoscope />, perm: 'outpatient' },
+      { to: '/opd/triage', label: 'Triage / Vitals', icon: <FaClipboard />, perm: 'triage' },
+      { to: '/opd/queue', label: 'OPD Queue', icon: <FaClock />, perm: 'outpatient' },
     ],
     lab: [
       { to: '/lab', label: 'Lab Dashboard', icon: <FaFolder />, perm: 'lab' },
