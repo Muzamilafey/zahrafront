@@ -190,6 +190,15 @@ export default function Sidebar({ role, onCollapse }) {
     { to: '/patients/discharged', label: 'Discharge / Invoices', icon: <FaFileInvoiceDollar />, perm: 'patients' },
     { to: '/patients/visits', label: 'Patient Visits', icon: <FaCalendarAlt />, perm: 'patients' },
     { to: '/patients/visits/report', label: 'Visits Report', icon: <FaFileInvoiceDollar />, perm: 'patients' },
+    // OPD links grouped under Patients
+    { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', icon: <FaStethoscope />, perm: 'outpatient' },
+    { to: '/opd/register', label: 'Register Visit', icon: <FaUserPlus />, perm: 'outpatient' },
+    { to: '/opd/triage', label: 'Triage / Vitals', icon: <FaClipboard />, perm: 'triage' },
+    { to: '/opd/consultation', label: 'Consultation', icon: <FaStethoscope />, perm: 'consultations' },
+    { to: '/opd/prescription', label: 'Prescriptions', icon: <FaPills />, perm: 'prescriptions' },
+    { to: '/opd/queue', label: 'OPD Queue', icon: <FaClock />, perm: 'outpatient' },
+    { to: '/opd/billing', label: 'OPD Billing', icon: <FaFileInvoiceDollar />, perm: 'billing' },
+    { to: '/opd/reports', label: 'OPD Reports', icon: <FaChartBar />, perm: 'outpatient' },
   ];
 
   // decide if patient management should be shown
@@ -375,25 +384,7 @@ export default function Sidebar({ role, onCollapse }) {
                   )}\
                 </div>
               )}
-                  {/* Outpatient group in hover overlay */}
-                  {outpatientItems.length > 0 && (
-                    <div>
-                      <button onClick={() => setOutpatientOpen(p => !p)} className="w-full flex items-center justify-between px-2 py-2 text-sm font-medium hover:bg-gray-100">
-                        <div className="flex items-center gap-2"><div className="text-sm text-brand-600"><FaStethoscope /></div><div>Outpatient</div></div>
-                        <div>{outpatientOpen ? <FaChevronUp /> : <FaChevronDown />}</div>
-                      </button>
-                      {outpatientOpen && (
-                        <div className="pl-8 flex flex-col">
-                          {outpatientItems.map(i => (
-                            <Link key={i.to} to={i.to} onClick={() => setOutpatientOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100">
-                              <div className="text-sm text-brand-600">{i.icon}</div>
-                              <div className="text-sm">{i.label}</div>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Outpatient links are now shown under Patients collapse */}
                   {/* Triage group in hover overlay */}
                   {triageItems.length > 0 && (
                     <div>

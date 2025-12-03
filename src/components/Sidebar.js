@@ -90,6 +90,15 @@ export default function Sidebar() {
         { to: '/patients/discharged', label: 'Discharged Patients', perm: 'patients' },
         { to: '/patients/visits', label: 'Patient Visits', perm: 'patients' },
         { to: '/patients/visits/report', label: 'Visits Report', perm: 'patients' },
+        // OPD links grouped under Patients
+        { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', perm: 'outpatient' },
+        { to: '/opd/register', label: 'Register Visit', perm: 'outpatient' },
+        { to: '/opd/triage', label: 'Triage / Vitals', perm: 'triage' },
+        { to: '/opd/consultation', label: 'Consultation', perm: 'consultations' },
+        { to: '/opd/prescription', label: 'Prescriptions', perm: 'prescriptions' },
+        { to: '/opd/queue', label: 'OPD Queue', perm: 'outpatient' },
+        { to: '/opd/billing', label: 'OPD Billing', perm: 'billing' },
+        { to: '/opd/reports', label: 'OPD Reports', perm: 'outpatient' },
       ],
     },
     {
@@ -187,21 +196,7 @@ export default function Sidebar() {
       ],
     },
     // Outpatient group
-    {
-      id: 'outpatient',
-      title: 'Outpatient Services',
-      defaultCheck: ['admin', 'doctor', 'nurse', 'receptionist'].includes(user?.role),
-      items: [
-        { to: '/dashboard/outpatient', label: 'Outpatient Dashboard', perm: 'outpatient' },
-        { to: '/opd/register', label: 'Register Visit', perm: 'outpatient' },
-        { to: '/opd/triage', label: 'Triage / Vitals', perm: 'triage' },
-        { to: '/opd/consultation', label: 'Consultation', perm: 'consultations' },
-        { to: '/opd/prescription', label: 'Prescriptions', perm: 'prescriptions' },
-        { to: '/opd/queue', label: 'OPD Queue', perm: 'outpatient' },
-        { to: '/opd/billing', label: 'OPD Billing', perm: 'billing' },
-        { to: '/opd/reports', label: 'OPD Reports', perm: 'outpatient' },
-      ],
-    },
+    // Note: Outpatient links are shown under Patient Management collapse
     // Maternity group
     {
       id: 'maternity',
