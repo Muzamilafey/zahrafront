@@ -3,7 +3,9 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com/api';
+// Keep base URL without trailing `/api` so frontend calls like `/api/employees`
+// are appended correctly and don't produce `/api/api/...` duplicates.
+const API_BASE = process.env.REACT_APP_API_BASE || 'https://zahra-7bi2.onrender.com';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
