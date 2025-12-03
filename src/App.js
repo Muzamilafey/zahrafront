@@ -49,6 +49,12 @@ import PatientRegistrationDashboard from './components/Dashboard/PatientRegistra
 import NurseDashboard from './components/Dashboard/NurseDashboard';
 import NurseAdmissionHistory from './pages/nurse/NurseAdmissionHistory';
 import OutpatientDashboard from './components/Dashboard/OutpatientDashboard';
+import VisitRegister from './components/OPD/VisitRegister';
+import TriageForm from './components/OPD/TriageForm';
+import ConsultationForm from './components/OPD/ConsultationForm';
+import PrescriptionForm from './components/OPD/PrescriptionForm';
+import QueueView from './components/OPD/QueueView';
+import BillingPage from './components/OPD/BillingPage';
 import MaternityDashboard from './components/Dashboard/MaternityDashboard';
 import RadiologyDashboard from './components/Dashboard/RadiologyDashboard';
 import MortuaryDashboard from './components/Dashboard/MortuaryDashboard';
@@ -386,6 +392,12 @@ function App() {
 
           <Route path="/triage" element={<PrivateRoute><Layout><TriageManagement /></Layout></PrivateRoute>} />
           <Route path="/triage/history" element={<PrivateRoute><Layout><TriageManagement /></Layout></PrivateRoute>} />
+          <Route path="/opd/register" element={<PrivateRoute><Layout><VisitRegister /></Layout></PrivateRoute>} />
+          <Route path="/opd/triage" element={<PrivateRoute><Layout><TriageForm /></Layout></PrivateRoute>} />
+          <Route path="/opd/consultation" element={<PrivateRoute><Layout><ConsultationForm /></Layout></PrivateRoute>} />
+          <Route path="/opd/prescription" element={<PrivateRoute><Layout><PrescriptionForm /></Layout></PrivateRoute>} />
+          <Route path="/opd/queue" element={<PrivateRoute><Layout><QueueView /></Layout></PrivateRoute>} />
+          <Route path="/opd/billing" element={<PrivateRoute><Layout><BillingPage /></Layout></PrivateRoute>} />
           
           <Route path="/consultations" element={<PrivateRoute><Layout><ConsultationManagement /></Layout></PrivateRoute>} />
           <Route path="/consultations/new" element={<PrivateRoute><Layout><ConsultationManagement /></Layout></PrivateRoute>} />
